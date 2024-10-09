@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./settings.css";
+import "../components/ui/settings.css";
 
 const Settings = () => {
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
