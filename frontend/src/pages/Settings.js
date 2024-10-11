@@ -1,58 +1,60 @@
 import React, { useState } from "react";
 import "../components/ui/settings.css";
+import Header from "../components/ui/Header.js";
 
 const Settings = () => {
-  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [newPassword, setNewPassword] = useState(""); // To store the new password
-  
-  const toggleSection = (section) => {
+    const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+    const [isAccountOpen, setIsAccountOpen] = useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [newPassword, setNewPassword] = useState(""); // To store the new password
+
+const toggleSection = (section) => {
     switch (section) {
-      case "password":
+        case "password":
         setIsPasswordOpen(!isPasswordOpen);
         break;
-      case "account":
+        case "account":
         setIsAccountOpen(!isAccountOpen);
         break;
-      case "notification":
+        case "notification":
         setIsNotificationOpen(!isNotificationOpen);
         break;
-      default:
+        default:
         break;
     }
-  };
+    };
 
-  const handlePasswordSubmit = (e) => {
+const handlePasswordSubmit = (e) => {
     e.preventDefault();
     console.log("New Password:", newPassword); // Handle password submission here
     setIsPasswordOpen(false); // Close the section after submission
     setNewPassword(""); // Clear input field
-  };
+    };
 
-  const handleCancel = () => {
+    const handleCancel = () => {
     setIsPasswordOpen(false); // Close the password section
     setNewPassword(""); // Clear input field
-  };
+    };
 
-  const handleLogOut = () => {
+    const handleLogOut = () => {
     setIsAccountOpen(false); //Close
-  };
+    };
 
-  return (
+return (
+    
     <div className="settings-container">
-      <h2>Settings</h2>
-
-      <div className="setting-item">
+        <header><Header/></header>
+        <h2>Settings</h2>
+        <div className="setting-item">
         <button className="setting-btn" onClick={() => toggleSection("password")}>
-          Password
+            Password
         </button>
         {isPasswordOpen && (
-          <div className="setting-content">
+            <div className="setting-content">
             <form onSubmit={handlePasswordSubmit}>
-              <label htmlFor="new-password" className="pass-change">
-              </label>
-              <input
+                <label htmlFor="new-password" className="pass-change">
+                </label>
+                <input
                 type="password"
                 id="new-password"
                 name="new-password"
@@ -60,51 +62,51 @@ const Settings = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="password-input"
-              />
-              <div className="button-group">
+                />
+                <div className="button-group">
                 <button type="button" className="cancel-btn" onClick={handleCancel}>
-                  Cancel
+                    Cancel
                 </button>
                 <button type="submit" className="submit-btn">
-                  Reset Password
+                    Reset Password
                 </button>
-              </div>
+                </div>
             </form>
-          </div>
+            </div>
         )}
-      </div>
+        </div>
 
-      <div className="setting-item">
+        <div className="setting-item">
         <button className="setting-btn" onClick={() => toggleSection("account")}>
-          Manage Your Account
+            Manage Your Account
         </button>
         {isAccountOpen && (
-          <div className="setting-content">
+            <div className="setting-content">
             <div className="button-group">
                 <button type="button" className="cancel-btn" onClick={handleLogOut}>
-                  Log Out
+                    Log Out
                 </button>
                 <button type="submit" className="submit-btn">
-                  Delete Your Account
+                    Delete Your Account
                 </button>
-              </div>
-          </div>
+                </div>
+            </div>
         )}
-      </div>
+        </div>
 
-      <div className="setting-item">
+        <div className="setting-item">
         <button className="setting-btn" onClick={() => toggleSection("notification")}>
-          Notification Preferences
+            Notification Preferences
         </button>
         {isNotificationOpen && (
-          <div className="setting-content">
+            <div className="setting-content">
             <div className="button-group">
-              <input type="checkbox" id="notifcation" value="on"></input>
-              <label for="notifcation">Notification for mentions?</label>
-          </div>
-          </div>
+                <input type="checkbox" id="notifcation" value="on"></input>
+                <label for="notifcation">Notification for mentions?</label>
+            </div>
+            </div>
         )}
-      </div>
+        </div>
     </div>
   );
 };
