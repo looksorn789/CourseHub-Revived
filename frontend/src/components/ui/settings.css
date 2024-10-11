@@ -1,5 +1,5 @@
 .settings-container {
-    width: 60%; /* Increased the width to make the box bigger */
+    width: 80%; /* Increased the width to make the box bigger */
     margin: 8rem auto 0 auto; /* Adjusted margin to move the box down */
     padding: 5rem 5rem; /* Increased padding to make the box taller */
     background-color: #f2f5f7;
@@ -7,13 +7,22 @@
     position: relative;
 }
 
-h2 {
+.settings-heading {
     text-align: center;
-    color: #2d573f;
-    margin-bottom: 3rem; /* Increased margin to move the "Settings" text above */
-    position: relative; /* Removed absolute positioning for better layout control */
-    top: -2rem; /* Slightly adjusted the position upwards to align above the first button */
+    color: #2d573f; /* Green color */
+    font-weight: bold; /* Bold text */
+    font-style: italic; /* Italicized for emphasis */
+    font-size: 2rem; /* Larger font size for prominence */
+    font-family: 'Georgia', serif; /* Elegant serif font */
+    margin-bottom: 2.5rem; /* Adjusted margin for better spacing */
+    position: relative;
+    top: -2rem; /* Slightly moves the text higher */
+    letter-spacing: 0.05rem; /* Adds slight spacing between the letters for readability */
+    text-transform: capitalize; /* Capitalizes the first letter for a cleaner look */
+    border-bottom: 2px solid #7ca38e; /* Optional: adds a subtle underline for emphasis */
+    padding-bottom: 0.5rem; /* Adds space between text and underline */
 }
+
 
 .setting-item {
     margin-bottom: 2rem; /* Space between buttons */
