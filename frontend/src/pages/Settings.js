@@ -44,7 +44,7 @@ return (
     
     <div className="settings-container">
         <header><Header/></header>
-        <h2>Settings</h2>
+        <p class="settings-heading">Settings</p>
         <div className="setting-item">
         <button className="setting-btn" onClick={() => toggleSection("password")}>
             Password
