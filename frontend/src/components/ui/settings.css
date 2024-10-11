@@ -1,7 +1,7 @@
 .settings-container {
-    width: 50%;
-    margin: 0 auto;
-    padding: 10rem 5rem 5rem 10rem; /* Reduced top padding to move the boxes higher */
+    width: 60%; /* Increased the width to make the box bigger */
+    margin: 8rem auto 0 auto; /* Adjusted margin to move the box down */
+    padding: 5rem 5rem; /* Increased padding to make the box taller */
     background-color: #f2f5f7;
     border-radius: 8px;
     position: relative;
@@ -10,11 +10,9 @@
 h2 {
     text-align: center;
     color: #2d573f;
-    margin-bottom: 2rem; /* Adjust margin to push the text a bit higher */
-    position: absolute;
-    top: 30px; /* Keeps the "Settings" text higher */
-    left: 50%;
-    transform: translateX(-50%);
+    margin-bottom: 3rem; /* Increased margin to move the "Settings" text above */
+    position: relative; /* Removed absolute positioning for better layout control */
+    top: -2rem; /* Slightly adjusted the position upwards to align above the first button */
 }
 
 .setting-item {
@@ -52,18 +50,16 @@ h2 {
     font-size: 1rem;
     border-radius: 4px;
     border: 1px solid #7ca38e;
-  }
-  
-/* Button group centered with appropriate spacing */
-.button-group {
-    display: flex;
-    justify-content: center; /* Center the entire button group */
-    gap: 2rem; /* Space between the Cancel and Submit buttons */
-    margin-top: 1.5rem;
-    width: 100%; /* Full width to ensure centering */
 }
 
-/* Cancel button styling */
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    width: 100%;
+}
+
 .cancel-btn {
     background-color: #d9534f;
     color: white;
@@ -73,10 +69,9 @@ h2 {
     border: none;
     cursor: pointer;
     width: 20%;
-    transition: box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for hover */
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-/* Submit button styling */
 .submit-btn {
     background-color: #7ca38e;
     color: white;
@@ -85,19 +80,17 @@ h2 {
     border-radius: 5px;
     border: none;
     cursor: pointer;
-    width: 30%; /* Slightly wider than the Cancel button */
-    transition: box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for hover */
+    width: 30%;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-/* Shared button styling */
 .submit-btn, .cancel-btn {
-    font-size: 1rem;
+    font-size: 0.9rem;
     border-radius: 4px;
     cursor: pointer;
 }
 
-/* Glowing effect on hover for both buttons */
 .submit-btn:hover, .cancel-btn:hover {
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Subtle glow effect */
-    transform: translateY(-3px); /* Slight lift on hover */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
 }
