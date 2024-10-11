@@ -13,7 +13,7 @@ const Header = () => {
         <a href="/" className="icon">
           <FaHome />
         </a>
-        <a href="/profile" className="icon">
+        <a href="/profile-page" className="icon">
           <FaUserCircle />
         </a>
       </div>
