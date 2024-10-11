@@ -40,3 +40,19 @@
   .icon:hover {
     color: #1b3d2e;
   }
+
+  .header-title {
+    display: flex;
+    align-items: center; /* Align items vertically centered */
+  }
+  
+  .icon-text {
+    display: flex;
+    align-items: center;
+  }
+  
+  .book-icon {
+    margin-right: 8px; /* Space between the icon and the text */
+    width: 24px;
+    height: 24px;
+  }
