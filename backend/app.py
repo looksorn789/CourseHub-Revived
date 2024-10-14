@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from config import Config
 from supabase import create_client, Client
 from routes.auth import auth_bp
+from routes.forum import forum_bp
 
 
 def create_app():
@@ -27,6 +28,8 @@ def create_app():
     app.supabase = supabase
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(forum_bp, url_prefix="/forum")
+    
     print("Blueprint registered: auth_bp")
 
     return app
