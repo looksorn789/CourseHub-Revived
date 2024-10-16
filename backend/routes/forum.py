@@ -26,13 +26,15 @@ def create_forum():
 
     
     # Error checking by name
-    if not str(name).isalpha():
+    if not all(str(letter).isalpha() or str(letter).isspace() for letter in name ):
         return jsonify({"message": "Forum name must be alphabet characters only"}), 409
     
     if forum_model.find_by_name(name) is not None and forum_model.find_by_name(name).get("name").upper() == str(name).upper():
         return jsonify({"message": "Forum name already exists"}), 409
     
     # Error checking by description
+    if not isinstance(description, str):
+        return jsonify({"message": "Description must be a string object"})
 
     if len(description) > 100:
         return jsonify({"message": "Description must me less than 100 characters"})
