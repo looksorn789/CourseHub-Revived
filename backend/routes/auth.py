@@ -265,6 +265,10 @@ def signin():
 
     if not user:
         return jsonify({"message": "User not found"}), 404
+    
+    # Check the password using the new method
+    if not user_model.check_password(email, password):
+        return jsonify({"message": "Invalid password"}), 401
 
     # Authenticate with Supabase
     try:
