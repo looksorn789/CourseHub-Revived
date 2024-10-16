@@ -14,6 +14,7 @@ class UserModel:
         verification_code=None,
         verification_code_expiry=None,
     ):
+        
         try:
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
             user_data = {
@@ -30,6 +31,13 @@ class UserModel:
         except Exception as e:
             return None, str(e)
 
+    def check_password(self, email, password):
+        user = self.find_by_email(email)
+        if user and 'password' in user:
+            # Compare the plain text password with the hashed password
+            return bcrypt.checkpw(password.encode('utf-8'), user['password'])
+        return False  # User not found or password not stored
+    
     def find_by_email(self, email):
         return self.collection.find_one({"email": email})
 
