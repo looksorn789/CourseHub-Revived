@@ -25,13 +25,34 @@ class Forum:
         # Search for a forum by email in MongoDB
         return self.collection.find_one({"name": name})
     
+    def update_name(
+            self,
+            name,
+            updatedName
+    ):
+        
+        self.collection.update_one({"name" : name}, {"$set": {"name":updatedName}} )
 
+    def update_description(
+            self,
+            description,
+            updatedDescription
+    ):
+        
+        self.collection.update_one({"description" : description}, {"$set": {"description":updatedDescription}} )
+    
+    def update_tags(
+            self,
+            tags,
+            updatedTags
+    ):
+        
+        self.collection.update_one({"tags" : tags}, {"$set": {"tags":updatedTags}} )
+        
+    
 
-    def find_by_tags(self, givenTags):
-        # Search for a forum by tags in MongoDB
-        for i in givenTags:
-            if i not in self.collection.tag:
-                return None, "Tag not found"
-        return self.collection.find({"tag": tags})
+    
+    
+
     
     
