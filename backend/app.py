@@ -7,6 +7,7 @@ from config import Config
 from supabase import create_client, Client
 from routes.auth import auth_bp
 from routes.forum import forum_bp
+from routes.settings import settings_bp
 
 
 def create_app():
@@ -29,7 +30,8 @@ def create_app():
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(forum_bp, url_prefix="/forum")
-    
+    app.register_blueprint(settings_bp, url_prefix="/settings")
+
     print("Blueprint registered: auth_bp")
 
     return app
