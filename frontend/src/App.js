@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
+import Settings from './pages/Settings'
 import Dashboard from "./pages/Dashboard";
 import StudentProfilePage from "./pages/StudentProfilePage";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -16,9 +17,6 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/student-profile" element={<StudentProfilePage />} />
         <Route
           path="/dashboard"
           element={

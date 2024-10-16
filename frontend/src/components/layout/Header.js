@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link} from "react-router-dom";
 import {
   Home,
   Users,
@@ -121,19 +121,29 @@ function Header() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="text-green-800">My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {/* Sign out (Link to profile page /) */}
+              <Link to="/student-profile">
               <DropdownMenuItem className={defaultItemHoverClasses}>
                 Profile
               </DropdownMenuItem>
+              </Link>
+              {/* Sign out (Link to Settings page /) */}
+              <Link to="/settings">
               <DropdownMenuItem className={defaultItemHoverClasses}>
                 Settings
               </DropdownMenuItem>
+              </Link>
+               {/* Help (No route defined, keeping it as is for now) */}
               <DropdownMenuItem className={defaultItemHoverClasses}>
                 Help
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              {/* Sign out (Link to landing page /) */}
+              <Link to="/">
               <DropdownMenuItem className="text-red-600 hover:bg-red-100 hover:text-red-800 focus:bg-red-100 focus:text-red-800">
                 Sign out
               </DropdownMenuItem>
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
           <Sheet>
