@@ -1,12 +1,19 @@
 import React, { useState } from "react";
-import Input from "../components/ui/Input"; // Ensure this Input component exists
+import Input from "../components/ui/Input"; 
 import Header from "../components/layout/Header";
+import { useNavigate } from "react-router-dom"; 
+import { requestResetPassword, deleteAccount } from "../services/authService"; // Import the new deleteAccount function
+import Button from "../components/ui/Button"; 
+import CustomLoader from "../components/ui/CustomLoader"; 
 
 const Settings = () => {
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
     const [isAccountOpen, setIsAccountOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-    const [newPassword, setNewPassword] = useState(""); // To store the new password
+    const [email, setEmail] = useState(""); 
+    const [isLoading, setIsLoading] = useState(false); 
+    const [error, setError] = useState(""); 
+    const navigate = useNavigate(); 
 
     const toggleSection = (section) => {
         switch (section) {
@@ -24,19 +31,44 @@ const Settings = () => {
         }
     };
 
-    const handlePasswordSubmit = (e) => {
-        e.preventDefault();
-        // Handle password reset logic here
-        console.log("Password reset for:", newPassword);
-    };
-
-    const handleCancel = () => {
-        setNewPassword(""); // Clear the input field
-    };
-
     const handleLogOut = () => {
-        // Handle logout logic here
         console.log("Logged out");
+        navigate("/"); 
+    };
+
+    const handleDeleteAccount = async () => {
+        const confirmed = window.confirm("Are you sure you want to delete your account?");
+        if (confirmed) {
+            try {
+                const email = "user@example.com"; // Replace this with the actual email
+                await deleteAccount(email); // Call the deleteAccount function
+                console.log("Account deleted."); // Handle success (e.g., navigate to another page)
+            } catch (error) {
+                console.error("Error deleting account:", error.message); // Handle error appropriately
+            }
+        }
+        navigate("/");
+        
+    };
+
+    const handleEmailSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        setIsLoading(true);
+        try {
+            await requestResetPassword(email);
+            setIsLoading(false);
+            alert("A reset link has been sent to your email.");
+            navigate("/reset-password"); 
+        } catch (err) {
+            const errorMessage = err.message || "Something went wrong, please try again.";
+            if (errorMessage.includes("Email not found")) {
+                setError("The email you entered is not registered. Please try again with a registered email.");
+            } else {
+                setError(errorMessage);
+            }
+            setIsLoading(false);
+        }
     };
 
     const styles = {
@@ -130,42 +162,41 @@ const Settings = () => {
             <div style={styles.settingsContainer}>
                 <p style={styles.settingsHeading}>Settings</p>
 
+                {/* Password section */}
                 <div style={styles.settingItem}>
                     <button
                         style={styles.settingBtn}
                         onClick={() => toggleSection("password")}
                     >
-                        Password
+                        Reset Password
                     </button>
                     {isPasswordOpen && (
                         <div style={styles.settingContent}>
-                            <form onSubmit={handlePasswordSubmit}>
-                                <Input
-                                    type="password"
-                                    id="new-password"
-                                    name="new-password"
-                                    placeholder="Enter new password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    style={styles.passwordInput}
-                                />
+                            <form onSubmit={handleEmailSubmit}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <Input
+                                        type="email"
+                                        id="email-address"
+                                        name="email"
+                                        placeholder="Enter your email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        style={styles.passwordInput}
+                                        required
+                                    />
+                                    {error && <p style={{ color: "red" }}>{error}</p>}
+                                </div>
                                 <div style={styles.buttonGroup}>
-                                    <button
-                                        type="button"
-                                        style={styles.cancelBtn}
-                                        onClick={handleCancel}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button type="submit" style={styles.submitBtn}>
-                                        Reset Password
-                                    </button>
+                                    <Button type="submit" disabled={isLoading} style={styles.submitBtn}>
+                                        {isLoading ? <CustomLoader /> : "Reset Password"}
+                                    </Button>
                                 </div>
                             </form>
                         </div>
                     )}
                 </div>
 
+                {/* Account management section */}
                 <div style={styles.settingItem}>
                     <button
                         style={styles.settingBtn}
@@ -183,14 +214,15 @@ const Settings = () => {
                                 >
                                     Log Out
                                 </button>
-                                <button type="submit" style={styles.submitBtn}>
-                                    Delete Your Account
+                                <button type="button" style={styles.submitBtn} onClick={handleDeleteAccount}>
+                                    {isLoading ? <CustomLoader /> : "Delete Your Account"}
                                 </button>
                             </div>
                         </div>
                     )}
                 </div>
 
+                {/* Notification preferences section */}
                 <div style={styles.settingItem}>
                     <button
                         style={styles.settingBtn}
