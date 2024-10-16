@@ -1,3 +1,4 @@
+import bcrypt
 class UserModel:
     def __init__(self, db, supabase):
         self.collection = db["users"]
@@ -7,16 +8,19 @@ class UserModel:
         self,
         email,
         username,
+        password,
         supabase_user_id=None,
         verified=False,
         verification_code=None,
         verification_code_expiry=None,
     ):
         try:
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
             user_data = {
                 "supabase_id": supabase_user_id,
                 "email": email,
                 "username": username,
+                "password": hashed_password,
                 "verified": verified,
                 "verification_code": verification_code,
                 "verification_code_expiry": verification_code_expiry,
