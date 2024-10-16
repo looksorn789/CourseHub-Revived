@@ -16,6 +16,35 @@ import {
   Check,
 } from "lucide-react";
 
+const [passwordStrength, setPasswordStrength] = useState('');
+const [passwordStrengthMessage, setPasswordStrengthMessage] = useState('');
+
+const validatePasswordStrength = (password) => {
+  const lengthCriteria = password.length >= 8;
+  const uppercaseCriteria = /[A-Z]/.test(password);
+  const lowercaseCriteria = /[a-z]/.test(password);
+  const digitCriteria = /\d/.test(password);
+  const specialCharCriteria = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  const isValid = lengthCriteria && uppercaseCriteria && lowercaseCriteria && digitCriteria && specialCharCriteria;
+
+  if (!lengthCriteria) {
+    setPasswordStrengthMessage('Password must be at least 8 characters long.');
+  } else if (!uppercaseCriteria) {
+    setPasswordStrengthMessage('Password must contain at least one uppercase letter.');
+  } else if (!lowercaseCriteria) {
+    setPasswordStrengthMessage('Password must contain at least one lowercase letter.');
+  } else if (!digitCriteria) {
+    setPasswordStrengthMessage('Password must contain at least one digit.');
+  } else if (!specialCharCriteria) {
+    setPasswordStrengthMessage('Password must contain at least one special character.');
+  } else {
+    setPasswordStrengthMessage('Password is strong.');
+  }
+
+  setPasswordStrength(isValid ? 'strong' : 'weak');
+};
+
 function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -201,8 +230,18 @@ function SignUp() {
                     className="block w-full pl-10 pr-10 sm:text-sm border-green-200 rounded-md focus:ring-green-500 focus:border-green-500"
                     placeholder="Create a password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      validatePasswordStrength(e.target.value); // Validate on input change
+                    }}
                   />
+
+                  // Display the password strength message
+                  {password && (
+                    <p className={`text-sm ${passwordStrength === 'strong' ? 'text-green-500' : 'text-red-500'}`}>
+                      {passwordStrengthMessage}
+                    </p>
+                  )}
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <button
                       type="button"
