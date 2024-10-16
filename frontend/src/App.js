@@ -20,7 +20,7 @@ function App() {
         <Route path="/settings" element={<PrivateRoute><Settings /> </PrivateRoute>}/>
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/settings" element={<PrivateRoute><StudentProfilePage /> </PrivateRoute>}/>
+        <Route path="/student-profile" element={<PrivateRoute><StudentProfilePage /> </PrivateRoute>}/>
         <Route
           path="/feed"
           element={
