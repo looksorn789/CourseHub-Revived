@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import "../components/ui/settings.css";
-import Header from "../components/ui/Header.js";
+import Input from "../components/ui/Input"; // Ensure this Input component exists
+import Header from "../components/layout/Header";
 
 const Settings = () => {
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
@@ -8,107 +8,210 @@ const Settings = () => {
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [newPassword, setNewPassword] = useState(""); // To store the new password
 
-const toggleSection = (section) => {
-    switch (section) {
-        case "password":
-        setIsPasswordOpen(!isPasswordOpen);
-        break;
-        case "account":
-        setIsAccountOpen(!isAccountOpen);
-        break;
-        case "notification":
-        setIsNotificationOpen(!isNotificationOpen);
-        break;
-        default:
-        break;
-    }
+    const toggleSection = (section) => {
+        switch (section) {
+            case "password":
+                setIsPasswordOpen(!isPasswordOpen);
+                break;
+            case "account":
+                setIsAccountOpen(!isAccountOpen);
+                break;
+            case "notification":
+                setIsNotificationOpen(!isNotificationOpen);
+                break;
+            default:
+                break;
+        }
     };
 
-const handlePasswordSubmit = (e) => {
-    e.preventDefault();
-    console.log("New Password:", newPassword); // Handle password submission here
-    setIsPasswordOpen(false); // Close the section after submission
-    setNewPassword(""); // Clear input field
+    const handlePasswordSubmit = (e) => {
+        e.preventDefault();
+        // Handle password reset logic here
+        console.log("Password reset for:", newPassword);
     };
 
     const handleCancel = () => {
-    setIsPasswordOpen(false); // Close the password section
-    setNewPassword(""); // Clear input field
+        setNewPassword(""); // Clear the input field
     };
 
     const handleLogOut = () => {
-    setIsAccountOpen(false); //Close
+        // Handle logout logic here
+        console.log("Logged out");
     };
 
-return (
-    
-    <div className="settings-container">
-        <header><Header/></header>
-        <p class="settings-heading">Settings</p>
-        <div className="setting-item">
-        <button className="setting-btn" onClick={() => toggleSection("password")}>
-            Password
-        </button>
-        {isPasswordOpen && (
-            <div className="setting-content">
-            <form onSubmit={handlePasswordSubmit}>
-                <label htmlFor="new-password" className="pass-change">
-                </label>
-                <input
-                type="password"
-                id="new-password"
-                name="new-password"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="password-input"
-                />
-                <div className="button-group">
-                <button type="button" className="cancel-btn" onClick={handleCancel}>
-                    Cancel
-                </button>
-                <button type="submit" className="submit-btn">
-                    Reset Password
-                </button>
-                </div>
-            </form>
-            </div>
-        )}
-        </div>
+    const styles = {
+        settingsContainer: {
+            width: "80%",
+            margin: "8rem auto 0 auto",
+            padding: "5rem 5rem",
+            backgroundColor: "#f2f5f7",
+            borderRadius: "8px",
+            position: "relative",
+        },
+        settingsHeading: {
+            textAlign: "center",
+            color: "#2d573f",
+            fontWeight: "bold",
+            fontStyle: "italic",
+            fontSize: "2rem",
+            fontFamily: "'Georgia', serif",
+            marginBottom: "2.5rem",
+            position: "relative",
+            top: "-2rem",
+            letterSpacing: "0.05rem",
+            textTransform: "capitalize",
+            borderBottom: "2px solid #7ca38e",
+            paddingBottom: "0.5rem",
+        },
+        settingItem: {
+            marginBottom: "2rem",
+        },
+        settingBtn: {
+            width: "100%",
+            padding: "1rem",
+            fontSize: "1rem",
+            backgroundColor: "#d9e4dc",
+            border: "1px solid #7ca38e",
+            color: "#2d573f",
+            cursor: "pointer",
+            textAlign: "left",
+            borderRadius: "5px",
+            transition: "background-color 0.3s ease",
+        },
+        settingContent: {
+            padding: "1rem",
+            marginTop: "0.5rem",
+            backgroundColor: "#f8f9fa",
+            borderLeft: "4px solid #7ca38e",
+            borderRadius: "5px",
+        },
+        passwordInput: {
+            width: "100%",
+            padding: "0.5rem",
+            margin: "0.5rem 0",
+            fontSize: "1rem",
+            borderRadius: "4px",
+            border: "1px solid #7ca38e",
+        },
+        buttonGroup: {
+            display: "flex",
+            justifyContent: "center",
+            gap: "2rem",
+            marginTop: "1.5rem",
+            width: "100%",
+        },
+        cancelBtn: {
+            backgroundColor: "#d9534f",
+            color: "white",
+            padding: "0.75rem 1.5rem",
+            fontSize: "1rem",
+            borderRadius: "5px",
+            border: "none",
+            cursor: "pointer",
+            width: "20%",
+            transition: "box-shadow 0.3s ease, transform 0.3s ease",
+        },
+        submitBtn: {
+            backgroundColor: "#7ca38e",
+            color: "white",
+            padding: "0.75rem 2rem",
+            fontSize: "1.1rem",
+            borderRadius: "5px",
+            border: "none",
+            cursor: "pointer",
+            width: "30%",
+            transition: "box-shadow 0.3s ease, transform 0.3s ease",
+        },
+    };
 
-        <div className="setting-item">
-        <button className="setting-btn" onClick={() => toggleSection("account")}>
-            Manage Your Account
-        </button>
-        {isAccountOpen && (
-            <div className="setting-content">
-            <div className="button-group">
-                <button type="button" className="cancel-btn" onClick={handleLogOut}>
-                    Log Out
-                </button>
-                <button type="submit" className="submit-btn">
-                    Delete Your Account
-                </button>
+    return (
+        <>
+            <Header />
+            <div style={styles.settingsContainer}>
+                <p style={styles.settingsHeading}>Settings</p>
+
+                <div style={styles.settingItem}>
+                    <button
+                        style={styles.settingBtn}
+                        onClick={() => toggleSection("password")}
+                    >
+                        Password
+                    </button>
+                    {isPasswordOpen && (
+                        <div style={styles.settingContent}>
+                            <form onSubmit={handlePasswordSubmit}>
+                                <Input
+                                    type="password"
+                                    id="new-password"
+                                    name="new-password"
+                                    placeholder="Enter new password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    style={styles.passwordInput}
+                                />
+                                <div style={styles.buttonGroup}>
+                                    <button
+                                        type="button"
+                                        style={styles.cancelBtn}
+                                        onClick={handleCancel}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button type="submit" style={styles.submitBtn}>
+                                        Reset Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                </div>
+
+                <div style={styles.settingItem}>
+                    <button
+                        style={styles.settingBtn}
+                        onClick={() => toggleSection("account")}
+                    >
+                        Manage Your Account
+                    </button>
+                    {isAccountOpen && (
+                        <div style={styles.settingContent}>
+                            <div style={styles.buttonGroup}>
+                                <button
+                                    type="button"
+                                    style={styles.cancelBtn}
+                                    onClick={handleLogOut}
+                                >
+                                    Log Out
+                                </button>
+                                <button type="submit" style={styles.submitBtn}>
+                                    Delete Your Account
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div style={styles.settingItem}>
+                    <button
+                        style={styles.settingBtn}
+                        onClick={() => toggleSection("notification")}
+                    >
+                        Notification Preferences
+                    </button>
+                    {isNotificationOpen && (
+                        <div style={styles.settingContent}>
+                            <div style={styles.buttonGroup}>
+                                <Input type="checkbox" id="notification" />
+                                <label htmlFor="notification">
+                                    Notification for mentions?
+                                </label>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
-        )}
-        </div>
-
-        <div className="setting-item">
-        <button className="setting-btn" onClick={() => toggleSection("notification")}>
-            Notification Preferences
-        </button>
-        {isNotificationOpen && (
-            <div className="setting-content">
-            <div className="button-group">
-                <input type="checkbox" id="notifcation" value="on"></input>
-                <label for="notifcation">Notification for mentions?</label>
-            </div>
-            </div>
-        )}
-        </div>
-    </div>
-  );
+        </>
+    );
 };
 
 export default Settings;
