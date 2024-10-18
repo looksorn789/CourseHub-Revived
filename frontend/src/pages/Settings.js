@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import Input from "../components/ui/Input"; 
 import Header from "../components/layout/Header";
 import { useNavigate } from "react-router-dom"; 
-import { requestResetPassword, deleteAccount } from "../services/authService"; // Import the new deleteAccount function
+import { requestResetPassword, deleteAccount } from "../services/authService"; 
 import Button from "../components/ui/Button"; 
 import CustomLoader from "../components/ui/CustomLoader"; 
+import { ChevronDown, ChevronUp } from "lucide-react"; 
 
 const Settings = () => {
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
@@ -42,13 +43,12 @@ const Settings = () => {
             try {
                 const email = "user@example.com"; // Replace this with the actual email
                 await deleteAccount(email); // Call the deleteAccount function
-                console.log("Account deleted."); // Handle success (e.g., navigate to another page)
+                console.log("Account deleted."); 
             } catch (error) {
-                console.error("Error deleting account:", error.message); // Handle error appropriately
+                console.error("Error deleting account:", error.message); 
             }
         }
-        navigate("/");
-        
+        navigate("/");        
     };
 
     const handleEmailSubmit = async (e) => {
@@ -72,106 +72,184 @@ const Settings = () => {
     };
 
     const styles = {
+        outerContainer: {
+            backgroundColor: "#e8f4f8",
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column", // Stack children vertically
+            justifyContent: "flex-start", // Align items at the top
+        },
         settingsContainer: {
-            width: "80%",
-            margin: "8rem auto 0 auto",
-            padding: "5rem 5rem",
-            backgroundColor: "#f2f5f7",
+            width: "90%",
+            minHeight: "75vh",
+            justifyContent: "center",
+            margin: "5rem auto 0 auto",
+            padding: "5rem",
+            backgroundColor: "#ffffff",
             borderRadius: "8px",
-            position: "relative",
+            boxSizing: "border-box",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
         },
         settingsHeading: {
             textAlign: "center",
-            color: "#2d573f",
             fontWeight: "bold",
-            fontStyle: "italic",
-            fontSize: "2rem",
+            color: "#2d573f",
+            fontSize: "1.8rem",
             fontFamily: "'Georgia', serif",
             marginBottom: "2.5rem",
-            position: "relative",
-            top: "-2rem",
             letterSpacing: "0.05rem",
             textTransform: "capitalize",
-            borderBottom: "2px solid #7ca38e",
-            paddingBottom: "0.5rem",
         },
         settingItem: {
+            width: "100%",
             marginBottom: "2rem",
+            display: "flex",
+            justifyContent: "center", 
+            alignItems: "center", 
+            flexDirection: "column", 
+            textAlign: "center", 
         },
         settingBtn: {
-            width: "100%",
+            width: "60%",
             padding: "1rem",
             fontSize: "1rem",
-            backgroundColor: "#d9e4dc",
+            backgroundColor: "#E0E0E0",
+            fontWeight: "Bold",
             border: "1px solid #7ca38e",
-            color: "#2d573f",
+            color: "#000000",
             cursor: "pointer",
             textAlign: "left",
             borderRadius: "5px",
             transition: "background-color 0.3s ease",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+        },
+        ResetAccountBtn: {
+            width: "60%",
+            padding: "1rem",
+            fontSize: "1rem",
+            backgroundColor: "#205836",
+            fontWeight: "Bold",
+            border: "1px solid #7ca38e",
+            color: "#000000",
+            cursor: "pointer",
+            textAlign: "left",
+            borderRadius: "5px",
+            transition: "background-color 0.3s ease",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
         },
         settingContent: {
-            padding: "1rem",
-            marginTop: "0.5rem",
+            display: isPasswordOpen || isAccountOpen || isNotificationOpen ? 'block' : 'none',
+            width: "60%",
+            margin: "0 auto", 
             backgroundColor: "#f8f9fa",
-            borderLeft: "4px solid #7ca38e",
-            borderRadius: "5px",
+            borderRadius: "4px",
+            padding: "2rem", 
+            boxSizing: "border-box",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", 
         },
         passwordInput: {
             width: "100%",
             padding: "0.5rem",
-            margin: "0.5rem 0",
-            fontSize: "1rem",
+            margin: "-1rem 0", 
+            fontSize: "0.9rem", 
+            borderRadius: "4px",
+        },
+        buttonGroup: {
+            alignItems: "center",
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "1.5rem",
+            gap: "2rem",
+        },
+        inputbox: {
+            width: "100%",
+            height: "3rem", 
+            padding: "1rem",
+            margin: "0.5rem 0", 
+            fontSize: "1rem", 
             borderRadius: "4px",
             border: "1px solid #7ca38e",
         },
-        buttonGroup: {
-            display: "flex",
-            justifyContent: "center",
-            gap: "2rem",
-            marginTop: "1.5rem",
-            width: "100%",
-        },
-        cancelBtn: {
-            backgroundColor: "#d9534f",
+        logOutBtn: {
+            width: "20%",
+            backgroundColor: "#205836",
             color: "white",
-            padding: "0.75rem 1.5rem",
+            padding: "0.35rem 2rem",
+            fontSize: "1rem",
+            borderRadius: "5px",
+            cursor: "pointer",
+            transition: "box-shadow 0.3s ease, transform 0.3s ease",
+        },
+        DeleteBtn: {
+            width: "30%",
+            backgroundColor: "#205836",
+            color: "white",
+            padding: "0.45rem 2rem",
             fontSize: "1rem",
             borderRadius: "5px",
             border: "none",
             cursor: "pointer",
+            transition: "box-shadow 0.3s ease, transform 0.3s ease",
+        },
+        cancelBtn: {
             width: "20%",
+            color: "black",
+            padding: "0.5rem 1.5rem",
+            fontSize: "1rem",
+            borderRadius: "5px",
+            cursor: "pointer",
             transition: "box-shadow 0.3s ease, transform 0.3s ease",
         },
         submitBtn: {
-            backgroundColor: "#7ca38e",
+            width: "25%",
+            backgroundColor: "#205836",
             color: "white",
-            padding: "0.75rem 2rem",
+            padding: "0.5rem 2rem",
             fontSize: "1.1rem",
             borderRadius: "5px",
             border: "none",
             cursor: "pointer",
-            width: "30%",
             transition: "box-shadow 0.3s ease, transform 0.3s ease",
+        },
+        notificationPreference: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start", 
+            margin: "0 auto", 
+        },
+        checkbox: {
+            width: "20px", 
+            height: "20px", 
+            marginLeft: "0.5rem", 
+        },
+        notificationLabel: {
+            fontSize: "1rem", 
+            color: "#000", 
         },
     };
 
     return (
-        <>
-            <Header />
-            <div style={styles.settingsContainer}>
-                <p style={styles.settingsHeading}>Settings</p>
 
-                {/* Password section */}
-                <div style={styles.settingItem}>
-                    <button
-                        style={styles.settingBtn}
-                        onClick={() => toggleSection("password")}
-                    >
-                        Reset Password
-                    </button>
-                    {isPasswordOpen && (
-                        <div style={styles.settingContent}>
+        <div style={styles.outerContainer}> {/* Outer container for the entire Settings page */}
+
+        <Header /> {/* Header remains at the top */}
+        <div style={styles.settingsContainer}> {/* Settings container below the header */}
+            <p style={styles.settingsHeading}>Settings</p>
+            {/* Password section */}
+            <div style={styles.settingItem}>
+                <button
+                    style={styles.settingBtn}
+                    onClick={() => toggleSection("password")}
+                >
+                    Password {isPasswordOpen ? <ChevronUp /> : <ChevronDown />}
+                </button>
+                {isPasswordOpen && (
+                    <div style={styles.settingContent}>
+                        <div style={styles.passwordInput}>
                             <form onSubmit={handleEmailSubmit}>
                                 <div style={{ marginBottom: '1rem' }}>
                                     <Input
@@ -181,69 +259,83 @@ const Settings = () => {
                                         placeholder="Enter your email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        style={styles.passwordInput}
+                                        style={styles.inputbox} 
                                         required
                                     />
                                     {error && <p style={{ color: "red" }}>{error}</p>}
                                 </div>
+                                
                                 <div style={styles.buttonGroup}>
-                                    <Button type="submit" disabled={isLoading} style={styles.submitBtn}>
+                                    <button
+                                        type="button"
+                                        style={styles.cancelBtn}
+                                        onClick={() => toggleSection("password")}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <Button type="reset" disabled={isLoading} style={styles.submitBtn}>
                                         {isLoading ? <CustomLoader /> : "Reset Password"}
                                     </Button>
                                 </div>
                             </form>
                         </div>
-                    )}
-                </div>
-
-                {/* Account management section */}
-                <div style={styles.settingItem}>
-                    <button
-                        style={styles.settingBtn}
-                        onClick={() => toggleSection("account")}
-                    >
-                        Manage Your Account
-                    </button>
-                    {isAccountOpen && (
-                        <div style={styles.settingContent}>
-                            <div style={styles.buttonGroup}>
-                                <button
-                                    type="button"
-                                    style={styles.cancelBtn}
-                                    onClick={handleLogOut}
-                                >
-                                    Log Out
-                                </button>
-                                <button type="button" style={styles.submitBtn} onClick={handleDeleteAccount}>
-                                    {isLoading ? <CustomLoader /> : "Delete Your Account"}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Notification preferences section */}
-                <div style={styles.settingItem}>
-                    <button
-                        style={styles.settingBtn}
-                        onClick={() => toggleSection("notification")}
-                    >
-                        Notification Preferences
-                    </button>
-                    {isNotificationOpen && (
-                        <div style={styles.settingContent}>
-                            <div style={styles.buttonGroup}>
-                                <Input type="checkbox" id="notification" />
-                                <label htmlFor="notification">
-                                    Notification for mentions?
-                                </label>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
-        </>
-    );
+
+            {/* Notification preferences section */}
+            <div style={styles.settingItem}>
+                <button
+                    style={styles.settingBtn}
+                    onClick={() => toggleSection("notification")}
+                >
+                    Notification Preferences {isNotificationOpen ? <ChevronUp /> : <ChevronDown />}
+                </button>
+                {isNotificationOpen && (
+                    <div style={styles.settingContent}>
+                        <div style={styles.notificationPreference}>
+                            <label htmlFor="notification" style={styles.notificationLabel}>
+                                Notification for mentions?
+                            </label>
+                            <input 
+                                type="checkbox" 
+                                id="notification" 
+                                style={styles.checkbox} 
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Account management section */}
+            <div style={styles.settingItem}>
+                <button
+                    style={styles.settingBtn}
+                    onClick={() => toggleSection("account")}
+                >
+                    Manage Your Account {isAccountOpen ? <ChevronUp /> : <ChevronDown />}
+                </button>
+                {isAccountOpen && (
+                    <div style={styles.settingContent}>
+                        <div style={styles.buttonGroup}>
+                            <button
+                                type="button"
+                                style={styles.logOutBtn}
+                                onClick={handleLogOut}
+                            >
+                                Log Out
+                            </button>
+                            <Button type="reset" disabled={isLoading} style={styles.DeleteBtn} onClick={handleDeleteAccount}>
+                                {isLoading ? <CustomLoader /> : "Delete Your Account"}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+        </div>
+    </div>
+);
 };
 
 export default Settings;
