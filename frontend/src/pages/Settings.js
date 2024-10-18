@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { requestResetPassword, deleteAccount } from "../services/authService"; 
 import Button from "../components/ui/Button"; 
 import CustomLoader from "../components/ui/CustomLoader"; 
-import { ChevronDown, ChevronUp } from "lucide-react"; 
+import { ChevronDown, ChevronUp, CheckCircle } from "lucide-react";
+
 
 const Settings = () => {
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
@@ -13,6 +14,7 @@ const Settings = () => {
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [email, setEmail] = useState(""); 
     const [isLoading, setIsLoading] = useState(false); 
+    const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState(""); 
     const navigate = useNavigate(); 
 
@@ -33,8 +35,9 @@ const Settings = () => {
     };
 
     const handleLogOut = () => {
-        console.log("Logged out");
-        navigate("/"); 
+        localStorage.removeItem("jwt_token");  
+        localStorage.removeItem("user");
+        navigate("/signin");
     };
 
     const handleDeleteAccount = async () => {
@@ -56,20 +59,26 @@ const Settings = () => {
         setError("");
         setIsLoading(true);
         try {
-            await requestResetPassword(email);
-            setIsLoading(false);
-            alert("A reset link has been sent to your email.");
-            navigate("/reset-password"); 
+          await requestResetPassword(email);
+          setIsLoading(false);
+          setIsSubmitted(true);
         } catch (err) {
-            const errorMessage = err.message || "Something went wrong, please try again.";
-            if (errorMessage.includes("Email not found")) {
-                setError("The email you entered is not registered. Please try again with a registered email.");
-            } else {
-                setError(errorMessage);
-            }
-            setIsLoading(false);
+          const errorMessage =
+            err.message || "Something went wrong, please try again.";
+          if (errorMessage.includes("Email not found")) {
+            setError(
+              "The email you entered is not registered. Please try again with a registered email.",
+            );
+          } else {
+            setError(errorMessage);
+          }
+          setIsLoading(false);
         }
-    };
+      };
+
+      const handleNotifications = async() => { //CANNOT WORK ON THIS YET UNTIL PROFILE IS FINISHED, AND FORUM SINCE I NEED TO SUBSCRIBE TO THE FORUMS
+
+      }
 
     const styles = {
         outerContainer: {
@@ -250,17 +259,19 @@ const Settings = () => {
                 {isPasswordOpen && (
                     <div style={styles.settingContent}>
                         <div style={styles.passwordInput}>
+                        {!isSubmitted ? (
                             <form onSubmit={handleEmailSubmit}>
                                 <div style={{ marginBottom: '1rem' }}>
                                     <Input
                                         type="email"
                                         id="email-address"
                                         name="email"
-                                        placeholder="Enter your email"
+                                        autoComplete="email"
+                                        placeholder="Enter your Email"
+                                        required
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        style={styles.inputbox} 
-                                        required
+                                        style={styles.inputbox}
                                     />
                                     {error && <p style={{ color: "red" }}>{error}</p>}
                                 </div>
@@ -273,15 +284,38 @@ const Settings = () => {
                                     >
                                         Cancel
                                     </button>
-                                    <Button type="reset" disabled={isLoading} style={styles.submitBtn}>
-                                        {isLoading ? <CustomLoader /> : "Reset Password"}
+                                    <Button type="submit" disabled={isLoading} style={styles.submitBtn}>
+                                    {isLoading ? (
+                                        <>
+                                        <CustomLoader />
+                                        <span className="ml-2">Sending...</span>
+                                    </>
+                                    ) : (
+                                        <>
+                                        Reset Password
+                                        </>
+                                      )}
                                     </Button>
                                 </div>
                             </form>
+                            
+                       ) : (
+                        <div className="mt-8 space-y-6">
+                          <div className="rounded-2xl bg-white shadow-xl p-8 space-y-6">
+                            <div className="flex items-center justify-center text-green-600">
+                              <CheckCircle className="h-12 w-12" />
+                            </div>
+                            <p className="text-center text-gray-700">
+                              We've sent a password reset link to <strong>{email}</strong>.
+                              Please check your inbox and follow the instructions to reset
+                              your password.
+                            </p>
+                          </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                      )}
+                      </div>
+                      </div>
+                )}</div>
 
             {/* Notification preferences section */}
             <div style={styles.settingItem}>
@@ -332,10 +366,9 @@ const Settings = () => {
                     </div>
                 )}
             </div>
-
-        </div>
     </div>
-);
-};
+</div>
+                );
+            };
 
 export default Settings;
