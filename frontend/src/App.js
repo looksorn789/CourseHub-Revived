@@ -22,10 +22,10 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/student-profile" element={<PrivateRoute><StudentProfilePage /> </PrivateRoute>}/>
         <Route
-          path="/feed"
+          path="/dashboard"
           element={
             <PrivateRoute>
-              <Feed />
+              <Dashboard />
             </PrivateRoute>
           }
         />
