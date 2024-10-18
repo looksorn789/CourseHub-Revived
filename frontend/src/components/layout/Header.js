@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Home,
   Users,
@@ -35,6 +35,7 @@ import { Separator } from "../ui/Separator";
 
 function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const navigate = useNavigate();
   const defaultItemHoverClasses =
     "hover:bg-green-100 hover:text-green-800 focus:bg-green-100 focus:text-green-800";
 
@@ -45,6 +46,12 @@ function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleSignOut = () => {
+        localStorage.removeItem("jwt_token");  
+        localStorage.removeItem("user");
+        navigate("/signin");
+  };
 
   return (
     <header
@@ -121,29 +128,21 @@ function Header() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="text-green-800">My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {/* Sign out (Link to profile page /) */}
-              <Link to="/student-profile">
               <DropdownMenuItem className={defaultItemHoverClasses}>
                 Profile
               </DropdownMenuItem>
-              </Link>
-              {/* Sign out (Link to Settings page /) */}
-              <Link to="/settings">
               <DropdownMenuItem className={defaultItemHoverClasses}>
                 Settings
               </DropdownMenuItem>
-              </Link>
-               {/* Help (No route defined, keeping it as is for now) */}
               <DropdownMenuItem className={defaultItemHoverClasses}>
                 Help
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {/* Sign out (Link to landing page /) */}
-              <Link to="/">
-              <DropdownMenuItem className="text-red-600 hover:bg-red-100 hover:text-red-800 focus:bg-red-100 focus:text-red-800">
+              <DropdownMenuItem className="text-red-600 hover:bg-red-100 hover:text-red-800 focus:bg-red-100 focus:text-red-800"
+                onClick={handleSignOut}
+              >
                 Sign out
               </DropdownMenuItem>
-              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
           <Sheet>
@@ -241,6 +240,7 @@ function Header() {
                 <Button
                   variant="ghost"
                   className="justify-start text-red-600 hover:bg-red-100 transition-colors duration-200"
+                  onClick={handleSignOut}
                 >
                   <LogOut className="mr-2 h-5 w-5" />
                   Sign Out
