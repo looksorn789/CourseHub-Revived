@@ -63,12 +63,15 @@ export const resetPassword = async (token, password) => {
   }
 };
 
-export const deleteAccount = async () => {
+export const deleteAccount = async (email) => {
   try {
-    const response = await axios.delete("/auth/delete_account"); // Adjust the endpoint as necessary
+    const response = await axios.delete("/auth/delete_account", {
+      data: { email },  // Pass email as payload for the delete request
+    });
     return response.data;
   } catch (error) {
     throw error.response ? error.response.data : { message: "Network Error" };
   }
 };
+
 
