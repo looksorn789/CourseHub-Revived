@@ -44,14 +44,17 @@ const Settings = () => {
         const confirmed = window.confirm("Are you sure you want to delete your account?");
         if (confirmed) {
             try {
-                const email = "user@example.com"; // Replace this with the actual email
+                const user = JSON.parse(localStorage.getItem("user")); // Get the logged-in user data
+                const email = user.email; // Extract email from user data
                 await deleteAccount(email); // Call the deleteAccount function
-                console.log("Account deleted."); 
+                console.log("Account deleted.");
+    
+                // Log out the user and clear local storage
+                handleLogOut();
             } catch (error) {
-                console.error("Error deleting account:", error.message); 
+                console.error("Error deleting account:", error.message);
             }
         }
-        navigate("/");        
     };
 
     const handleEmailSubmit = async (e) => {
@@ -77,7 +80,6 @@ const Settings = () => {
       };
 
       const handleNotifications = async() => { //CANNOT WORK ON THIS YET UNTIL PROFILE IS FINISHED, AND FORUM SINCE I NEED TO SUBSCRIBE TO THE FORUMS
-
       }
 
     const styles = {
@@ -359,9 +361,14 @@ const Settings = () => {
                             >
                                 Log Out
                             </button>
-                            <Button type="reset" disabled={isLoading} style={styles.DeleteBtn} onClick={handleDeleteAccount}>
+                            <Button
+                                type="reset"
+                                disabled={isLoading}
+                                style={styles.DeleteBtn}
+                                onClick={handleDeleteAccount}
+                            >
                                 {isLoading ? <CustomLoader /> : "Delete Your Account"}
-                            </Button>
+                        </Button>
                         </div>
                     </div>
                 )}
