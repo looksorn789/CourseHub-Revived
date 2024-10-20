@@ -89,31 +89,42 @@ const Settings = () => {
             display: "flex",
             flexDirection: "column", // Stack children vertically
             justifyContent: "flex-start", // Align items at the top
+            
         },
+
+        settingsText: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
+            fontSize: '16px',
+            fontWeight: '400',
+            lineHeight: '1.5',
+            color: '#333',
+          },
+          
         settingsContainer: {
-            width: "90%",
+            width: "80%",
             minHeight: "75vh",
             justifyContent: "center",
             margin: "5rem auto 0 auto",
-            padding: "5rem",
+            padding: "3.5rem",
             backgroundColor: "#ffffff",
             borderRadius: "8px",
             boxSizing: "border-box",
             boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
         },
         settingsHeading: {
+            fontFamily: "'Arial', sans-serif",
             textAlign: "center",
-            fontWeight: "bold",
-            color: "#2d573f",
-            fontSize: "1.8rem",
-            fontFamily: "'Georgia', serif",
-            marginBottom: "2.5rem",
+            fontWeight: "600",
+            color: "#446B51",
+            fontSize: "1.5rem",
             letterSpacing: "0.05rem",
             textTransform: "capitalize",
         },
         settingItem: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
             width: "100%",
-            marginBottom: "2rem",
+            marginBottom: "1rem", //increase spacing between buttons
+            marginTop: "6rem", // Added margin to push buttons down further
             display: "flex",
             justifyContent: "center", 
             alignItems: "center", 
@@ -121,11 +132,12 @@ const Settings = () => {
             textAlign: "center", 
         },
         settingBtn: {
-            width: "60%",
+            fontFamily: "'Arial', Helvetica, sans-serif;",
+            width: "50%",
             padding: "1rem",
             fontSize: "1rem",
             backgroundColor: "#E0E0E0",
-            fontWeight: "Bold",
+            fontWeight: "550",
             border: "1px solid #7ca38e",
             color: "#000000",
             cursor: "pointer",
@@ -137,37 +149,35 @@ const Settings = () => {
             alignItems: "center",
         },
         ResetAccountBtn: {
-            width: "60%",
-            padding: "1rem",
-            fontSize: "1rem",
+            fontFamily: "'Arial', Helvetica, sans-serif;",
+            width: "21%",
             backgroundColor: "#205836",
-            fontWeight: "Bold",
-            border: "1px solid #7ca38e",
-            color: "#000000",
+            color: "white",
+            padding: "1.3rem 2rem",
+            fontSize: "1rem",
+            borderRadius: "8px",
+            border: "none",
             cursor: "pointer",
-            textAlign: "left",
-            borderRadius: "5px",
-            transition: "background-color 0.3s ease",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            transition: "box-shadow 0.3s ease, transform 0.3s ease",
         },
         settingContent: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
             display: isPasswordOpen || isAccountOpen || isNotificationOpen ? 'block' : 'none',
-            width: "60%",
+            width: "50%",
             margin: "0 auto", 
             backgroundColor: "#f8f9fa",
-            borderRadius: "4px",
+            borderRadius: "8px",
             padding: "2rem", 
             boxSizing: "border-box",
             boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", 
         },
         passwordInput: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
             width: "100%",
             padding: "0.5rem",
             margin: "-1rem 0", 
             fontSize: "0.9rem", 
-            borderRadius: "4px",
+            borderRadius: "8px",
         },
         buttonGroup: {
             alignItems: "center",
@@ -177,15 +187,17 @@ const Settings = () => {
             gap: "2rem",
         },
         inputbox: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
             width: "100%",
             height: "3rem", 
             padding: "1rem",
             margin: "0.5rem 0", 
             fontSize: "1rem", 
-            borderRadius: "4px",
+            borderRadius: "8px",
             border: "1px solid #7ca38e",
         },
         logOutBtn: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
             width: "20%",
             backgroundColor: "#205836",
             color: "white",
@@ -196,6 +208,7 @@ const Settings = () => {
             transition: "box-shadow 0.3s ease, transform 0.3s ease",
         },
         DeleteBtn: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
             width: "30%",
             backgroundColor: "#205836",
             color: "white",
@@ -207,6 +220,7 @@ const Settings = () => {
             transition: "box-shadow 0.3s ease, transform 0.3s ease",
         },
         cancelBtn: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
             width: "20%",
             color: "black",
             padding: "0.5rem 1.5rem",
@@ -216,6 +230,7 @@ const Settings = () => {
             transition: "box-shadow 0.3s ease, transform 0.3s ease",
         },
         submitBtn: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
             width: "25%",
             backgroundColor: "#205836",
             color: "white",
@@ -238,6 +253,7 @@ const Settings = () => {
             marginLeft: "0.5rem", 
         },
         notificationLabel: {
+            fontFamily: "'Arial', Helvetica, sans-serif;",
             fontSize: "1rem", 
             color: "#000", 
         },
@@ -286,7 +302,7 @@ const Settings = () => {
                                     >
                                         Cancel
                                     </button>
-                                    <Button type="submit" disabled={isLoading} style={styles.submitBtn}>
+                                    <Button type="submit" disabled={isLoading} style={styles.ResetAccountBtn}>
                                     {isLoading ? (
                                         <>
                                         <CustomLoader />
