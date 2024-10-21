@@ -123,8 +123,8 @@ const Settings = () => {
         settingItem: {
             fontFamily: "'Arial', Helvetica, sans-serif;",
             width: "100%",
-            marginBottom: "1rem", //increase spacing between buttons
-            marginTop: "6rem", // Added margin to push buttons down further
+            marginTop: "-3.5rem",
+            paddingTop: "7rem",
             display: "flex",
             justifyContent: "center", 
             alignItems: "center", 
