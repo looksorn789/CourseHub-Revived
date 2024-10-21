@@ -99,7 +99,7 @@ function Feed() {
                   <a
                     href="#"
                     className="text-sm text-gray-600 hover:text-gray-800"
-                    onClick={() => navigate(`/postdetail`)}
+                    onClick={() => navigate(`/postdetails`)}
                   >
                     {post.title}
                   </a>
