@@ -173,7 +173,7 @@ function Feed() {
               <div
                 key={index}
                 className="bg-white rounded-lg shadow p-4 flex items-start space-x-4 cursor-pointer hover:bg-gray-100"
-                onClick={() => navigate(`/postdetail`)}
+                onClick={() => navigate(`/postdetails`)}
               >
                 <img
                   src={post.image}

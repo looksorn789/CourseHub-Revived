@@ -20,7 +20,7 @@ function PostDetail() {
                   href="#"
                   className="text-sm text-gray-600 hover:text-gray-800"
                   onClick={() => {
-                    navigate(`/postdetail`);
+                    navigate(`/postdetails`);
                   }}
                 >
                   What is the difference between a list and an array?
@@ -32,7 +32,7 @@ function PostDetail() {
                   href="#"
                   className="text-sm text-gray-600 hover:text-gray-800"
                   onClick={() => {
-                    navigate(`/postdetail`);
+                    navigate(`/postdetails`);
                   }}
                 >
                   How can I implement a stack in python?
