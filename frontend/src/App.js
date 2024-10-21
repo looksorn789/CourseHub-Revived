@@ -4,12 +4,12 @@ import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Feed from "./pages/Feed";
+import PostDetails from "./pages/PostDetails";
+import Profile from "./pages/Profile.js";
 import StudentProfilePage from "./pages/StudentProfilePage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
-import PostDetails from "./pages/PostDetails";
-import Profile from "./pages/Profile.js";
 
 function App() {
   return (
@@ -25,12 +25,12 @@ function App() {
           path="/feed"
           element={
             <PrivateRoute>
-              <Feed/>
+              <Feed />
             </PrivateRoute>
           }
         />
-        <Route
-            path="/postdetail"
+      <Route
+            path="/postdetails"
             element={
               <PrivateRoute>
                 <PostDetails/>
@@ -47,8 +47,7 @@ function App() {
 
             }
           />
-          
-      </Routes>
+          </Routes>
     </Router>
   );
 }

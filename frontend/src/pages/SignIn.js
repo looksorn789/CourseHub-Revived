@@ -53,7 +53,7 @@ function SignIn() {
         }),
       );
 
-      // Redirect to dashboard
+      // Redirect to feed
       navigate("/feed");
     } catch (err) {
       console.error("Error during sign-in:", err);
