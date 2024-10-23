@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from pymongo.errors import PyMongoError
 from models.forum import Forum
+from datetime import date
 
 forum_bp = Blueprint("forum_bp", __name__)
 
@@ -11,12 +12,11 @@ def create_forum():
     description = data.get("description")
     tags = data.get("tags")
     creator_id = data.get("creator_id")
-    creation_date = data.get("creation_date")
     member_list = data.get("member_list")
     
 
     # Checks if any inputs are null
-    if name is None or description is None or tags is None:
+    if not all([name, description, tags, creator_id, member_list]):
         return jsonify({"message": "Name, description, and at least one tag are required"}), 400
 
     forum_model = Forum(current_app.db, current_app.supabase)
@@ -53,7 +53,7 @@ def create_forum():
             description = description,
             tags = tags,
             creator_id = creator_id,
-            creation_date = creation_date,
+            creation_date = datetime.date.now(),
             member_list = member_list,
             member_count = 1
         )
