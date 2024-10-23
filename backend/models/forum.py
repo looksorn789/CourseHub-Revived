@@ -15,8 +15,8 @@ class Forum:
                 "description" : description,
                 "tags" : tags
             }
-            self.collection.insert_one(forum_data)
-  
+            return self.collection.insert_one(forum_data)
+
         except Exception as e:
             return None, str(e)
 
@@ -46,11 +46,4 @@ class Forum:
             updatedTags
     ):
 
-        self.collection.update_one({"tags" : tags}, {"$set": {"tags":updatedTags}})   
-    
-
-    
-    
-
-    
-    
+        self.collection.update_one({"tags" : tags}, {"$set": {"tags":updatedTags}})

@@ -44,7 +44,7 @@ def create_forum():
             return jsonify({"message": "Tags must be string objects"})
 
     try:
-        forum_data = forum_model.create_forum(
+        forum_model.create_forum(
             name = name,
             description = description,
             tags = tags
@@ -74,7 +74,7 @@ def update_forum():
         return jsonify({"message:": "No forum selected to update"})
 
     if updated_name is not None:
-        if forum_model.geT("description") != description:
+        if forum_model.get("description") != description:
             return jsonify({"message": "old description is not the same"})
         if name.upper() == updated_name.upper():
             return jsonify({"message": "Names are already the same"})
