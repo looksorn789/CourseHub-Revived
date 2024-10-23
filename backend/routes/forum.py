@@ -74,7 +74,7 @@ def update_forum():
         return jsonify({"message:": "No forum selected to update"})
 
     if updated_name is not None:
-        if forum_model.get("description") != description:
+        if forum_model.find_by_description("description") != description:
             return jsonify({"message": "old description is not the same"})
         if name.upper() == updated_name.upper():
             return jsonify({"message": "Names are already the same"})
