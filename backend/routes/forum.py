@@ -13,7 +13,7 @@ def create_forum():
     creator_id = data.get("creator_id")
     creation_date = data.get("creation_date")
     member_list = data.get("member_list")
-    member_count = data.get("member_count")
+    
 
     # Checks if any inputs are null
     if name is None or description is None or tags is None:
@@ -55,7 +55,7 @@ def create_forum():
             creator_id = creator_id,
             creation_date = creation_date,
             member_list = member_list,
-            member_count = member_count
+            member_count = 1
         )
     except PyMongoError as e:
         return jsonify({"message": "Database error", "details": str(e)}), 500
