@@ -1,19 +1,12 @@
-from flask import Blueprint, url_for, request, jsonify, current_app
-import boto3
-from botocore.exceptions import ClientError
-import requests
-
+from flask import Blueprint, request, jsonify, current_app
 from pymongo.errors import PyMongoError
-
 from models.forum import Forum
-
 
 forum_bp = Blueprint("forum_bp", __name__)
 
 @forum_bp.route("/", methods=["POST"])
 def create_forum():
     data = request.get_json()
-
     name = data.get("name")
     description = data.get("description")
     tags = data.get("tags")
@@ -24,21 +17,20 @@ def create_forum():
 
     forum_model = Forum(current_app.db, current_app.supabase)
 
-    
     # Error checking by name
     if not all(str(letter).isalpha() or str(letter).isspace() for letter in name ):
         return jsonify({"message": "Forum name must be alphabet characters only"}), 409
-    
+
     if forum_model.find_by_name(name) is not None and forum_model.find_by_name(name).get("name").upper() == str(name).upper():
         return jsonify({"message": "Forum name already exists"}), 409
-    
+
     # Error checking by description
     if not isinstance(description, str):
         return jsonify({"message": "Description must be a string object"})
 
     if len(description) > 100:
         return jsonify({"message": "Description must me less than 100 characters"})
-    
+
     # Error checking tags
 
     if not isinstance(tags, list):
@@ -66,6 +58,7 @@ def create_forum():
 def update_forum():
     data = request.get_json()
 
+    
     name = data.get("name")
     updated_name = data.get("updated_name")
 
@@ -77,7 +70,12 @@ def update_forum():
 
     forum_model = Forum(current_app.db, current_app.supabase)
     
+    if name is None:
+        return jsonify({"message:": "No forum selected to update"})
+
     if updated_name is not None:
+        if forum_model.geT("description") != description:
+            return jsonify({"message": "old description is not the same"})
         if name.upper() == updated_name.upper():
             return jsonify({"message": "Names are already the same"})
 
@@ -86,6 +84,8 @@ def update_forum():
         except PyMongoError as e:
             return jsonify({"message": "Database error", "details": str(e)}), 500
     
+
+
     if updated_description is not None:
         if len(str(updated_description)) > 100:
             return jsonify({"message": "Updated description must me less than 100 characters"})

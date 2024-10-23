@@ -16,7 +16,7 @@ class Forum:
                 "description" : description,
                 "tags" : tags
             }
-            result = self.collection.insert_one(forum_data)
+            self.collection.insert_one(forum_data)
             
         except Exception as e:
             return None, str(e)
