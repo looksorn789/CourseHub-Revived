@@ -61,5 +61,8 @@ class Forum:
         self.collection.update_one({"tags" : tags}, {"$set": {"tags":updatedTags}})
 
 
+    def add_member(self, user_id):
+        
+
     def get_members(self, name):
         return self.collection.find_one({"name": name}).get("members_list")
