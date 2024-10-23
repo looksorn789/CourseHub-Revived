@@ -24,9 +24,9 @@ function App() {
         <Route
           path="/feed"
           element={
-            <PrivateRoute>
+            //<PrivateRoute>
               <Feed />
-            </PrivateRoute>
+            //</PrivateRoute>
           }
         />
       <Route

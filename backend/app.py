@@ -1,11 +1,13 @@
 from flask import Flask
 from flask_cors import CORS
 
-# from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager
 from pymongo import MongoClient
 from config import Config
 from supabase import create_client, Client
 from routes.auth import auth_bp
+from routes.post_routes import post_bp
+from routes.comment_routes import comment_bp
 
 
 def create_app():
@@ -13,7 +15,7 @@ def create_app():
     app.config.from_object(Config)
 
     CORS(app)
-    # jwt = JWTManager(app)
+    jwt = JWTManager(app)
 
     client = MongoClient(
         app.config["MONGO_URI"], tls=True, tlsAllowInvalidCertificates=True
@@ -27,6 +29,9 @@ def create_app():
     app.supabase = supabase
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(post_bp, url_prefix="/posts")
+    app.register_blueprint(comment_bp, url_prefix="/comments")
+
     print("Blueprint registered: auth_bp")
 
     return app
