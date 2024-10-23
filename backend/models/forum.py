@@ -7,13 +7,21 @@ class Forum:
         self,
         name,
         description,
-        tags
+        tags,
+        creator_id,
+        creation_date,
+        member_list,
+        member_count
     ):
         try:
             forum_data = {
                 "name" : name,
                 "description" : description,
-                "tags" : tags
+                "tags" : tags,
+                "creator_id" : creator_id,
+                "creation_date" : creation_date,
+                "member_list" : member_list,
+                "member_count" : member_count
             }
             return self.collection.insert_one(forum_data)
 
@@ -51,3 +59,7 @@ class Forum:
     ):
 
         self.collection.update_one({"tags" : tags}, {"$set": {"tags":updatedTags}})
+
+
+    def get_members(self, name):
+        return self.collection.find_one({"name": name}).get("members_list")
