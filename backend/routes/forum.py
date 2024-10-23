@@ -53,7 +53,7 @@ def create_forum():
             description = description,
             tags = tags,
             creator_id = creator_id,
-            creation_date = datetime.date.now(),
+            creation_date = date.now(),
             member_list = member_list,
             member_count = 1
         )
