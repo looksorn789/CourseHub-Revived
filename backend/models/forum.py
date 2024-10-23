@@ -23,7 +23,7 @@ class Forum:
     def find_by_name(self, name):
         # Search for a forum by email in MongoDB
         return self.collection.find_one({"name": name})
-    
+
     def find_by_description(self, description):
         # Search for a forum by description in MongoDB
         return self.collection.find_one({"description": description})
