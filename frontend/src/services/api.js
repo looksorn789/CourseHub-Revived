@@ -64,7 +64,7 @@ api.interceptors.response.use(
 
       case 404:
         console.error('Resource not found:', error.response.data);
-        return Promise.reject(new Error('The requested resource was not found.'));
+        return Promise.reject(new Error(error.response.data.message || 'The requested resource was not found.'));
 
       case 422:
         console.error('Validation error:', error.response.data);
