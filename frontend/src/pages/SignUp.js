@@ -17,6 +17,53 @@ import {
 } from "lucide-react";
 
 function SignUp() {
+  const [passwordStrengthMessage, setPasswordStrengthMessage] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState(''); // Define passwordStrength state
+  const [passwordRequirements, setPasswordRequirements] = useState([
+    { criteria: 'Password must be at least 8 characters long.', met : false },
+    { criteria: 'Password must contain at least one uppercase letter.', met: false },
+    { criteria: 'Password must contain at least one lowercase letter.', met: false },
+    { criteria: 'Password must contain at least one digit.', met: false },
+    { criteria: 'Password must contain at least one special character.', met: false },
+  ]);
+  const validatePasswordStrength = (password) => {
+    const lengthCriteria = password.length >= 8;
+    const uppercaseCriteria = /[A-Z]/.test(password);
+    const lowercaseCriteria = /[a-z]/.test(password);
+    const digitCriteria = /\d/.test(password);
+    const specialCharCriteria = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    // Update password requirements
+    const updatedRequirements = [...passwordRequirements];
+    updatedRequirements[0].met = lengthCriteria;
+    updatedRequirements[1].met = uppercaseCriteria;
+    updatedRequirements[2].met = lowercaseCriteria;
+    updatedRequirements[3].met = digitCriteria;
+    updatedRequirements[4].met = specialCharCriteria;
+
+    setPasswordRequirements(updatedRequirements);
+
+    // Check if all criteria are met
+    const isValid = lengthCriteria && uppercaseCriteria && lowercaseCriteria && digitCriteria && specialCharCriteria;
+
+    // Set the strength message based on the criteria
+    if (!lengthCriteria) {
+      setPasswordStrengthMessage('Password must be at least 8 characters long.');
+    } else if (!uppercaseCriteria) {
+      setPasswordStrengthMessage('Password must contain at least one uppercase letter.');
+    } else if (!lowercaseCriteria) {
+      setPasswordStrengthMessage('Password must contain at least one lowercase letter.');
+    } else if (!digitCriteria) {
+      setPasswordStrengthMessage('Password must contain at least one digit.');
+    } else if (!specialCharCriteria) {
+      setPasswordStrengthMessage('Password must contain at least one special character.');
+    } else {
+      setPasswordStrengthMessage('Password is strong.');
+    }
+
+    setPasswordStrength(isValid ? 'strong' : 'weak');
+};
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState(1);
@@ -183,41 +230,55 @@ function SignUp() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Password
-                </Label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    className="block w-full pl-10 pr-10 sm:text-sm border-green-200 rounded-md focus:ring-green-500 focus:border-green-500"
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-400 hover:text-gray-500 focus:outline-none focus:text-gray-500 transition ease-in-out duration-150"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
+        <Label
+          htmlFor="password"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Password
+        </Label>
+        <div className="mt-1 relative rounded-md shadow-sm">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Lock className="h-5 w-5 text-gray-400" />
+          </div>
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            required
+            className="block w-full pl-10 pr-10 sm:text-sm border-green-200 rounded-md focus:ring-green-500 focus:border-green-500"
+            placeholder="Create a password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              validatePasswordStrength(e.target.value); // Validate on input change
+            }}
+          />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-gray-400 hover:text-gray-500 focus:outline-none focus:text-gray-500 transition ease-in-out duration-150"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
                 </div>
               </div>
+              
+              {/* Render Password Requirements */}
+              <div className="mt-2 space-y-1">
+                {passwordRequirements.map((requirement, index) => (
+                  <p key={index} className="text-sm flex items-center">
+                    {/* Dot symbol, color changes based on whether requirement is met */}
+                    <span className={`mr-2 h-2 w-2 rounded-full ${requirement.met ? 'bg-green-600' : 'bg-red-600'}`} />
+                    {requirement.criteria}
+                  </p>
+                ))}
+              </div>
+            </div>
               <div className="space-y-1">
                 <Label
                   htmlFor="confirm-password"
