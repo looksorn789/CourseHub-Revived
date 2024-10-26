@@ -7,6 +7,9 @@ import { steps } from "../../constants/steps";
 import { Card, CardContent } from "../ui/Card";
 import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "../ui/Button";
+import CustomLoader from "../ui/CustomLoader";
+import { createProfile } from "../../services/profileService"; 
+import { useNavigate } from "react-router-dom";
 
 function StudentProfile() {
   const [step, setStep] = useState(1);
@@ -22,10 +25,127 @@ function StudentProfile() {
   const [clubs, setClubs] = useState([]);
   const [certifications, setCertifications] = useState([]);
   const [avatar, setAvatar] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [avatarStyle] = useState('adventurer'); 
+  const [avatarOptions] = useState({
+    backgroundColor: ['b6e3f4','c0aede','d1d4f9'],
+    radius: 50
+  });
 
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  const handleNavigation = (direction) => {
+    if (direction === "next") {
+      setStep(step + 1);
+    } else {
+      setStep(step - 1);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission
+
+    if (step !== steps.length) {
+      return;
+    }
+
+    if (!firstName || !lastName || !school || !major) {
+      setError("Please fill out all required fields.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError("");
+
+      const profileData = {
+        firstName,
+        lastName,
+        bio,
+        school,
+        major,
+        graduationDate: graduationDate ? graduationDate.toISOString() : null,
+        gpa,
+        selectedTopics,
+        awards,
+        clubs,
+        certifications,
+        avatarStyle,
+        avatarOptions
+      };
+
+      console.log('Submitting profile data:', profileData);
+
+      const { data, error } = await createProfile(profileData);
+      
+      if (error) {
+        throw new Error(error);
+      }
+
+      console.log('Profile created successfully:', data);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error('Profile creation failed:', err);
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (step) {
+      case 1:
+        return (
+          <Step1PersonalInfo
+            firstName={firstName}
+            setFirstName={setFirstName}
+            lastName={lastName}
+            setLastName={setLastName}
+            bio={bio}
+            setBio={setBio}
+            avatar={avatar}
+            setAvatar={setAvatar}
+            isSubmitting={isSubmitting}
+          />
+        );
+      case 2:
+        return (
+          <Step2Education
+            school={school}
+            setSchool={setSchool}
+            major={major}
+            setMajor={setMajor}
+            graduationDate={graduationDate}
+            setGraduationDate={setGraduationDate}
+            gpa={gpa}
+            setGpa={setGpa}
+            isSubmitting={isSubmitting}
+          />
+        );
+      case 3:
+        return (
+          <Step3Interests
+            selectedTopics={selectedTopics}
+            setSelectedTopics={setSelectedTopics}
+            isSubmitting={isSubmitting}
+          />
+        );
+      case 4:
+        return (
+          <Step4Achievements
+            awards={awards}
+            setAwards={setAwards}
+            clubs={clubs}
+            setClubs={setClubs}
+            certifications={certifications}
+            setCertifications={setCertifications}
+            isSubmitting={isSubmitting}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -40,101 +160,85 @@ function StudentProfile() {
             Help us personalize your student experience
           </p>
         </div>
-        <Card className="bg-white shadow-2xl rounded-3xl overflow-hidden">
-          <CardContent className="p-8">
-            <div className="flex justify-between items-center mb-8">
-              {steps.map((s) => (
-                <div
-                  key={s.number}
-                  className={`flex flex-col items-center ${
-                    step === s.number ? "text-green-600" : "text-gray-400"
-                  }`}
-                >
+
+        {isSubmitting ? (
+          <CustomLoader />
+        ) : (
+          <Card className="bg-white shadow-2xl rounded-3xl overflow-hidden">
+            <CardContent className="p-8">
+              {/* Progress indicators */}
+              <div className="flex justify-between items-center mb-8">
+                {steps.map((s) => (
                   <div
-                    className={`rounded-full p-2 ${
-                      step === s.number ? "bg-green-100" : "bg-gray-100"
+                    key={s.number}
+                    className={`flex flex-col items-center ${
+                      step === s.number ? "text-green-600" : "text-gray-400"
                     }`}
                   >
-                    <s.icon className="h-6 w-6" />
+                    <div
+                      className={`rounded-full p-2 ${
+                        step === s.number ? "bg-green-100" : "bg-gray-100"
+                      }`}
+                    >
+                      <s.icon className="h-6 w-6" />
+                    </div>
+                    <span className="mt-2 text-xs font-medium">{s.title}</span>
                   </div>
-                  <span className="mt-2 text-xs font-medium">{s.title}</span>
-                </div>
-              ))}
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {step === 1 && (
-                <Step1PersonalInfo
-                  firstName={firstName}
-                  setFirstName={setFirstName}
-                  lastName={lastName}
-                  setLastName={setLastName}
-                  bio={bio}
-                  setBio={setBio}
-                  avatar={avatar}
-                  setAvatar={setAvatar}
-                />
-              )}
-              {step === 2 && (
-                <Step2Education
-                  school={school}
-                  setSchool={setSchool}
-                  major={major}
-                  setMajor={setMajor}
-                  graduationDate={graduationDate}
-                  setGraduationDate={setGraduationDate}
-                  gpa={gpa}
-                  setGpa={setGpa}
-                />
-              )}
-              {step === 3 && (
-                <Step3Interests
-                  selectedTopics={selectedTopics}
-                  setSelectedTopics={setSelectedTopics}
-                />
-              )}
-              {step === 4 && (
-                <Step4Achievements
-                  awards={awards}
-                  setAwards={setAwards}
-                  clubs={clubs}
-                  setClubs={setClubs}
-                  certifications={certifications}
-                  setCertifications={setCertifications}
-                />
-              )}
-              <div className="flex justify-between mt-8">
-                {step > 1 && (
-                  <Button
-                    type="button"
-                    onClick={() => setStep(step - 1)}
-                    variant="outline"
-                    className="flex items-center border-green-600 text-green-600 hover:bg-green-50"
-                  >
-                    <ChevronLeft className="mr-2 h-4 w-4" />
-                    Previous
-                  </Button>
-                )}
-                {step < steps.length ? (
-                  <Button
-                    type="button"
-                    onClick={() => setStep(step + 1)}
-                    className="ml-auto flex items-center bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    Next
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    className="ml-auto bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    Complete Profile
-                  </Button>
-                )}
+                ))}
               </div>
-            </form>
-          </CardContent>
-        </Card>
+
+              {/* Error message */}
+              {error && (
+                <div className="mb-4">
+                  <p className="text-red-600 text-sm">{error}</p>
+                </div>
+              )}
+
+              {/* Step content */}
+              <div className="space-y-6">
+                {renderStepContent()}
+
+                {/* Navigation buttons */}
+                <div className="flex justify-between mt-8">
+                  {step > 1 && (
+                    <Button
+                      type="button"
+                      onClick={() => handleNavigation("prev")}
+                      variant="outline"
+                      className="flex items-center border-green-600 text-green-600 hover:bg-green-50"
+                      disabled={isSubmitting}
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Previous
+                    </Button>
+                  )}
+
+                  {step < steps.length ? (
+                    <Button
+                      type="button"
+                      onClick={() => handleNavigation("next")}
+                      className="ml-auto flex items-center bg-green-600 hover:bg-green-700 text-white"
+                      disabled={isSubmitting}
+                    >
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <form onSubmit={handleSubmit}>
+                      <Button
+                        type="submit"
+                        className="ml-auto bg-green-600 hover:bg-green-700 text-white"
+                        disabled={isSubmitting}
+                      >
+                        Complete Profile
+                      </Button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
