@@ -48,7 +48,7 @@ class Forum:
     ):
         
         self.collection.update_one({"tags" : tags}, {"$set": {"tags":updatedTags}} )
-        
+
     
 
     

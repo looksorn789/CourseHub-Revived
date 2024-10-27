@@ -104,3 +104,16 @@ def update_forum():
             return jsonify({"message": "Database error", "details": str(e)}), 500
         
     return jsonify({"message": "Updated forum"})
+
+# @forum_bp.route("/user/<user_id>/forums", methods=["GET"])
+# def get_user_forums(user_id):
+#     """
+#     Get all forums associated with a specific user.
+#     """
+#     forum_model = Forum(current_app.db, current_app.supabase)
+#     forums = forum_model.find_by_user_id(user_id)
+    
+#     if forums is None:
+#         return jsonify({"message": "No forums found for this user"}), 404
+
+#     return jsonify({"forums": forums}), 200

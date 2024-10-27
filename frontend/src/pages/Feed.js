@@ -1,13 +1,14 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import Header from "../components/layout/Header"; // Import your Header
+import { useNavigate } from "react-router-dom";
+import Header from "../components/layout/Header";
+import axios from "axios"; // Import axios for making HTTP requests
 
 function Feed() {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
-  const [showCreateForumModal, setShowCreateForumModal] = useState(false); // New state for the create forum modal
+  const [showCreateForumModal, setShowCreateForumModal] = useState(false);
   const [newPost, setNewPost] = useState({ title: "", body: "", forum: "", attachment: null });
-  const [newForum, setNewForum] = useState({ title: "", description: "", tags: "" }); // State for new forum
+  const [newForum, setNewForum] = useState({ name: "", description: "", tags: "" });
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
@@ -17,30 +18,6 @@ function Feed() {
       author: "user12345",
       comments: 12,
       date: "September 17, 2024",
-      image: "https://via.placeholder.com/150",
-      forum: "Computer Science",
-    },
-    {
-      title: "How can I implement a stack in python?",
-      author: "user12345",
-      comments: 15,
-      date: "September 14, 2024",
-      image: "https://via.placeholder.com/150",
-      forum: "Computer Science",
-    },
-    {
-      title: "Is it easy to get started with VR development?",
-      author: "user12345",
-      comments: 12,
-      date: "September 13, 2024",
-      image: "https://via.placeholder.com/150",
-      forum: "Technology",
-    },
-    {
-      title: "What is the difference between inner and outer joins in SQL?",
-      author: "user12345",
-      comments: 15,
-      date: "September 10, 2024",
       image: "https://via.placeholder.com/150",
       forum: "Computer Science",
     },
@@ -64,10 +41,29 @@ function Feed() {
     setNewPost({ ...newPost, attachment: e.target.files[0] });
   };
 
-  const handleCreatePostSubmit = () => {
-    console.log("New Post Created:", newPost);
-    setShowCreatePostModal(false);
-    setNewPost({ title: "", body: "", forum: "", attachment: null });
+  // API call for creating a post
+  const handleCreatePostSubmit = async () => {
+    const formData = new FormData();
+    formData.append("title", newPost.title);
+    formData.append("body", newPost.body);
+    formData.append("forum", newPost.forum);
+    if (newPost.attachment) {
+      formData.append("attachment", newPost.attachment);
+    }
+
+    try {
+      const response = await axios.post("/api/posts", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      console.log("Post created successfully:", response.data);
+      setShowCreatePostModal(false);
+      setNewPost({ title: "", body: "", forum: "", attachment: null });
+      // Optionally refresh posts or update the state here
+    } catch (error) {
+      console.error("Error creating post:", error);
+    }
   };
 
   // Handle Create Forum modal input change
@@ -76,11 +72,24 @@ function Feed() {
     setNewForum({ ...newForum, [name]: value });
   };
 
-  const handleCreateForumSubmit = () => {
-    console.log("New Forum Created:", newForum);
-    setShowCreateForumModal(false);
-    setNewForum({ title: "", description: "", tags: "" });
-  };
+  // API call for creating a forum
+  const handleCreateForumSubmit = async () => {
+    const forumData = {
+        name: newForum.title,        // Assuming title corresponds to forum name
+        description: newForum.description,
+        tags: newForum.tags.split(",").map(tag => tag.trim()), // Split tags by commas and trim whitespace
+    };
+
+    try {
+        const response = await axios.post("/api/forums/", forumData); // Send request to backend
+        console.log("Forum created successfully:", response.data);
+        setShowCreateForumModal(false);
+        setNewForum({ title: "", description: "", tags: "" }); // Reset form fields
+        // Optionally refresh forums or update the state here
+    } catch (error) {
+        console.error("Error creating forum:", error);
+    }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
@@ -89,7 +98,6 @@ function Feed() {
       <div className="feed-content flex p-4">
         {/* Sidebar */}
         <div className="flex flex-col space-y-4">
-
           {/* Saved Posts Section */}
           <div className="m-12 top-20 w-64 h-full p-8 bg-white rounded-lg shadow-lg">
             <h3 className="text-xl font-semibold mb-4">Saved Posts</h3>
@@ -108,8 +116,8 @@ function Feed() {
               ))}
             </ul>
           </div>
-            {/* Courses Section */}
-            <div className="m-12 w-64 h-full p-11 bg-white rounded-lg shadow-lg">
+          {/* Courses Section */}
+          <div className="m-12 w-64 h-full p-11 bg-white rounded-lg shadow-lg">
             <h3 className="text-xl font-semibold mb-4">Courses</h3>
             <ul>
               {["Computer Science", "Mathematics", "Business", "Film"].map((course, index) => (
@@ -194,122 +202,113 @@ function Feed() {
           </div>
         </div>
 
-        {/* Modal for Creating Post */}
+        {/* Create Post Modal */}
         {showCreatePostModal && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-8 rounded-lg shadow-lg w-1/3">
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-8 shadow-lg">
               <h2 className="text-xl font-semibold mb-4">Create a New Post</h2>
-              <form>
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2">Post Title:</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={newPost.title}
-                    onChange={handleInputChange}
-                    className="border rounded w-full px-3 py-2"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2">Body:</label>
-                  <textarea
-                    name="body"
-                    value={newPost.body}
-                    onChange={handleInputChange}
-                    className="border rounded w-full px-3 py-2"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2">Forum:</label>
-                  <select
-                    name="forum"
-                    value={newPost.forum}
-                    onChange={handleInputChange}
-                    className="border rounded w-full px-3 py-2"
+              <form onSubmit={(e) => e.preventDefault()}>
+                <input
+                  type="text"
+                  name="title"
+                  value={newPost.title}
+                  onChange={handleInputChange}
+                  placeholder="Post Title"
+                  className="block border rounded w-full p-2 mb-4"
+                  required
+                />
+                <textarea
+                  name="body"
+                  value={newPost.body}
+                  onChange={handleInputChange}
+                  placeholder="Post Body"
+                  className="block border rounded w-full p-2 mb-4"
+                  required
+                />
+                <select
+                  name="forum"
+                  value={newPost.forum}
+                  onChange={handleInputChange}
+                  className="block border rounded w-full p-2 mb-4"
+                  required
+                >
+                  <option value="">Select Forum</option>
+                  {subscribedForums.map((forum, index) => (
+                    <option key={index} value={forum}>
+                      {forum}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="block border rounded w-full p-2 mb-4"
+                />
+                <div className="flex justify-end">
+                  <button
+                    className="bg-green-600 text-white px-4 py-2 rounded mr-2"
+                    onClick={handleCreatePostSubmit}
                   >
-                    {subscribedForums.map((forum, index) => (
-                      <option key={index} value={forum}>
-                        {forum}
-                      </option>
-                    ))}
-                  </select>
+                    Submit
+                  </button>
+                  <button
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded"
+                    onClick={() => setShowCreatePostModal(false)}
+                  >
+                    Cancel
+                  </button>
                 </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2">Attachment:</label>
-                  <input
-                    type="file"
-                    onChange={handleFileChange}
-                    className="border rounded w-full px-3 py-2"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCreatePostSubmit}
-                  className="bg-green-600 text-white px-4 py-2 rounded"
-                >
-                  Submit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreatePostModal(false)}
-                  className="bg-gray-400 text-white px-4 py-2 rounded ml-2"
-                >
-                  Cancel
-                </button>
               </form>
             </div>
           </div>
         )}
 
-        {/* Modal for Creating Forum */}
+        {/* Create Forum Modal */}
         {showCreateForumModal && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-8 rounded-lg shadow-lg w-1/3">
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-8 shadow-lg">
               <h2 className="text-xl font-semibold mb-4">Create a New Forum</h2>
-              <form>
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2">Forum Title:</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={newForum.title}
-                    onChange={handleForumInputChange}
-                    className="border rounded w-full px-3 py-2"
-                  />
+              <form onSubmit={(e) => e.preventDefault()}>
+                <input
+                  type="text"
+                  name="title"
+                  value={newForum.title}
+                  onChange={handleForumInputChange}
+                  placeholder="Forum Title"
+                  className="block border rounded w-full p-2 mb-4"
+                  required
+                />
+                <textarea
+                  name="description"
+                  value={newForum.description}
+                  onChange={handleForumInputChange}
+                  placeholder="Description"
+                  className="block border rounded w-full p-2 mb-4"
+                  required
+                />
+                <input
+                  type="text"
+                  name="tags"
+                  value={newForum.tags}
+                  onChange={handleForumInputChange}
+                  placeholder="Tags (comma-separated)"
+                  className="block border rounded w-full p-2 mb-4"
+                  required
+                />
+                <div className="flex justify-end">
+                  <button
+                    className="bg-green-600 text-white px-4 py-2 rounded mr-2"
+                    onClick={handleCreateForumSubmit}
+                  >
+                    Submit
+                  </button>
+                  <button
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded"
+                    onClick={() => setShowCreateForumModal(false)}
+                  >
+                    Cancel
+                  </button>
                 </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2">Description:</label>
-                  <textarea
-                    name="description"
-                    value={newForum.description}
-                    onChange={handleForumInputChange}
-                    className="border rounded w-full px-3 py-2"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2">Tags:</label>
-                  <input
-                    type="text"
-                    name="tags"
-                    value={newForum.tags}
-                    onChange={handleForumInputChange}
-                    className="border rounded w-full px-3 py-2"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCreateForumSubmit}
-                  className="bg-green-600 text-white px-4 py-2 rounded"
-                >
-                  Submit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForumModal(false)}
-                  className="bg-gray-400 text-white px-4 py-2 rounded ml-2"
-                >
-                  Cancel
-                </button>
               </form>
             </div>
           </div>
