@@ -9,6 +9,7 @@ from config import Config
 from routes.auth import auth_bp
 from routes.profile import profile_bp
 from routes.forum import forum_bp
+from routes.post import post_bp
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -83,7 +84,7 @@ def create_app(config_class=Config):
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(forum_bp, url_prefix="/forum")
-
+    app.register_blueprint(post_bp, url_prefix="/post")
 
     app.register_blueprint(profile_bp, url_prefix="/api")
 

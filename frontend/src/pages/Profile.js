@@ -6,7 +6,8 @@ import Input from "../components/ui/Input"; // Assuming an Input component for c
 
 function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-  const [userData, setUserData] = useState({
+  const [userData, setUserData] = useState(null);
+  setUserData({
     name: "Bethany Cruz",
     username: "bethcruz98",
     email: "bethany@example.com",
@@ -16,7 +17,7 @@ function ProfilePage() {
     biography:
       "I am a passionate Engineering student who is in several clubs at my college and I am pursuing my master’s currently!",
   });
-
+  
   const [editableUserData, setEditableUserData] = useState(userData);
 
   // Toggle edit mode

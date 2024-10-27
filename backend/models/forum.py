@@ -27,7 +27,7 @@ class Forum:
 
         except Exception as e:
             return None, str(e)
-
+        
     def find_by_name(self, name):
         # Search for a forum by email in MongoDB
         return self.collection.find_one({"name": name})
