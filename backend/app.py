@@ -8,6 +8,7 @@ from supabase import create_client, Client
 from config import Config
 from routes.auth import auth_bp
 from routes.profile import profile_bp
+from routes.forum import forum_bp
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

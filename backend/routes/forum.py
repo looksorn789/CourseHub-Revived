@@ -7,7 +7,6 @@ from pymongo.errors import PyMongoError
 
 from models.forum import Forum
 
-
 forum_bp = Blueprint("forum_bp", __name__)
 
 @forum_bp.route("/", methods=["POST"])
