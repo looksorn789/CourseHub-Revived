@@ -8,6 +8,7 @@ from supabase import create_client, Client
 from routes.auth import auth_bp
 from routes.post_routes import post_bp
 from routes.comment_routes import comment_bp
+from routes.forum_routes import forum_bp
 
 
 def create_app():
@@ -29,6 +30,7 @@ def create_app():
     app.supabase = supabase
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(forum_bp, url_prefix="/forum")
     app.register_blueprint(post_bp, url_prefix="/posts")
     app.register_blueprint(comment_bp, url_prefix="/comments")
 

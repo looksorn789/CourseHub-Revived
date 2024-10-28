@@ -9,6 +9,7 @@ class Post:
     def create_post(self, title, body, author, forum, attachment_id=None, tags=None):
         try:
             post_data = {
+                "_id": ObjectId(),
                 "title": title,
                 "body": body,
                 "author": author,
@@ -24,21 +25,39 @@ class Post:
         except Exception as e:
             return None, str(e)
         
+    def get_post(self, post_id):
+        try:
+            post = self.collection.find_one({"_id": ObjectId(post_id)})
+            if not post:
+                return None, "Post not found."
+            return {
+                "id": str(post["_id"]),
+                "title": post["title"],
+                "body": post["body"],
+                "author": post["author"],
+                "forum": post["forum"],
+                "attachment_id": post.get("attachment_id"),
+                "tags": post.get("tags", []),
+                "likes": post.get("likes", 0),
+                "date": post["date"]
+            }, None
+        except Exception as e:
+            return None, str(e)
+        
     def get_all_posts(self):
         try:
             posts = self.collection.find()
             return [
                 {
                     "id": str(post["_id"]),
-                    "title": post["title"],
-                    "body": post["body"],
-                    "author": post["author"],
-                    "forum": post["forum"],
-                    "tags": post.get("tags", []),
+                    "title": post.get("title", ""),
+                    "body": post.get("body", ""),
+                    "author": post.get("author", ""),
+                    "forum": post.get("forum", ""),
                     "attachment_id": post.get("attachment_id", None),
+                    "tags": post.get("tags", []),
                     "likes": post.get("likes", 0),
-                    "date": post["date"],
-                    "comments": post["comments"]
+                    "date": post.get("date", "")
                 }
                 for post in posts
             ], None
@@ -57,14 +76,8 @@ class Post:
     def delete_post(self, post_id):
         try: 
             result = self.collection.delete_one({"_id": ObjectId(post_id)})
-            if result.matched_count == 0:
+            if result.deleted_count == 0:
                 return None, "Post not found"
             return "Post deleted successfully", None
         except Exception as e:
             return None, str(e)
-        
-    def find_by_forum(self, forum):
-        return list(self.collection.find({"forum": forum}))
-    
-    def get_posts_by_titles(self, title):
-        return list(self.collection.find({"title": {"$regex": title, "$options": "i"}}))
