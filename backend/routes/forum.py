@@ -1,22 +1,28 @@
 from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from pymongo.errors import PyMongoError
 from models.forum import Forum
-from datetime import date
+from models.user import UserModel
+from datetime import datetime
 
 forum_bp = Blueprint("forum_bp", __name__)
 
 @forum_bp.route("/", methods=["POST"])
+@jwt_required()
 def create_forum():
     data = request.get_json()
     name = data.get("name")
     description = data.get("description")
     tags = data.get("tags")
-    creator_id = data.get("creator_id")
-    member_list = data.get("member_list")
-    
+    #creator_id = data.get("creator_id")
+    #member_list = data.get("member_list")
+
+    user_token = get_jwt_identity()
+    user_model = UserModel(current_app.db, current_app.supabase)
+    user_id = str(user_model.get_user_by_supabase_id(user_token)["_id"])
 
     # Checks if any inputs are null
-    if not all([name, description, tags, creator_id, member_list]):
+    if not all([name, description, tags]):
         return jsonify({"message": "Name, description, and at least one tag are required"}), 400
 
     forum_model = Forum(current_app.db, current_app.supabase)
@@ -52,9 +58,9 @@ def create_forum():
             name = name,
             description = description,
             tags = tags,
-            creator_id = creator_id,
-            creation_date = date.today(),
-            member_list = member_list,
+            creator_id = user_id,
+            creation_date = datetime.now().strftime("%m-%d-%Y %H:%M:%S"),
+            member_list = [user_id],
             member_count = 1
         )
     except PyMongoError as e:
@@ -110,3 +116,11 @@ def update_forum():
             return jsonify({"message": "Database error", "details": str(e)}), 500
 
     return jsonify({"message": "Updated forum"})
+
+def add_member():
+    data = request.get_json()
+
+    member_to_add = data.get("member_to_add")
+    forum_model = Forum(current_app.db, current_app.supabase)
+
+    forum_model.add_member()
