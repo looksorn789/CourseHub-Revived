@@ -120,7 +120,11 @@ def update_forum():
 
     # Adds new member to the forum member list
     if user_to_add is not None:
-        forum_model.add_member(user_to_add)
+        #error check make sure user being passed in isnt already in member list
+        current_forum = forum_model.find_by_name(name)
+        current_forum_members = current_forum.get("member_list")
+        forum_model.add_member(current_forum_members, user_to_add)
+        return jsonify({"message": "added user to member list"})
 
     return jsonify({"message": "Updated forum"})
 
