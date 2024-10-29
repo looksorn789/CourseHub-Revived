@@ -10,11 +10,11 @@ function Feed() {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
   const [showCreateForumModal, setShowCreateForumModal] = useState(false);
-  const [newPost, setNewPost] = useState({ title: "", body: "", forum: "", attachment: null });
-  const [newForum, setNewForum] = useState({ title: "", description: "", tags: [] }); // Change tags to an array
+  const [newPost, setNewPost] = useState({title : "", body : "", tags : [], forum_id : "55367", creator_id : "6554", creation_date : "", like_count : 0});
+  const [newForum, setNewForum] = useState({ title: "", description: "", tags: [] }); 
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentTag, setCurrentTag] = useState(""); // State for current tag input
-  const [loading, setLoading] = useState(false); // Loading state for API calls
+  const [currentTag, setCurrentTag] = useState(""); 
+  const [loading, setLoading] = useState(false); 
   const navigate = useNavigate();
 
   const handleListItemAdd = (item, setter) => {
@@ -60,25 +60,28 @@ function Feed() {
   };
 
   // API call for creating a post
+
   const handleCreatePostSubmit = async () => {
     setLoading(true); // Set loading to true
     const formData = new FormData();
     formData.append("title", newPost.title);
     formData.append("body", newPost.body);
-    formData.append("forum", newPost.forum);
+    formData.append("forum_id", newPost.forum);
+    formData.append("creator_id", newPost.creator_id)
+    formData.append("like_count", newPost.like_count)
     if (newPost.attachment) {
       formData.append("attachment", newPost.attachment);
     }
 
     try {
-      const response = await axios.post("/post", formData, {
+      const response = await axios.post("/post/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
       console.log("Post created successfully:", response.data);
       setShowCreatePostModal(false);
-      setNewPost({ title: "", body: "", forum: "", attachment: null });
+      setNewPost({ title: "", body: "", forum_id: "", attachment: null });
       // Optionally refresh posts or update the state here
     } catch (error) {
       console.error("Error creating post:", error);
@@ -94,7 +97,16 @@ function Feed() {
   };
 
   // Function to add a tag
-  const addTag = () => {
+  const addTagPost = () => {
+    if (currentTag && !newPost.tags.includes(currentTag)) {
+      setNewPost((prev) => ({
+        ...prev,
+        tags: [...prev.tags, currentTag.trim()],
+      }));
+      setCurrentTag(""); // Reset current tag input
+    }
+  };
+  const addTagForum = () => {
     if (currentTag && !newForum.tags.includes(currentTag)) {
       setNewForum((prev) => ({
         ...prev,
@@ -104,21 +116,20 @@ function Feed() {
     }
   };
 
-  // API call for creating a forum
   const handleCreateForumSubmit = async () => {
-    setLoading(true); // Set loading to true
+    setLoading(true); 
     const forumData = {
       name: newForum.title,
       description: newForum.description,
-      tags: newForum.tags, // Use tags as an array
+      tags: newForum.tags, 
     };
 
     try {
-      const response = await axios.post("/forum/", forumData); // Send request to backend
+      const response = await axios.post("/forum/", forumData); 
       console.log("Forum created successfully:", response.data);
       setShowCreateForumModal(false);
-      setNewForum({ title: "", description: "", tags: [] }); // Reset form fields
-      setCurrentTag(""); // Reset current tag input
+      setNewForum({ title: "", description: "", tags: [] }); 
+      setCurrentTag(""); 
     } catch (error) {
       console.error("Error creating forum:", error);
     } finally {
@@ -275,6 +286,40 @@ function Feed() {
           </option>
         ))}
       </select>
+      <Label htmlFor="tags">Tags</Label>
+      <div className="flex mb-4">
+        <Input
+          type="text"
+          id="tags"
+          placeholder="Add a tag"
+          value={currentTag}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addTagPost();
+            }
+          }}
+          onChange={(e) => setCurrentTag(e.target.value)}
+          className="flex-grow border-green-200 focus:ring-green-500 focus:border-green-500"
+        />
+        <Button onClick={addTagPost}>Add Tag</Button>
+      </div>
+      <div className="tags-container mb-4">
+        {newPost.tags.map((tag, index) => (
+          <span
+            key={index}
+            className="tag bg-green-200 rounded-full px-2 py-1 text-green-700 mr-2"
+          >
+            {tag}
+            <button
+              className="ml-2 text-red-600"
+              onClick={() => handleTagRemove(index, true)} // Updated to include 'true' for post tag removal
+            >
+              &times;
+            </button>
+          </span>
+        ))}
+      </div>
       <Label htmlFor="postAttachment">Attach File</Label>
       <Input
         type="file"
@@ -324,13 +369,13 @@ function Feed() {
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              addTag();
+              addTagForum();
             }
           }}
           onChange={(e) => setCurrentTag(e.target.value)}
           className="flex-grow border-green-200 focus:ring-green-500 focus:border-green-500"
         />
-        <Button onClick={addTag}>Add Tag</Button>
+        <Button onClick={addTagForum}>Add Tag</Button>
       </div>
       <div className="tags-container mb-4">
         {newForum.tags.map((tag, index) => (

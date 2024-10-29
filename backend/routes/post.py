@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from pymongo.errors import PyMongoError
 from models.post import Post
 from datetime import date
@@ -6,13 +7,16 @@ from datetime import date
 post_bp = Blueprint("post_bp", __name__)
 
 @post_bp.route("/", methods=["POST"])
+@jwt_required
 def create_post():
+    user_id = get_jwt_identity()
     data = request.get_json()
     title = data.get("title")
     body = data.get("body")
     tags = data.get("tags")
+    forum_id = data.get("forum_id")
     creator_id = data.get("creator_id")
-    creator_date = data.get("creation_date")
+    creation_date = data.get("creation_date")
     like_count = data.get("like_count")
     
 
@@ -44,6 +48,7 @@ def create_post():
                name = title,
                 body = body,
                 tags = tags,
+                forum_id = forum_id,
                 creator_id =  creator_id,
                 creation_date = date.today(),
                 like_count = like_count
@@ -52,3 +57,11 @@ def create_post():
         return jsonify({"message": "Database error", "details": str(e)}), 500
 
     return jsonify({"message": "Forum created successfully."}), 201
+
+@post_bp.route('/', methods=['GET'])
+def get_posts():
+    post_model = Post(current_app.db, current_app.supabase)
+    posts, error = post_model.get_all_posts()
+    if error:
+        return jsonify({'error': error}), 500
+    return jsonify(posts), 200
