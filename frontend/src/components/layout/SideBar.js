@@ -4,6 +4,7 @@ import Button from "../ui/Button"
 import { cn } from "../../lib/utils"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/Collapsible"
 import { Separator } from "../ui/Separator"
+import CreateChannelModal from "../ui/CreateChannelModal"
 
 const channels = [
   { name: 'Web Development', icon: '💻' },
@@ -89,15 +90,9 @@ function Sidebar() {
                   >
                     <div className="transform transition-all duration-300 ease-in-out">
                       {/* Create Channel Button */}
-                      <div className="px-2 py-2">
-                        <Button 
-                          className="w-full bg-green-600 hover:bg-green-700 text-white h-9 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105"
-                        >
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          <span className="text-sm font-medium">Create Channel</span>
-                        </Button>
-                      </div>
-                      
+                        <div className="px-2 py-2">
+                        <CreateChannelModal />
+                        </div>              
                       {/* Channel List */}
                       <div className="space-y-1">
                         {channels.map((channel, index) => (
