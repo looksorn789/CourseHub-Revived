@@ -82,3 +82,32 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes collapse {
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@keyframes expand {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
+}
+
+@layer utilities {
+  .animate-collapse {
+    animation: collapse 0.2s ease-out;
+  }
+
+  .animate-expand {
+    animation: expand 0.2s ease-out;
+  }
+}
+
