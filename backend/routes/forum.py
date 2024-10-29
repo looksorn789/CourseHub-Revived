@@ -14,8 +14,6 @@ def create_forum():
     name = data.get("name")
     description = data.get("description")
     tags = data.get("tags")
-    #creator_id = data.get("creator_id")
-    #member_list = data.get("member_list")
 
     user_token = get_jwt_identity()
     user_model = UserModel(current_app.db, current_app.supabase)
@@ -72,7 +70,6 @@ def create_forum():
 def update_forum():
     data = request.get_json()
 
-
     name = data.get("name")
     updated_name = data.get("updated_name")
 
@@ -82,11 +79,15 @@ def update_forum():
     tags = data.get("tags")
     updated_tags = data.get("updated_tags")
 
+    user_to_add = data.get("user_to_add")
+
+    user_model = UserModel(current_app.db, current_app.supabase)
     forum_model = Forum(current_app.db, current_app.supabase)
 
     if name is None:
         return jsonify({"message:": "No forum selected to update"})
 
+    # Checks if forum name is being updated
     if updated_name is not None:
         if forum_model.find_by_description("description") != description:
             return jsonify({"message": "old description is not the same"})
@@ -98,6 +99,7 @@ def update_forum():
         except PyMongoError as e:
             return jsonify({"message": "Database error", "details": str(e)}), 500
 
+    # Checks if forum description is being updated
     if updated_description is not None:
         if len(str(updated_description)) > 100:
             return jsonify({"message": "Updated description must me less than 100 characters"})
@@ -106,6 +108,7 @@ def update_forum():
         except PyMongoError as e:
             return jsonify({"message": "Database error", "details": str(e)}), 500
 
+    # Checks if forum tags are being updated
     if updated_tags is not None:
         if tags == updated_tags:
             return jsonify({"message": "Tags are already the same"})
@@ -114,6 +117,10 @@ def update_forum():
             forum_model.update_tags(tags, updated_tags)
         except PyMongoError as e:
             return jsonify({"message": "Database error", "details": str(e)}), 500
+
+    # Adds new member to the forum member list
+    if user_to_add is not None:
+        forum_model.add_member(user_to_add)
 
     return jsonify({"message": "Updated forum"})
 

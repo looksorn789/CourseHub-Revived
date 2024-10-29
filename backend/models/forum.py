@@ -63,7 +63,7 @@ class Forum:
 
     def add_member(self, member_list, user_id):
         member_list.append(user_id)
-        
+
 
     def get_members(self, name):
         return self.collection.find_one({"name": name}).get("members_list")
