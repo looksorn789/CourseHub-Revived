@@ -28,7 +28,7 @@ function Header() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [user, setUser] = useState({
     name: "",
-    email: "",
+    username: "",
     avatarUrl: ""
   });
 
@@ -39,7 +39,7 @@ function Header() {
       if (data && data.profile) {
         const { first_name, last_name, avatar_config } = data.profile;
         const fullName = `${first_name} ${last_name}`;
-        const email = data.email;
+        const username = data.username;
 
         let avatarUrl = "";
         if (avatar_config) {
@@ -50,7 +50,7 @@ function Header() {
 
         setUser({
           name: fullName,
-          email: email,
+          username: username,
           avatarUrl: avatarUrl
         });
       } else if (error) {
@@ -78,7 +78,7 @@ function Header() {
       </Avatar>
       <div className={inMenu ? "" : "text-center"}>
         <p className="font-semibold text-base">{user.name || "User"}</p>
-        <p className="text-sm text-gray-500">{user.email}</p>
+        <p className="text-sm text-gray-500">{user.username}</p>
       </div>
     </div>
   );
