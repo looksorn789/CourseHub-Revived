@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, Search, MessageSquare, Bell, Moon, User, Menu, Home, TrendingUp, Users, Bookmark, Settings, HelpCircle, LogOut } from 'lucide-react'
+import { BookOpen, Search, MessageSquare, Bell, Moon, User, Menu, Home, TrendingUp, Users, Bookmark, Settings, HelpCircle, LogOut } from 'lucide-react';
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import {
@@ -20,35 +20,68 @@ import {
   SheetClose,
 } from "../ui/Sheet";
 import { Separator } from "../ui/Separator";
+import { getUserProfile } from "../../services/profileService";
+import { generateAvatarSvg } from "../../utils/avatarUtils";
 
 function Header() {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
-  
+  const [user, setUser] = useState({
+    name: "",
+    email: "",
+    avatarUrl: ""
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data, error } = await getUserProfile();
+
+      if (data && data.profile) {
+        const { first_name, last_name, avatar_config } = data.profile;
+        const fullName = `${first_name} ${last_name}`;
+        const email = data.email;
+
+        let avatarUrl = "";
+        if (avatar_config) {
+          const { style, seed, options } = avatar_config;
+          const svg = generateAvatarSvg(style, seed, options);
+          avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+        }
+
+        setUser({
+          name: fullName,
+          email: email,
+          avatarUrl: avatarUrl
+        });
+      } else if (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   const handleSignOut = () => {
-    try {
-      localStorage.removeItem("jwt_token");
-      localStorage.removeItem("user");
-      navigate("/signin");
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
+    localStorage.removeItem("jwt_token");
+    localStorage.removeItem("user");
+    navigate("/signin");
   };
 
-  const ProfileContent = ({ inMenu = false }) => {
-    return (
-      <div className={`flex ${inMenu ? 'flex-row items-center' : 'flex-col items-center'} space-y-2 mb-4`}>
-        <Avatar className={inMenu ? "h-10 w-10 mr-3" : "h-16 w-16"}>
-          <AvatarImage src="/placeholder.svg?height=64&width=64" alt="Elias Woldie" />
-          <AvatarFallback>EW</AvatarFallback>
-        </Avatar>
-        <div className={inMenu ? "" : "text-center"}>
-          <p className="font-semibold text-base">Elias Woldie</p>
-          <p className="text-sm text-gray-500">elias@gmail.com</p>
-        </div>
+  const ProfileContent = ({ inMenu = false }) => (
+    <div className={`flex ${inMenu ? 'flex-row items-center' : 'flex-col items-center'} space-y-2 mb-4`}>
+      <Avatar className={inMenu ? "h-10 w-10 mr-3" : "h-16 w-16"}>
+        {user.avatarUrl ? (
+          <AvatarImage src={user.avatarUrl} alt={`${user.name}'s Avatar`} />
+        ) : (
+          <AvatarFallback>{user.name ? user.name.charAt(0) : "U"}</AvatarFallback>
+        )}
+      </Avatar>
+      <div className={inMenu ? "" : "text-center"}>
+        <p className="font-semibold text-base">{user.name || "User"}</p>
+        <p className="text-sm text-gray-500">{user.email}</p>
+      </div>
     </div>
-    );
-  };
+  );
 
   const navigationItems = [
     { name: 'Home', icon: Home, path: '/' },
@@ -87,8 +120,11 @@ function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-1 hidden md:flex items-center space-x-2">
                   <Avatar className="h-8 w-8 transition-transform duration-200 hover:scale-110">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                    <AvatarFallback>EW</AvatarFallback>
+                    {user.avatarUrl ? (
+                      <AvatarImage src={user.avatarUrl} alt="User Avatar" />
+                    ) : (
+                      <AvatarFallback>{user.name ? user.name.charAt(0) : "U"}</AvatarFallback>
+                    )}
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>

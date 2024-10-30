@@ -81,8 +81,44 @@ class UserModel:
         except Exception as e:
             return None, str(e)
 
+    def update_user_profile(self, supabase_id, profile_data, email=None, username=None):
+        try:
+            # Prepare the update data structure
+            update_data = {"updated_at": datetime.utcnow()}
+            
+            # Handle email and username updates if provided
+            if email:
+                update_data["email"] = email
+            if username:
+                update_data["username"] = username
+
+            # Loop through each key in the profile_data and nest it under "profile"
+            for key, value in profile_data.items():
+                update_data[f"profile.{key}"] = value
+
+            # Perform the update
+            result = self.collection.update_one(
+                {"supabase_id": supabase_id},
+                {"$set": update_data}
+            )
+
+            if result.modified_count == 0:
+                return None, "User not found or no changes made"
+
+            return True, None
+
+        except Exception as e:
+            return None, str(e)
+
+
     def find_by_email(self, email):
         return self.collection.find_one({"email": email})
 
     def get_user_by_supabase_id(self, supabase_id):
-        return self.collection.find_one({"supabase_id": supabase_id})
+        try:
+            supabase_id = str(supabase_id)
+            user = self.collection.find_one({"supabase_id": supabase_id})
+            return user
+        except Exception as e:
+            print("Error:", e)
+            return None
