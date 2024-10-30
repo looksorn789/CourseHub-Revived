@@ -132,9 +132,7 @@ def update_forum(forum_id):
                 return jsonify({"message": "Database error", "details": str(e)}), 500
 
         # Checks if forum tags are being deleted
-        if tags_to_delete:
-            if len(tags) < 1:
-                return jsonify({"message": "Cannot delete as no tags exist yet"})
+        if tags_to_delete and len(tags) > 0:
             for tag in tags_to_delete:
                 if tag not in tags:
                     return jsonify({"message": "One or more tags do not exist in current tags"})
@@ -146,9 +144,7 @@ def update_forum(forum_id):
                 return jsonify({"message": "Database error", "details": str(e)}), 500
 
         # Checks if forum tags are being added
-        if tags_to_add:
-            if len(tags) >= 5:
-                return jsonify({"message": "Tags list already contains max number of tags (5)"})
+        if tags_to_add and len(tags) <= 5:
             for tag in tags_to_add:
                 if tag in tags:
                     return jsonify({"message": "Cannot add duplicate tags to forum"})
@@ -160,22 +156,18 @@ def update_forum(forum_id):
                 return jsonify({"message": "Database error", "details": str(e)}), 500
 
     # Adds new member to the forum member list
-    if add_user and user_id in member_list:
-        return jsonify({"message": "User already subscribed to this forum"})
-
-    try:
-        forum_model.add_member(forum_id, user_id, member_count)
-    except PyMongoError as e:
-        return jsonify({"message": "Database error", "details": str(e)}), 500
+    if add_user and user_id not in member_list:
+        try:
+            forum_model.add_member(forum_id, user_id, member_count)
+        except PyMongoError as e:
+            return jsonify({"message": "Database error", "details": str(e)}), 500
 
     # Removes current member from forum member list
-    if remove_user and user_id not in member_list:
-        return jsonify({"message": "User not subscribed to this forum"})
-
-    try:
-        forum_model.remove_member(forum_id, user_id, member_count)
-    except PyMongoError as e:
-        return jsonify({"message": "Database error", "details": str(e)}), 500
+    if remove_user and user_id in member_list:
+        try:
+            forum_model.remove_member(forum_id, user_id, member_count)
+        except PyMongoError as e:
+            return jsonify({"message": "Database error", "details": str(e)}), 500
 
     return jsonify({"message": "Updated forum"})
 
