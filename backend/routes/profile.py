@@ -92,34 +92,28 @@ def update_user_profile():
         user_model = UserModel(current_app.db, current_app.supabase)
         request_data = request.get_json()
 
-        # Extract update data
+        if not request_data:
+            return jsonify({
+                "error": "Invalid request",
+                "details": "Request body is empty"
+            }), 400
+
         profile_data = request_data.get("profile", {})
+        if not profile_data and any(key in request_data for key in UserModel.PROFILE_FIELDS):
+            profile_data = request_data
+
         email = request_data.get("email")
         username = request_data.get("username")
 
-        # Validate update data
         if not any([profile_data, email, username]):
             return jsonify({
                 "error": "No update data provided",
-                "details": "At least one of profile, email, or username must be provided"
+                "details": "No valid fields found in request"
             }), 400
 
-        if request.method == "PUT":
-            if profile_data:
-                required_fields = ["firstName", "lastName", "school", "major"]
-                missing_fields = [
-                    field for field in required_fields 
-                    if field not in profile_data
-                ]
-                if missing_fields:
-                    return jsonify({
-                        "error": "Missing required fields",
-                        "details": f"Required fields missing: {', '.join(missing_fields)}"
-                    }), 400
-
         # Update profile
-        success, error = user_model.update_user_profile(
-            user_id, 
+        updated_data, error = user_model.update_user_profile(
+            user_id,
             profile_data,
             email,
             username
@@ -127,14 +121,13 @@ def update_user_profile():
 
         if error:
             return jsonify({
-                "error": "Failed to update profile",
-                "details": str(error)
+                "error": "Validation failed",
+                "details": error
             }), 400
 
         return jsonify({
             "message": "Profile updated successfully",
-            "success": True,
-            "data": success
+            "data": updated_data
         }), 200
 
     except Exception as e:
