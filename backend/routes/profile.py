@@ -1,144 +1,171 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.user import UserModel
+import logging
 
 profile_bp = Blueprint("profile_bp", __name__)
 
+def handle_error(e: Exception, message: str = "An error occurred"):
+    """Centralized error handling"""
+    current_app.logger.error(f"{message}: {str(e)}")
+    return jsonify({
+        "error": message,
+        "details": str(e)
+    }), 500
 
 @profile_bp.route("/profile", methods=["POST"])
 @jwt_required()
 def create_profile():
+    """Create initial user profile"""
     try:
-        # Get the authenticated user's ID
         user_id = get_jwt_identity()
-
-        # Get and validate the request data
         profile_data = request.get_json()
+
         if not profile_data:
-            return jsonify({"error": "No data provided"}), 400
-
-        # Validate required fields
-        required_fields = ["firstName", "lastName", "school", "major"]
-        missing_fields = [
-            field for field in required_fields if not profile_data.get(field)
-        ]
-
-        if missing_fields:
-            return (
-                jsonify(
-                    {"error": f'Missing required fields: {", ".join(missing_fields)}'}
-                ),
-                400,
-            )
+            return jsonify({
+                "error": "No data provided",
+                "details": "Request body is empty"
+            }), 400
 
         user_model = UserModel(current_app.db, current_app.supabase)
-
-        # Check if the profile already exists
+        
+        # Check existing profile
         existing_user = user_model.get_user_by_supabase_id(user_id)
         if existing_user and existing_user.get("profile_completed"):
-            # If the profile already exists, return a success message to navigate to dashboard
-            return jsonify({"message": "Profile already exists", "profile_completed": True}), 200
+            return jsonify({
+                "message": "Profile already exists",
+                "profile_completed": True,
+                "user": existing_user
+            }), 200
 
-        # Create the initial profile for the user
+        # Create profile
         success, error = user_model.create_initial_profile(user_id, profile_data)
 
         if error:
-            return jsonify({"error": str(error)}), 500
+            return jsonify({
+                "error": "Failed to create profile",
+                "details": str(error)
+            }), 400
 
-        if success:
-            # Set profile_completed to True after successful profile creation
-            user_model.collection.update_one(
-                {"supabase_id": user_id}, {"$set": {"profile_completed": True}}
-            )
-
-        return (
-            jsonify({"message": "Profile created successfully", "success": True}),
-            201,
-        )
+        return jsonify({
+            "message": "Profile created successfully",
+            "success": True,
+            "data": success
+        }), 201
 
     except Exception as e:
-        print(f"Error creating profile: {str(e)}")
-        return jsonify({"error": "Failed to create profile", "message": str(e)}), 500
-    
+        return handle_error(e, "Error creating profile")
 
 @profile_bp.route("/user", methods=["GET"])
 @jwt_required()
 def get_user_profile():
+    """Get user profile"""
     try:
         user_id = get_jwt_identity()
         user_model = UserModel(current_app.db, current_app.supabase)
         user_data = user_model.get_user_by_supabase_id(user_id)
 
         if not user_data:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({
+                "error": "User not found",
+                "details": "No user found with the provided ID"
+            }), 404
 
-        # Convert MongoDB ObjectId to string if present
-        if "_id" in user_data:
-            user_data["_id"] = str(user_data["_id"])
-
-        # Structure response to include email and profile information
         response_data = {
             "email": user_data.get("email"),
             "username": user_data.get("username"),
-            "profile": user_data.get("profile", {})
+            "profile": user_data.get("profile", {}),
+            "profileCompleted": user_data.get("profile_completed", False)
         }
 
         return jsonify(response_data), 200
 
     except Exception as e:
-        current_app.logger.error(f"Error retrieving user profile: {str(e)}")
-        return jsonify({"error": "Failed to retrieve profile", "message": str(e)}), 500
+        return handle_error(e, "Error retrieving user profile")
 
-
-@profile_bp.route("/user", methods=["PUT"])
+@profile_bp.route("/user", methods=["PUT", "PATCH"])
 @jwt_required()
 def update_user_profile():
+    """Update user profile"""
     try:
         user_id = get_jwt_identity()
         user_model = UserModel(current_app.db, current_app.supabase)
+        request_data = request.get_json()
 
-        # Get the profile data, email, and username from the request
-        profile_data = request.json.get("profile", {})
-        email = request.json.get("email", None)
-        username = request.json.get("username", None)
+        # Extract update data
+        profile_data = request_data.get("profile", {})
+        email = request_data.get("email")
+        username = request_data.get("username")
 
-        if not profile_data and not email and not username:
-            return jsonify({"error": "No profile, email, or username data provided"}), 400
+        # Validate update data
+        if not any([profile_data, email, username]):
+            return jsonify({
+                "error": "No update data provided",
+                "details": "At least one of profile, email, or username must be provided"
+            }), 400
 
-        # Update the user profile in the database
-        success, error = user_model.update_user_profile(user_id, profile_data, email, username)
-        
+        if request.method == "PUT":
+            if profile_data:
+                required_fields = ["firstName", "lastName", "school", "major"]
+                missing_fields = [
+                    field for field in required_fields 
+                    if field not in profile_data
+                ]
+                if missing_fields:
+                    return jsonify({
+                        "error": "Missing required fields",
+                        "details": f"Required fields missing: {', '.join(missing_fields)}"
+                    }), 400
+
+        # Update profile
+        success, error = user_model.update_user_profile(
+            user_id, 
+            profile_data,
+            email,
+            username
+        )
+
         if error:
-            return jsonify({"error": error}), 500
+            return jsonify({
+                "error": "Failed to update profile",
+                "details": str(error)
+            }), 400
 
-        return jsonify({"success": True}), 200
+        return jsonify({
+            "message": "Profile updated successfully",
+            "success": True,
+            "data": success
+        }), 200
 
     except Exception as e:
-        current_app.logger.error(f"Error updating user profile: {str(e)}")
-        return jsonify({"error": "Failed to update profile", "message": str(e)}), 500
+        return handle_error(e, "Error updating user profile")
 
+# Error handlers
+@profile_bp.errorhandler(400)
+def handle_bad_request(e):
+    return jsonify({
+        "error": "Bad Request",
+        "details": str(e)
+    }), 400
 
-@profile_bp.route("/user", methods=["PATCH"])
-@jwt_required()
-def edit_user_profile():
-    try:
-        user_id = get_jwt_identity()
-        user_model = UserModel(current_app.db, current_app.supabase)
+@profile_bp.errorhandler(401)
+def handle_unauthorized(e):
+    return jsonify({
+        "error": "Unauthorized",
+        "details": "Authentication required"
+    }), 401
 
-        # Get the data from the request
-        profile_data = request.json.get("profile", {})
-        
-        if not profile_data:
-            return jsonify({"error": "No profile data provided"}), 400
+@profile_bp.errorhandler(404)
+def handle_not_found(e):
+    return jsonify({
+        "error": "Not Found",
+        "details": str(e)
+    }), 404
 
-        # Update the user profile in the database
-        success, error = user_model.update_user_profile(user_id, profile_data)
-        
-        if error:
-            return jsonify({"error": error}), 500
-
-        return jsonify({"success": True}), 200
-
-    except Exception as e:
-        current_app.logger.error(f"Error updating user profile: {str(e)}")
-        return jsonify({"error": "Failed to update profile", "message": str(e)}), 500
+@profile_bp.errorhandler(500)
+def handle_server_error(e):
+    current_app.logger.error(f"Server error: {str(e)}")
+    return jsonify({
+        "error": "Internal Server Error",
+        "details": "An unexpected error occurred"
+    }), 500

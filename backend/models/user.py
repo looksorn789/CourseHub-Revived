@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from bson import ObjectId
 
 class UserModel:
     def __init__(self, db, supabase):
@@ -32,21 +32,53 @@ class UserModel:
         except Exception as e:
             return None, str(e)
 
+    def serialize_user(self, user_data):
+        """Serialize user data for JSON response"""
+        if not user_data:
+            return None
+            
+        if "_id" in user_data:
+            user_data["_id"] = str(user_data["_id"])
+            
+        user_data.pop("verification_code", None)
+        user_data.pop("verification_code_expiry", None)
+        
+        return user_data
+
+    def validate_profile_data(self, profile_data):
+        """Validate profile data fields"""
+        required_fields = {
+            "firstName": "First name",
+            "lastName": "Last name",
+            "school": "School",
+            "major": "Major"
+        }
+        
+        missing_fields = []
+        for field, name in required_fields.items():
+            if not profile_data.get(field):
+                missing_fields.append(name)
+                
+        return missing_fields
+
     def create_initial_profile(self, supabase_id, profile_data):
         """Create the initial profile for a new user"""
         try:
+            missing_fields = self.validate_profile_data(profile_data)
+            if missing_fields:
+                return None, f"Missing required fields: {', '.join(missing_fields)}"
+
             avatar_config = {
                 "style": profile_data.get("avatarStyle", "adventurer"),
                 "seed": f"{profile_data.get('firstName')}{profile_data.get('lastName')}",
                 "options": profile_data.get("avatarOptions", {}),
             }
 
-            # Transform frontend data to match our schema
             profile = {
                 "profile": {
                     "first_name": profile_data.get("firstName"),
                     "last_name": profile_data.get("lastName"),
-                    "bio": profile_data.get("bio"),
+                    "bio": profile_data.get("bio", ""),
                     "school": profile_data.get("school"),
                     "major": profile_data.get("major"),
                     "graduation_date": profile_data.get("graduationDate"),
@@ -61,64 +93,83 @@ class UserModel:
                 "updated_at": datetime.utcnow(),
             }
 
-            # Check if profile already exists
-            existing_user = self.collection.find_one(
-                {"supabase_id": supabase_id, "profile_completed": True}
+            result = self.collection.find_one_and_update(
+                {
+                    "supabase_id": supabase_id,
+                    "profile_completed": False
+                },
+                {"$set": profile},
+                return_document=True
             )
 
-            if existing_user:
-                return None, "Profile already exists"
+            if not result:
+                return None, "Profile already exists or user not found"
 
-            # Create the initial profile
-            result = self.collection.update_one(
-                {"supabase_id": supabase_id}, {"$set": profile}
-            )
+            return self.serialize_user(result), None
 
-            if result.modified_count == 0:
-                return None, "User not found"
-
-            return True, None
         except Exception as e:
             return None, str(e)
 
     def update_user_profile(self, supabase_id, profile_data, email=None, username=None):
+        """Update user profile with validation"""
         try:
-            # Prepare the update data structure
             update_data = {"updated_at": datetime.utcnow()}
             
-            # Handle email and username updates if provided
             if email:
                 update_data["email"] = email
+                
             if username:
                 update_data["username"] = username
 
-            # Loop through each key in the profile_data and nest it under "profile"
+            profile_updates = {}
             for key, value in profile_data.items():
-                update_data[f"profile.{key}"] = value
+                # Convert camelCase to snake_case for database
+                db_key = ''.join(['_'+c.lower() if c.isupper() else c for c in key]).lstrip('_')
+                profile_updates[f"profile.{db_key}"] = value
 
-            # Perform the update
-            result = self.collection.update_one(
+            if profile_updates:
+                update_data.update(profile_updates)
+
+            result = self.collection.find_one_and_update(
                 {"supabase_id": supabase_id},
-                {"$set": update_data}
+                {"$set": update_data},
+                return_document=True
             )
 
-            if result.modified_count == 0:
-                return None, "User not found or no changes made"
+            if not result:
+                return None, "User not found"
 
-            return True, None
+            return self.serialize_user(result), None
 
         except Exception as e:
             return None, str(e)
 
+    def get_user_profile(self, supabase_id):
+        """Get user profile with formatted response"""
+        try:
+            user = self.collection.find_one({"supabase_id": str(supabase_id)})
+            if not user:
+                return None, "User not found"
+
+            return self.serialize_user(user), None
+
+        except Exception as e:
+            return None, str(e)
 
     def find_by_email(self, email):
-        return self.collection.find_one({"email": email})
+        """Find user by email with serialization"""
+        try:
+            user = self.collection.find_one({"email": email})
+            return self.serialize_user(user)
+        except Exception as e:
+            print(f"Error finding user by email: {e}")
+            return None
 
     def get_user_by_supabase_id(self, supabase_id):
+        """Get user by supabase_id with serialization"""
         try:
-            supabase_id = str(supabase_id)
-            user = self.collection.find_one({"supabase_id": supabase_id})
-            return user
+            user = self.collection.find_one({"supabase_id": str(supabase_id)})
+            return self.serialize_user(user)
         except Exception as e:
-            print("Error:", e)
+            print(f"Error getting user by supabase_id: {e}")
             return None
