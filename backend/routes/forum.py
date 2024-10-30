@@ -59,7 +59,7 @@ def create_forum():
             creator_id = user_id,
             creation_date = datetime.now().strftime("%m-%d-%Y %H:%M:%S"),
             member_list = [user_id],
-            member_count = 1,
+            member_count = 1
         )
     except PyMongoError as e:
         return jsonify({"message": "Database error", "details": str(e)}), 500
