@@ -90,6 +90,8 @@ def update_forum(forum_id):
     updated_description = data.get("updated_description")
     tags_to_add = data.get("tags_to_add")
     tags_to_delete = data.get("tags_to_delete")
+    add_user = data.get("add_user")
+    remove_user = data.get("remove_user")
 
     # Current forum and forum id
     forum_model = Forum(current_app.db, current_app.supabase)
@@ -99,6 +101,8 @@ def update_forum(forum_id):
     name = current_forum["name"]
     description = current_forum["description"]
     tags = current_forum["tags"]
+    member_list = current_forum["member_list"]
+    member_count = current_forum["member_count"]
 
     # Current user object for session information
     user_model = UserModel(current_app.db, current_app.supabase)
@@ -129,20 +133,20 @@ def update_forum(forum_id):
 
     # Checks if forum tags are being delted
     if tags_to_delete is not None:
-        # Deleting tags from tag list
+        if len(tags) < 1:
+            return jsonify({"message": "Cannot delete as no tags exist yet"})
         for tag in tags_to_delete:
             if tag not in tags:
                 return jsonify({"message": "One or more tags do not exist in current tags"})
 
         try:
             for tag in tags_to_delete:
-                tags.remove(tag)
+                forum_model.delete_tag(forum_id, tag)
         except PyMongoError as e:
             return jsonify({"message": "Database error", "details": str(e)}), 500
 
     # Checks if forum tags are being added
     if tags_to_add is not None:
-        # Adding tags to tag list
         if len(tags) >= 5:
             return jsonify({"message": "Tags list already contains max number of tags (5)"})
         for tag in tags_to_add:
@@ -156,11 +160,23 @@ def update_forum(forum_id):
             return jsonify({"message": "Database error", "details": str(e)}), 500
 
     # Adds new member to the forum member list
-    '''if user_to_add is not None:
-        #error check make sure user being passed in isnt already in member list
-        current_forum = forum_model.find_by_name(name)
-        current_forum_members = current_forum.get("member_list")
-        forum_model.add_member(current_forum_members, user_to_add)
-        return jsonify({"message": "added user to member list"})'''
+    if add_user is True:
+        if user_id in member_list:
+            return jsonify({"message": "User already subscribed to this forum"})
+
+        try:
+            forum_model.add_member(forum_id, user_id, member_count)
+        except PyMongoError as e:
+            return jsonify({"message": "Database error", "details": str(e)}), 500
+
+    # Removes current member from forum member list
+    if remove_user is True:
+        if user_id not in member_list:
+            return jsonify({"message": "User not subscribed to this forum"})
+
+        try:
+            forum_model.remove_member(forum_id, user_id, member_count)
+        except PyMongoError as e:
+            return jsonify({"message": "Database error", "details": str(e)}), 500
 
     return jsonify({"message": "Updated forum"})

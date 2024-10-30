@@ -55,15 +55,20 @@ class Forum:
         self.collection.update_one({"description" : description}, {"$set": {"description":updatedDescription}})
 
     # Adds newTag to list of tags
-    def add_tag(self, forum_id, newTag):
+    def add_tag(self, forum_id, tag_to_add):
         object_id = ObjectId(forum_id)
-        self.collection.update_one({"_id": object_id}, {"$push": {"tags": newTag}})
+        self.collection.update_one({"_id": object_id}, {"$push": {"tags": tag_to_add}})
 
-    def delete_tag(self, tags, updatedTags):
-        self.collection.update_one({"tags" : tags}, {"$set": {"tags":updatedTags}})
+    def delete_tag(self, forum_id, tag_to_delete):
+        object_id = ObjectId(forum_id)
+        self.collection.update_one({"_id": object_id}, {"$pull": {"tags": tag_to_delete}})
 
-    def add_member(self, member_list, user_id):
-        member_list.append(user_id)
+    def add_member(self, forum_id, user_to_add, member_count):
+        object_id = ObjectId(forum_id)
+        self.collection.update_one({"_id": object_id}, {"$push": {"member_list": user_to_add}})
+        self.collection.update_one({"_id": object_id}, {"$set": {"member_count": member_count + 1}})
 
-    def get_members(self, name):
-        return self.collection.find_one({"name": name}).get("members_list")
+    def remove_member(self, forum_id, user_to_delete, member_count):
+        object_id = ObjectId(forum_id)
+        self.collection.update_one({"_id": object_id}, {"$pull": {"member_list": user_to_delete}})
+        self.collection.update_one({"_id": object_id}, {"$set": {"member_count": member_count - 1}})
