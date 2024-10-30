@@ -30,47 +30,40 @@ class Forum:
         except Exception as e:
             return None, str(e)
 
+    # Search for a forum by name in MongoDB
     def find_by_name(self, name):
-        # Search for a forum by name in MongoDB
         return self.collection.find_one({"name": name})
     
-    def find_by_id(self, forum_id):
-        # Search for a forum with a given id
+    # Turns a forum's id into ObjectId
+    def find_forum_id(self, forum_id):
         object_id = ObjectId(forum_id)
         return str(self.collection.find_one({"_id": object_id}))
+    
+    # Find a specific forum given a forum id
+    def find_by_id(self, forum_id):
+        object_id = ObjectId(forum_id)
+        return self.collection.find_one({"_id": object_id})
 
+    # Search for a forum by description in MongoDB
     def find_by_description(self, description):
-        # Search for a forum by description in MongoDB
         return self.collection.find_one({"description": description})
 
-    def update_name(
-            self,
-            name,
-            updatedName
-    ):
-
+    def update_name(self, name, updatedName):
         self.collection.update_one({"name" : name}, {"$set": {"name":updatedName}})
 
-    def update_description(
-            self,
-            description,
-            updatedDescription
-    ):
-
+    def update_description(self,description, updatedDescription):
         self.collection.update_one({"description" : description}, {"$set": {"description":updatedDescription}})
 
-    def update_tags(
-            self,
-            tags,
-            updatedTags
-    ):
+    # Adds newTag to list of tags
+    def add_tag(self, forum_id, newTag):
+        object_id = ObjectId(forum_id)
+        self.collection.update_one({"_id": object_id}, {"$push": {"tags": newTag}})
 
+    def delete_tag(self, tags, updatedTags):
         self.collection.update_one({"tags" : tags}, {"$set": {"tags":updatedTags}})
-
 
     def add_member(self, member_list, user_id):
         member_list.append(user_id)
-
 
     def get_members(self, name):
         return self.collection.find_one({"name": name}).get("members_list")
