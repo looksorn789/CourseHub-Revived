@@ -13,7 +13,8 @@ class Forum:
         creator_id,
         creation_date,
         member_list,
-        member_count
+        member_count,
+        posts
     ):
         try:
             forum_data = {
@@ -23,7 +24,8 @@ class Forum:
                 "creator_id" : creator_id,
                 "creation_date" : creation_date,
                 "member_list" : member_list,
-                "member_count" : member_count
+                "member_count" : member_count,
+                "posts": posts
             }
             return self.collection.insert_one(forum_data)
 
