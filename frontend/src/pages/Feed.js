@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import api from "../services/api";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header"; // Import your Header
 
 function Feed() {
+  const [posts_, setPosts] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
   const [showCreateForumModal, setShowCreateForumModal] = useState(false); // New state for the create forum modal
@@ -48,10 +51,20 @@ function Feed() {
 
   const subscribedForums = ["Computer Science", "Technology", "Business", "Film"];
 
-  const filteredPosts = posts.filter((post) => {
+  useEffect(() => {
+    api.get("/posts/")
+      .then(response => {
+        setPosts(response.data);
+      })
+      .catch(error => {
+        console.error("Error fetching posts:", error);
+      });
+  }, []);
+
+  const filteredPosts = posts_.filter((post) => {
     const matchesForum =
       selectedFilter === "All" || post.forum === selectedFilter;
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = post.title && post.title.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesForum && matchesSearch;
   });
 
@@ -64,10 +77,27 @@ function Feed() {
     setNewPost({ ...newPost, attachment: e.target.files[0] });
   };
 
+  // Handle Create Post
   const handleCreatePostSubmit = () => {
+    const formData = new FormData();
+    formData.append("title", newPost.title);
+    formData.append("body", newPost.body);
+    formData.append("forum", newPost.forum);
+
+    if (newPost.attachment){
+      formData.append("attachment", newPost.attachment);
+    }
+
+    api.post("/posts/", formData)
+      .then(response => {
+        setPosts([response.data, ...posts_]);
+        setShowCreatePostModal(false);
+        setNewPost({ title: "", body: "", forum: "", attachment: null });
+      })
+      .catch(error => {
+        console.error("Error creating post:", error);
+      });
     console.log("New Post Created:", newPost);
-    setShowCreatePostModal(false);
-    setNewPost({ title: "", body: "", forum: "", attachment: null });
   };
 
   // Handle Create Forum modal input change
@@ -227,6 +257,7 @@ function Feed() {
                     onChange={handleInputChange}
                     className="border rounded w-full px-3 py-2"
                   >
+                    <option value="" disabled>Select Forum</option>
                     {subscribedForums.map((forum, index) => (
                       <option key={index} value={forum}>
                         {forum}

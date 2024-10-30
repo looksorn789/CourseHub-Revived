@@ -32,9 +32,9 @@ function App() {
       <Route
             path="/postdetails"
             element={
-              <PrivateRoute>
+              //<PrivateRoute>
                 <PostDetails/>
-              </PrivateRoute>
+              //</PrivateRoute>
 
             }
           />

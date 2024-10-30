@@ -6,7 +6,7 @@ class Post:
         self.collection = db["posts"]
         self.supabase = supabase
 
-    def create_post(self, title, body, author, forum, attachment_id=None, tags=None):
+    def create_post(self, title, body, author, forum, attachment_data=None, tags=[]):
         try:
             post_data = {
                 "_id": ObjectId(),
@@ -14,8 +14,8 @@ class Post:
                 "body": body,
                 "author": author,
                 "forum": forum,
-                "attachment_id": attachment_id,
-                "tags": tags if tags else [],
+                "attachment_data": attachment_data,
+                "tags": tags,
                 "likes": 0,
                 "date": datetime.now().strftime('%m-%d-%Y %H:%M:%S'),
                 "comments": []

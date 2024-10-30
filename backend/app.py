@@ -10,6 +10,8 @@ from routes.post_routes import post_bp
 from routes.comment_routes import comment_bp
 from routes.forum_routes import forum_bp
 
+import os
+
 
 def create_app():
     app = Flask(__name__)
@@ -35,6 +37,12 @@ def create_app():
     app.register_blueprint(comment_bp, url_prefix="/comments")
 
     print("Blueprint registered: auth_bp")
+
+    # Handling file uploads
+    app.config['UPLOAD_FOLDER'] = 'uploads/'
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 # sets max size to 16 MB
+
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     return app
 

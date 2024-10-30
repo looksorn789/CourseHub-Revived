@@ -1,34 +1,57 @@
 from flask import Blueprint, Flask, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from bson.objectid import ObjectId
 from pymongo.errors import PyMongoError
 from models.post import Post
+from models.user import UserModel
+import base64
 
 post_bp = Blueprint('post_bp', __name__)
 
+# Creates post with POST
 @post_bp.route('/', methods=['POST'])
 #@jwt_required()
 def create_post():
+    #print("Content-Type:", request.content_type)
+    #print("Form data:", request.form)
+    #print("Files:", request.files)
+
     user_id = "test_user_id"
-    data = request.get_json()
+
     post_model = Post(current_app.db, current_app.supabase)
 
-    title = data.get("title")
-    body = data.get("body")
-    forum = data.get("forum")
+    title = request.form.get("title")
+    body = request.form.get("body")
+    forum = request.form.get("forum")
+    attachment = request.files.get("attachment")
+
+    # Defined allowed forums
+    allowed_forums = ["Computer Science", "Technology", "Business", "Film"]
 
     if not all([title, body, forum]):
         return jsonify({"error": "Missing required fields"}), 400
     
     if len(body.split()) <= 5:
         return jsonify({"message": "Must be more than 5 words"}), 400
+    
+    if forum not in allowed_forums:
+        return jsonify({"error": "Invalid forum selection"}), 400
+
+    attachment_data = None
+    if attachment:
+        attachment_data = {
+            "filename": attachment.filename,
+            "content_type": attachment.content_type,
+            "data": base64.b64encode(attachment.read()).decode('utf-8')
+        }
 
     post_id, error = post_model.create_post(
         title=title,
         body=body,
         author=user_id,
         forum=forum,
-        attachment_id=data.get('attachment_id'),
-        tags=data.get('tags', [])
+        attachment_data=attachment_data,
+        tags=request.form.getlist('tags')
     )
 
     if error:
@@ -49,11 +72,15 @@ def get_posts():
 @post_bp.route('/<post_id>', methods=['GET'])
 def get_single_post(post_id):
     post_model = Post(current_app.db, current_app.supabase)
-    post, error = post_model.get_post(post_id)
-    if error:
-        return jsonify({'error': error}), 404
+    post = post_model.get_post(post_id)
+    if not post:
+        return jsonify({'error': "Post not found."}), 404
+    if post.get("attachment"):
+        post["attachment"]["data"] = base64.b64decode(post["attachment"]["data"])
     return jsonify(post), 200
 
+
+# Updating posts
 @post_bp.route('/<post_id>', methods=['PATCH'])
 #@jwt_required()
 def update_post(post_id):
@@ -74,6 +101,7 @@ def update_post(post_id):
         return jsonify({'error': error}), 404
     return jsonify({'message': message}), 200
 
+# Deleting posts
 @post_bp.route('/<post_id>', methods=['DELETE'])
 #@jwt_required()
 def delete_post(post_id):

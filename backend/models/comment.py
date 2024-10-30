@@ -2,8 +2,9 @@ from datetime import datetime
 from bson.objectid import ObjectId
 
 class Comment:
-    def __init__(self, db):
+    def __init__(self, db, supabase):
         self.collection = db["comments"]
+        self.supabase = supabase
 
     # Insert comment into the database
     def create_comment(self, post_id, author, body, parent_id=None):

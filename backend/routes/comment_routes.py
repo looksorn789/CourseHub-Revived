@@ -7,13 +7,13 @@ comment_bp = Blueprint('comment_routes', __name__)
 @comment_bp.route('/', methods=['POST'])
 def create_comment():
     data = request.json
-    comment_model = Comment(request.app.db)
+    comment_model = Comment(current_app.db, current_app.supabase)
 
     comment_id, error = comment_model.create_comment(
         post_id=data['post_id'],
         author=data['author'],
-        body=data['body'],
-        parent_id=data.get('parent_id')
+        body=data['body']
+        #parent_id=data.get('parent_id')
     )
     if error:
         return jsonify({'error': error}), 500
@@ -22,7 +22,7 @@ def create_comment():
 # Get comments for a post (GET)
 @comment_bp.route('/post/<post_id>', methods=['GET'])
 def get_comments(post_id):
-    comment_model = Comment(request.app.db)
+    comment_model = Comment(current_app.db, current_app.supabase)
     comments, error = comment_model.get_comments_by_post(post_id)
     if error:
         return jsonify({'error': error}), 500
@@ -31,7 +31,7 @@ def get_comments(post_id):
 # Delete a comment (DELETE)
 @comment_bp.route('/<comment_id>', methods=['DELETE'])
 def delete_comment(comment_id):
-    comment_model = Comment(request.app.db)
+    comment_model = Comment(current_app.db, current_app.supabase)
     message, error = comment_model.delete_comment(comment_id)
     if error:
         return jsonify({'error': error}), 404

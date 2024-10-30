@@ -3,68 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/layout/Header";
 import axios from "../services/api";
 
-function PostDetails() {
-  const { id } = useParams(); // get post ID from URL
-  const [post, setPost] = useState({});
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchPost();
-  }, [id]);
-
-  // Fetch the post by ID from the backend
-  const fetchPost = async () => {
-    try {
-      const { data } = await axios.get(`/posts/${id}`);
-      setPost(data);
-      setLoading(false);
-    } catch (error) {
-      setError("Failed to load post.");
-      setLoading(false);
-    }
-  };
-
-  //if (loading) return <p>Loading...</p>;
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
-      <Header />
-      <div className="post-details">
-        {error && <p>{error}</p>}
-        <h1>{post.title}</h1>
-        <p>{post.body}</p>
-        <p>Author: {post.author}</p>
-        <p>Date: {post.date}</p>
-      </div>
-    </div>
-  );
-};
-
-const handleDelete = async () => {
-  try {
-    await axios.delete(`/posts/${id}`);
-    alert("Post deleted successfully");
-    window.location.href = "/posts";
-  } catch (error) {
-    setError("Failed to delete post.");
-  }
-};
-
-/*return (
-  <div className="post-details">
-    {error && <p>{error}</p>}
-      <h1>{post.title}</h1>
-      <p>{post.body}</p>
-      <p>Author: {post.author}</p>
-      <p>Date: {post.date}</p>
-      <button onClick={handleDelete}>Delete Post</button>
-
-      <Comments postId={id} />
-  </div>
-  
-);*/
-
 function PostDetail() {
   const navigate = useNavigate();
 
@@ -166,4 +104,4 @@ When I print these out, they'll behave the same way, despite the different types
   );
 }
 
-export default PostDetails;
+export default PostDetail;
