@@ -1,9 +1,9 @@
+from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pymongo.errors import PyMongoError
 from models.forum import Forum
 from models.user import UserModel
-from datetime import datetime
 
 forum_bp = Blueprint("forum_bp", __name__)
 
@@ -59,7 +59,8 @@ def create_forum():
             creator_id = user_id,
             creation_date = datetime.now().strftime("%m-%d-%Y %H:%M:%S"),
             member_list = [user_id],
-            member_count = 1
+            member_count = 1,
+            posts = []
         )
     except PyMongoError as e:
         return jsonify({"message": "Database error", "details": str(e)}), 500
@@ -76,8 +77,7 @@ def get_forum(forum_id):
 
     if forum:
         return jsonify(forum)
-    else:
-        return jsonify({"message": "Forum not found"}), 404
+    return jsonify({"message": "Forum not found"}), 404
 
 
 @forum_bp.route("/<forum_id>", methods=["PATCH"])
@@ -109,55 +109,57 @@ def update_forum(forum_id):
     user_token = get_jwt_identity()
     user_id = str(user_model.get_user_by_supabase_id(user_token)["_id"])
 
-    # Checks if forum name is being updated
-    if updated_name is not None:
-        if name.upper() == updated_name.upper():
-            return jsonify({"message": "Names are already the same"})
+    # Ensures only forum creator can edit name, description, or tags
+    if user_id == current_forum["creator_id"]:
+        # Checks if forum name is being updated
+        if updated_name is not None:
+            if name.upper() == updated_name.upper():
+                return jsonify({"message": "Names are already the same"})
 
-        try:
-            forum_model.update_name(name, updated_name)
-        except PyMongoError as e:
-            return jsonify({"message": "Database error", "details": str(e)}), 500
+            try:
+                forum_model.update_name(name, updated_name)
+            except PyMongoError as e:
+                return jsonify({"message": "Database error", "details": str(e)}), 500
 
-    # Checks if forum description is being updated
-    if updated_description is not None:
-        if len(str(updated_description)) > 100:
-            return jsonify({"message": "Updated description must me less than 100 characters"})
-        if description.upper() == updated_description.upper():
-            return jsonify({"message": "Updated description is the same as original description"})
+        # Checks if forum description is being updated
+        if updated_description is not None:
+            if len(str(updated_description)) > 100:
+                return jsonify({"message": "Updated description must me less than 100 characters"})
+            if description.upper() == updated_description.upper():
+                return jsonify({"message": "Updated description is the same as original description"})
 
-        try:
-            forum_model.update_description(description, updated_description)
-        except PyMongoError as e:
-            return jsonify({"message": "Database error", "details": str(e)}), 500
+            try:
+                forum_model.update_description(description, updated_description)
+            except PyMongoError as e:
+                return jsonify({"message": "Database error", "details": str(e)}), 500
 
-    # Checks if forum tags are being delted
-    if tags_to_delete is not None:
-        if len(tags) < 1:
-            return jsonify({"message": "Cannot delete as no tags exist yet"})
-        for tag in tags_to_delete:
-            if tag not in tags:
-                return jsonify({"message": "One or more tags do not exist in current tags"})
-
-        try:
+        # Checks if forum tags are being delted
+        if tags_to_delete is not None:
+            if len(tags) < 1:
+                return jsonify({"message": "Cannot delete as no tags exist yet"})
             for tag in tags_to_delete:
-                forum_model.delete_tag(forum_id, tag)
-        except PyMongoError as e:
-            return jsonify({"message": "Database error", "details": str(e)}), 500
+                if tag not in tags:
+                    return jsonify({"message": "One or more tags do not exist in current tags"})
 
-    # Checks if forum tags are being added
-    if tags_to_add is not None:
-        if len(tags) >= 5:
-            return jsonify({"message": "Tags list already contains max number of tags (5)"})
-        for tag in tags_to_add:
-            if tag in tags:
-                return jsonify({"message": "Cannot add duplicate tags to forum"})
+            try:
+                for tag in tags_to_delete:
+                    forum_model.delete_tag(forum_id, tag)
+            except PyMongoError as e:
+                return jsonify({"message": "Database error", "details": str(e)}), 500
 
-        try:
+        # Checks if forum tags are being added
+        if tags_to_add is not None:
+            if len(tags) >= 5:
+                return jsonify({"message": "Tags list already contains max number of tags (5)"})
             for tag in tags_to_add:
-                forum_model.add_tag(forum_id, tag)
-        except PyMongoError as e:
-            return jsonify({"message": "Database error", "details": str(e)}), 500
+                if tag in tags:
+                    return jsonify({"message": "Cannot add duplicate tags to forum"})
+
+            try:
+                for tag in tags_to_add:
+                    forum_model.add_tag(forum_id, tag)
+            except PyMongoError as e:
+                return jsonify({"message": "Database error", "details": str(e)}), 500
 
     # Adds new member to the forum member list
     if add_user is True:
@@ -180,3 +182,26 @@ def update_forum(forum_id):
             return jsonify({"message": "Database error", "details": str(e)}), 500
 
     return jsonify({"message": "Updated forum"})
+
+
+@forum_bp.route("/<forum_id>", methods=["DELETE"])
+@jwt_required()
+def delete_forum(forum_id):
+    forum_model = Forum(current_app.db, current_app.supabase)
+    current_forum = forum_model.find_by_id(forum_id)
+
+    user_model = UserModel(current_app.db, current_app.supabase)
+    user_token = get_jwt_identity()
+    user_id = str(user_model.get_user_by_supabase_id(user_token)["_id"])
+
+    creator_id = current_forum["creator_id"]
+
+    if creator_id != user_id:
+        return jsonify({"message": "Only forum creator can delete the forum"})
+
+    try:
+        forum_model.delete_forum(forum_id)
+    except PyMongoError as e:
+        return jsonify({"message": "Database error", "details": str(e)}), 500
+
+    return jsonify({"message": "Forum successfully deleted"})
