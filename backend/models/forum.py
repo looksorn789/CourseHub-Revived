@@ -1,3 +1,5 @@
+from bson.objectid import ObjectId
+
 class Forum:
     def __init__(self, db, supabase):
         self.collection = db["forums"]
@@ -31,6 +33,11 @@ class Forum:
     def find_by_name(self, name):
         # Search for a forum by name in MongoDB
         return self.collection.find_one({"name": name})
+    
+    def find_by_id(self, forum_id):
+        # Search for a forum with a given id
+        object_id = ObjectId(forum_id)
+        return str(self.collection.find_one({"_id": object_id}))
 
     def find_by_description(self, description):
         # Search for a forum by description in MongoDB

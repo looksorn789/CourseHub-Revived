@@ -66,10 +66,26 @@ def create_forum():
 
     return jsonify({"message": "Forum created successfully."}), 201
 
+
+# Returns forum given a correct forum_id
+@forum_bp.route("/<forum_id>", methods=["GET"])
+def get_forum(forum_id):
+    forum_model = Forum(current_app.db, current_app.supabase)
+
+    forum = forum_model.find_by_id(forum_id)
+
+    if forum:
+        return jsonify(forum)
+    else:
+        return jsonify({"message": "Forum not found"}), 404
+
+
 @forum_bp.route("/", methods=["PATCH"])
+@jwt_required()
 def update_forum():
     data = request.get_json()
 
+    # data parsed from the JSON request
     name = data.get("name")
     updated_name = data.get("updated_name")
 
@@ -79,10 +95,13 @@ def update_forum():
     tags = data.get("tags")
     updated_tags = data.get("updated_tags")
 
-    user_to_add = data.get("user_to_add")
+    #user_to_add = data.get("user_to_add")
 
-    user_model = UserModel(current_app.db, current_app.supabase)
     forum_model = Forum(current_app.db, current_app.supabase)
+    user_model = UserModel(current_app.db, current_app.supabase)
+
+    user_token = get_jwt_identity()
+    user_id = str(user_model.get_user_by_supabase_id(user_token)["_id"])
 
     if name is None:
         return jsonify({"message:": "No forum selected to update"})
@@ -127,11 +146,3 @@ def update_forum():
         return jsonify({"message": "added user to member list"})
 
     return jsonify({"message": "Updated forum"})
-
-def add_member():
-    data = request.get_json()
-
-    member_to_add = data.get("member_to_add")
-    forum_model = Forum(current_app.db, current_app.supabase)
-
-    forum_model.add_member()
