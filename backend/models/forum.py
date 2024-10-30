@@ -29,7 +29,7 @@ class Forum:
             return None, str(e)
         
     def find_by_name(self, name):
-        # Search for a forum by email in MongoDB
+        # Search for a forum by name in MongoDB
         return self.collection.find_one({"name": name})
 
     def find_by_description(self, description):
@@ -61,8 +61,9 @@ class Forum:
         self.collection.update_one({"tags" : tags}, {"$set": {"tags":updatedTags}})
 
 
-    def add_member(self, user_id):
-        pass
+    def add_member(self, member_list, user_id):
+        member_list.append(user_id)
+
 
     def get_members(self, name):
         return self.collection.find_one({"name": name}).get("members_list")
