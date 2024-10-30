@@ -7,7 +7,6 @@ import Dashboard from "./pages/Dashboard";
 import StudentProfilePage from "./pages/StudentProfilePage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import StudentProfile from "./components/StudentProfile/StudentProfile.js";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
@@ -31,7 +30,7 @@ function App() {
           path="/student-profile"
           element={
             <PrivateRoute>
-              <StudentProfile />
+              <StudentProfilePage />
             </PrivateRoute>
           }
         />
