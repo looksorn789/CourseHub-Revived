@@ -4,38 +4,45 @@ from bson.objectid import ObjectId
 from pymongo.errors import PyMongoError
 from models.post import Post
 from models.user import UserModel
+from models.forum import Forum
 import base64
 
 post_bp = Blueprint('post_bp', __name__)
 
 # Creates post with POST
 @post_bp.route('/', methods=['POST'])
-#@jwt_required()
-def create_post():
+@jwt_required()
+def create_post(forum_id):
     #print("Content-Type:", request.content_type)
     #print("Form data:", request.form)
     #print("Files:", request.files)
 
-    user_id = "test_user_id"
+    user_model = UserModel(current_app.db, current_app.supabase)
+    user_token = get_jwt_identity()
+    user_id = str(user_model.get_user_by_supabase_id(user_token)["_id"])
 
     post_model = Post(current_app.db, current_app.supabase)
 
-    title = request.form.get("title")
-    body = request.form.get("body")
-    forum = request.form.get("forum")
+    forum_model = Forum(current_app.db, current_app.supabase)
+    forum = forum_model.find_by_id(forum_id)
+    
+
+    data = request.get_json()
+    title = data.get("title")
+    body = data.get("body")
     attachment = request.files.get("attachment")
 
     # Defined allowed forums
-    allowed_forums = ["Computer Science", "Technology", "Business", "Film"]
+    #allowed_forums = ["Computer Science", "Technology", "Business", "Film"]
 
     if not all([title, body, forum]):
-        return jsonify({"error": "Missing required fields"}), 400
+       return jsonify({"error": "Missing required fields"}), 400
     
     if len(body.split()) <= 5:
         return jsonify({"message": "Must be more than 5 words"}), 400
     
-    if forum not in allowed_forums:
-        return jsonify({"error": "Invalid forum selection"}), 400
+    #if forum not in allowed_forums:
+    #    return jsonify({"error": "Invalid forum selection"}), 400
 
     attachment_data = None
     if attachment:
@@ -49,7 +56,7 @@ def create_post():
         title=title,
         body=body,
         author=user_id,
-        forum=forum,
+        forum=forum_id,
         attachment_data=attachment_data,
         tags=request.form.getlist('tags')
     )

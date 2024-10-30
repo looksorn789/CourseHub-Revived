@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from models.comment import Comment
+from models.post import Post
 
 comment_bp = Blueprint('comment_routes', __name__)
 
@@ -8,6 +9,7 @@ comment_bp = Blueprint('comment_routes', __name__)
 def create_comment():
     data = request.json
     comment_model = Comment(current_app.db, current_app.supabase)
+    post_model = Post(current_app.db, current_app.supabase)
 
     comment_id, error = comment_model.create_comment(
         post_id=data['post_id'],
@@ -20,7 +22,7 @@ def create_comment():
     return jsonify({'comment_id': comment_id}), 201
 
 # Get comments for a post (GET)
-@comment_bp.route('/post/<post_id>', methods=['GET'])
+@comment_bp.route('/', methods=['GET'])
 def get_comments(post_id):
     comment_model = Comment(current_app.db, current_app.supabase)
     comments, error = comment_model.get_comments_by_post(post_id)

@@ -1,3 +1,4 @@
+from bson.objectid import ObjectId
 class Forum:
     def __init__(self, db, supabase):
         self.collection = db["forums"]
@@ -66,3 +67,11 @@ class Forum:
 
     def get_members(self, name):
         return self.collection.find_one({"name": name}).get("members_list")
+
+    def find_by_id(self, forum_id):
+        object_id = ObjectId(forum_id)
+        return self.collection.find_one({"_id": object_id})
+    
+    def add_post(self, forum, post_id):
+        post_oid = ObjectId(post_id)
+        forum.append(self.collection.find_one({"_id": post_oid}))
