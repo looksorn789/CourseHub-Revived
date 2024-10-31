@@ -8,7 +8,7 @@ import { Card, CardContent } from "../ui/Card";
 import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "../ui/Button";
 import CustomLoader from "../ui/CustomLoader";
-import { createProfile } from "../../services/profileService"; 
+import { createProfile } from "../../services/profileService";
 import { useNavigate } from "react-router-dom";
 
 function StudentProfile() {
@@ -27,10 +27,10 @@ function StudentProfile() {
   const [avatar, setAvatar] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [avatarStyle] = useState('adventurer'); 
+  const [avatarStyle] = useState("adventurer");
   const [avatarOptions] = useState({
-    backgroundColor: ['b6e3f4','c0aede','d1d4f9'],
-    radius: 50
+    backgroundColor: ["b6e3f4", "c0aede", "d1d4f9"],
+    radius: 50,
   });
 
   const navigate = useNavigate();
@@ -72,21 +72,21 @@ function StudentProfile() {
         clubs,
         certifications,
         avatarStyle,
-        avatarOptions
+        avatarOptions,
       };
 
-      console.log('Submitting profile data:', profileData);
+      console.log("Submitting profile data:", profileData);
 
       const { data, error } = await createProfile(profileData);
-      
+
       if (error) {
         throw new Error(error);
       }
 
-      console.log('Profile created successfully:', data);
+      console.log("Profile created successfully:", data);
       navigate("/dashboard");
     } catch (err) {
-      console.error('Profile creation failed:', err);
+      console.error("Profile creation failed:", err);
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);

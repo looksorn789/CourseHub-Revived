@@ -4,7 +4,7 @@ import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Dashboard from "./pages/Dashboard";
-import StudentProfilePage from "./pages/StudentProfilePage";
+import StudentProfile from "./components/StudentProfile/StudentProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
@@ -30,7 +30,7 @@ function App() {
           path="/student-profile"
           element={
             <PrivateRoute>
-              <StudentProfilePage />
+              <StudentProfile />
             </PrivateRoute>
           }
         />
