@@ -1,6 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, Search, MessageSquare, Bell, Moon, User, Menu, Home, TrendingUp, Users, Bookmark, Settings, HelpCircle, LogOut } from 'lucide-react';
+import {
+  BookOpen,
+  Search,
+  MessageSquare,
+  Bell,
+  Moon,
+  User,
+  Menu,
+  Home,
+  TrendingUp,
+  Users,
+  Bookmark,
+  Settings,
+  HelpCircle,
+  LogOut,
+} from "lucide-react";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import {
@@ -29,7 +44,7 @@ function Header() {
   const [user, setUser] = useState({
     name: "",
     username: "",
-    avatarUrl: ""
+    avatarUrl: "",
   });
 
   useEffect(() => {
@@ -57,7 +72,7 @@ function Header() {
           setUser({
             name: fullName,
             username: username,
-            avatarUrl: avatarUrl
+            avatarUrl: avatarUrl,
           });
         } else if (error) {
           console.error("Failed to fetch user data:", error);
@@ -85,12 +100,16 @@ function Header() {
   };
 
   const ProfileContent = ({ inMenu = false }) => (
-    <div className={`flex ${inMenu ? 'flex-row items-center' : 'flex-col items-center'} ${!inMenu && 'space-y-2'} mb-4`}>
+    <div
+      className={`flex ${inMenu ? "flex-row items-center" : "flex-col items-center"} ${!inMenu && "space-y-2"} mb-4`}
+    >
       <Avatar className={inMenu ? "h-10 w-10 mr-3" : "h-16 w-16"}>
         {user.avatarUrl ? (
           <AvatarImage src={user.avatarUrl} alt={`${user.name}'s Avatar`} />
         ) : (
-          <AvatarFallback>{user.name ? user.name.charAt(0) : "U"}</AvatarFallback>
+          <AvatarFallback>
+            {user.name ? user.name.charAt(0) : "U"}
+          </AvatarFallback>
         )}
       </Avatar>
       <div className={inMenu ? "" : "text-center"}>
@@ -101,12 +120,12 @@ function Header() {
   );
 
   const navigationItems = [
-    { name: 'Home', icon: Home, path: '/' },
-    { name: 'Popular', icon: TrendingUp, path: '/popular' },
-    { name: 'Friends', icon: Users, path: '/friends' },
-    { name: 'Bookmarks', icon: Bookmark, path: '/bookmarks' },
-    { name: 'Messages', icon: MessageSquare, path: '/messages' },
-    { name: 'Notifications', icon: Bell, path: '/notifications' },
+    { name: "Home", icon: Home, path: "/" },
+    { name: "Popular", icon: TrendingUp, path: "/popular" },
+    { name: "Friends", icon: Users, path: "/friends" },
+    { name: "Bookmarks", icon: Bookmark, path: "/bookmarks" },
+    { name: "Messages", icon: MessageSquare, path: "/messages" },
+    { name: "Notifications", icon: Bell, path: "/notifications" },
   ];
 
   return (
@@ -121,33 +140,51 @@ function Header() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search CourseHub" 
-                className="pl-10 w-full rounded-full bg-gray-100 border-transparent focus:border-green-500 focus:ring-green-500" 
+                placeholder="Search CourseHub"
+                className="pl-10 w-full rounded-full bg-gray-100 border-transparent focus:border-green-500 focus:ring-green-500"
               />
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="hidden sm:flex text-green-600 hover:bg-green-100 transition-colors duration-200 h-10 w-10 p-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden sm:flex text-green-600 hover:bg-green-100 transition-colors duration-200 h-10 w-10 p-2"
+            >
               <MessageSquare className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="hidden sm:flex text-green-600 hover:bg-green-100 transition-colors duration-200 h-10 w-10 p-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden sm:flex text-green-600 hover:bg-green-100 transition-colors duration-200 h-10 w-10 p-2"
+            >
               <Bell className="h-5 w-5" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-1 hidden md:flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  className="p-1 hidden md:flex items-center space-x-2"
+                >
                   <Avatar className="h-8 w-8 transition-transform duration-200 hover:scale-110">
                     {user.avatarUrl ? (
                       <AvatarImage src={user.avatarUrl} alt="User Avatar" />
                     ) : (
-                      <AvatarFallback>{user.name ? user.name.charAt(0) : "U"}</AvatarFallback>
+                      <AvatarFallback>
+                        {user.name ? user.name.charAt(0) : "U"}
+                      </AvatarFallback>
                     )}
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 p-4">
                 <ProfileContent />
-                <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => navigate('/profile')}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-2"
+                  onClick={() => navigate("/profile")}
+                >
                   View Profile
                 </Button>
                 <DropdownMenuSeparator />
@@ -164,7 +201,7 @@ function Header() {
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="cursor-pointer py-2 hover:bg-red-50 rounded-md transition-colors duration-200"
                   onClick={handleSignOut}
                 >
@@ -177,7 +214,11 @@ function Header() {
             </DropdownMenu>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden text-green-600 hover:bg-green-100 transition-colors duration-200">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden text-green-600 hover:bg-green-100 transition-colors duration-200"
+                >
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
@@ -191,15 +232,18 @@ function Header() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="Search CourseHub" 
-                      className="pl-10 w-full rounded-full bg-gray-100 border-transparent focus:border-green-500 focus:ring-green-500" 
+                      placeholder="Search CourseHub"
+                      className="pl-10 w-full rounded-full bg-gray-100 border-transparent focus:border-green-500 focus:ring-green-500"
                     />
                   </div>
                   <nav className="flex flex-col space-y-1">
                     {navigationItems.map((item) => (
                       <SheetClose asChild key={item.name}>
                         <Link to={item.path}>
-                          <Button variant="ghost" className="w-full justify-start text-green-600 hover:bg-green-100 transition-colors duration-200">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-green-600 hover:bg-green-100 transition-colors duration-200"
+                          >
                             <item.icon className="mr-2 h-5 w-5" />
                             {item.name}
                           </Button>
@@ -208,17 +252,23 @@ function Header() {
                     ))}
                   </nav>
                   <Separator />
-                  <Button variant="ghost" className="justify-start text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                  <Button
+                    variant="ghost"
+                    className="justify-start text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+                  >
                     <Settings className="mr-2 h-5 w-5" />
                     Settings
                   </Button>
-                  <Button variant="ghost" className="justify-start text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                  <Button
+                    variant="ghost"
+                    className="justify-start text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+                  >
                     <HelpCircle className="mr-2 h-5 w-5" />
                     Help Center
                   </Button>
                   <Separator />
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="justify-start text-red-600 hover:bg-red-100 transition-colors duration-200"
                     onClick={handleSignOut}
                   >

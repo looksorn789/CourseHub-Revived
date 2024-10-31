@@ -13,7 +13,7 @@ function PrivateRoute({ children }) {
   };
 
   if (!token) {
-    sessionStorage.setItem('redirectUrl', location.pathname);
+    sessionStorage.setItem("redirectUrl", location.pathname);
     return <Navigate to="/signin" />;
   }
 
@@ -48,7 +48,7 @@ function PrivateRoute({ children }) {
 
     return <Navigate to="/signin" />;
   } catch (error) {
-    console.error('Token validation error:', error);
+    console.error("Token validation error:", error);
     handleLogout();
     return <Navigate to="/signin" />;
   }

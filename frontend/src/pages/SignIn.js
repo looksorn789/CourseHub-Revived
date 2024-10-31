@@ -31,12 +31,12 @@ function SignIn() {
     setIsLoading(true);
     try {
       const data = await signin(email, password);
-  
+
       if (!data || !data.jwt_token) {
         setError("Failed to sign in: Invalid response from server");
         return;
       }
-  
+
       // Store user data
       localStorage.setItem("jwt_token", data.jwt_token);
       localStorage.setItem(
@@ -47,11 +47,11 @@ function SignIn() {
           email: data.email,
           first_name: data.first_name,
           last_name: data.last_name,
-          profile_completed: data.profile_completed, 
+          profile_completed: data.profile_completed,
           avatar: data.avatar,
-        })
+        }),
       );
-  
+
       navigate("/dashboard");
     } catch (err) {
       console.error("Error during sign-in:", err);
@@ -60,7 +60,6 @@ function SignIn() {
       setIsLoading(false);
     }
   };
-  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
