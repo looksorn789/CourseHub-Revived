@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 function PrivateRoute({ children }) {
   const location = useLocation();
   const token = localStorage.getItem("jwt_token");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const handleLogout = () => {
     localStorage.removeItem("jwt_token");
@@ -30,7 +31,22 @@ function PrivateRoute({ children }) {
       return <Navigate to="/signin" />;
     }
 
-    return children;
+    const isProfileCompleted = user.profile_completed;
+    const isProfilePage = location.pathname === "/student-profile";
+
+    if (!isProfileCompleted && !isProfilePage) {
+      return <Navigate to="/student-profile" state={{ from: location }} />;
+    }
+
+    if (!isProfileCompleted && isProfilePage) {
+      return children;
+    }
+
+    if (isProfileCompleted) {
+      return children;
+    }
+
+    return <Navigate to="/signin" />;
   } catch (error) {
     console.error('Token validation error:', error);
     handleLogout();
