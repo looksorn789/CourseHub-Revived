@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PlusCircle, Check, Upload } from 'lucide-react'
+import axios from 'axios'
 import Button from "../ui/Button"
 import { Dialog, DialogContent } from "../ui/Dialog"
 import Input from "../ui/Input"
@@ -14,17 +15,15 @@ import {
 } from "../ui/Select"
 
 const tags = ['Q&A', 'Lecture Notes', 'Homework Help', 'Study Group', 'Exam Prep', 'Career']
-
+ 
 const steps = [
   { title: "Basics", description: "Enter channel name and description" },
-  { title: "Category", description: "Select a category for your channel" },
   { title: "Images", description: "Upload profile icon and banner" },
 ]
 
 function cn(...classes) {
   return classes.filter(Boolean).join(' ')
 }
-
 const FileUpload = ({ id, label, file, onFileChange, accept = "image/*" }) => {
   const handleChange = (e) => {
     const selectedFile = e.target.files?.[0]
@@ -32,7 +31,7 @@ const FileUpload = ({ id, label, file, onFileChange, accept = "image/*" }) => {
       onFileChange(selectedFile)
     }
   }
-
+  
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
@@ -84,7 +83,24 @@ function CreateChannelModal() {
   const [selectedTag, setSelectedTag] = useState('')
   const [profileIcon, setProfileIcon] = useState(null)
   const [bannerCover, setBannerCover] = useState(null)
-
+  const [newForum, setNewForum] = useState({ title: "", description: "", tags: [] }); 
+  const [currentTag, setCurrentTag] = useState("");
+  const [loading, setLoading] = useState(false)
+  const addTag = () => {
+    if (currentTag && !newForum.tags.includes(currentTag)) {
+      setNewForum((prev) => ({
+        ...prev,
+        tags: [...prev.tags, currentTag.trim()],
+      }));
+      setCurrentTag(""); // Reset current tag input
+    }
+  };
+  const handleTagRemove = (index) => {
+    setNewForum((prev) => ({
+        ...prev,
+        tags: prev.tags.filter((_, i) => i !== index) // Correctly filter tags
+    }));
+  };
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
@@ -97,19 +113,34 @@ function CreateChannelModal() {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (currentStep < steps.length - 1) {
       handleNext()
     } else {
-      console.log({ channelName, description, selectedTag, profileIcon, bannerCover })
-      setIsOpen(false)
-      setChannelName('')
-      setDescription('')
-      setSelectedTag('')
-      setProfileIcon(null)
-      setBannerCover(null)
-      setCurrentStep(0)
+      setLoading(true)
+        const forumData = {
+          name: newForum.title,
+          description: newForum.description,
+          tags: newForum.tags, 
+        };
+        if (profileIcon) forumData.append("profile_icon", profileIcon)
+        if (bannerCover) forumData.append("banner_cover", bannerCover)
+        try {
+          const response = await axios.post("/forum/", forumData); 
+          console.log("Forum created successfully:", response.data);
+          setNewForum({ title: "", description: "", tags: [] }); 
+          setCurrentTag(""); 
+          setIsOpen(false)
+      
+          setProfileIcon(null)
+          setBannerCover(null)
+          setCurrentStep(0)
+      } catch (error) {
+        console.error("Error creating channel:", error)
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -182,24 +213,44 @@ function CreateChannelModal() {
                   className="border-green-300 focus:border-green-500 focus:ring-green-500"
                 />
               </div>
+              <Label htmlFor="tags">Tags</Label>
+      <div className="flex mb-4">
+        <Input
+          type="text"
+          id="tags"
+          placeholder="Add a tag"
+          value={currentTag}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addTag();
+            }
+          }}
+          onChange={(e) => setCurrentTag(e.target.value)}
+          className="flex-grow border-green-200 focus:ring-green-500 focus:border-green-500"
+        />
+        <Button onClick={addTag}>Add Tag</Button>
+      </div>
+      <div className="tags-container mb-4">
+        {newForum.tags.map((tag, index) => (
+          <span
+            key={index}
+            className="tag bg-green-200 rounded-full px-2 py-1 text-green-700 mr-2"
+          >
+            {tag}
+            <button
+              className="ml-2 text-red-600"
+              onClick={() => handleTagRemove(index)} // Correct the function call here
+            >
+              &times;
+            </button>
+          </span>
+        ))}
+        </div>
             </>
           )}
+          
           {currentStep === 1 && (
-            <div className="space-y-2">
-              <Label htmlFor="tag">Category</Label>
-              <Select value={selectedTag} onValueChange={setSelectedTag}>
-                <SelectTrigger className="border-green-300 focus:border-green-500 focus:ring-green-500">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {currentStep === 2 && (
             <>
               <FileUpload
                 id="profileIcon"
@@ -229,7 +280,7 @@ function CreateChannelModal() {
               type="submit" 
               className="bg-green-600 hover:bg-green-700 text-white ml-auto"
             >
-              {currentStep < steps.length - 1 ? 'Next' : 'Create Channel'}
+              {currentStep < steps.length - 1 ? 'Next' : 'Submit'}
             </Button>
           </div>
         </form>
@@ -237,5 +288,4 @@ function CreateChannelModal() {
     </Dialog>
   )
 }
-
-export default CreateChannelModal
+export default CreateChannelModal;

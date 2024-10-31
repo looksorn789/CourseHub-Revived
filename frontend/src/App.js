@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
-import Feed from "./pages/Feed";
 import PostDetails from "./pages/PostDetails";
 import Profile from "./pages/Profile.js";
 import StudentProfilePage from "./pages/StudentProfilePage";
@@ -11,6 +10,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import StudentProfile from "./components/StudentProfile/StudentProfile.js";
 import PrivateRoute from "./components/PrivateRoute";
+import Dashboard from "./pages/Dashboard.js";
 
 function App() {
   return (
@@ -22,10 +22,10 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route
-          path="/feed"
+          path="/dashboard"
           element={
             <PrivateRoute>
-              <Feed />
+              <Dashboard />
             </PrivateRoute>
           }
         />

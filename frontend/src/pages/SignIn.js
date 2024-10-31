@@ -53,8 +53,8 @@ function SignIn() {
         }),
       );
 
-      // Redirect to feed
-      navigate("/feed");
+      // Redirect to dashboard
+      navigate("/dashboard");
     } catch (err) {
       console.error("Error during sign-in:", err);
       setError(err.message || "Signin failed");
