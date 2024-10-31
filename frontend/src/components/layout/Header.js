@@ -34,41 +34,58 @@ function Header() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const { data, error } = await getUserProfile();
-
-      if (data && data.profile) {
-        const { first_name, last_name, avatar_config } = data.profile;
-        const fullName = `${first_name} ${last_name}`;
-        const username = data.username;
-
-        let avatarUrl = "";
-        if (avatar_config) {
-          const { style, seed, options } = avatar_config;
-          const svg = generateAvatarSvg(style, seed, options);
-          avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+      try {
+        const token = localStorage.getItem("jwt_token");
+        if (!token) {
+          navigate("/signin");
+          return;
         }
 
-        setUser({
-          name: fullName,
-          username: username,
-          avatarUrl: avatarUrl
-        });
-      } else if (error) {
-        console.error("Failed to fetch user data:", error);
+        const { data, error } = await getUserProfile();
+        if (data && data.profile) {
+          const { first_name, last_name, avatar_config } = data.profile;
+          const fullName = `${first_name} ${last_name}`;
+          const username = data.username;
+          let avatarUrl = "";
+
+          if (avatar_config) {
+            const { style, seed, options } = avatar_config;
+            const svg = generateAvatarSvg(style, seed, options);
+            avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+          }
+
+          setUser({
+            name: fullName,
+            username: username,
+            avatarUrl: avatarUrl
+          });
+        } else if (error) {
+          console.error("Failed to fetch user data:", error);
+          if (error.status === 401) {
+            navigate("/signin");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        navigate("/signin");
       }
     };
 
     fetchUserData();
-  }, []);
+  }, [navigate]);
 
-  const handleSignOut = () => {
-    localStorage.removeItem("jwt_token");
-    localStorage.removeItem("user");
-    navigate("/signin");
+  const handleSignOut = async () => {
+    try {
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("user");
+      navigate("/signin");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   const ProfileContent = ({ inMenu = false }) => (
-    <div className={`flex ${inMenu ? 'flex-row items-center' : 'flex-col items-center'} space-y-2 mb-4`}>
+    <div className={`flex ${inMenu ? 'flex-row items-center' : 'flex-col items-center'} ${!inMenu && 'space-y-2'} mb-4`}>
       <Avatar className={inMenu ? "h-10 w-10 mr-3" : "h-16 w-16"}>
         {user.avatarUrl ? (
           <AvatarImage src={user.avatarUrl} alt={`${user.name}'s Avatar`} />
@@ -78,7 +95,7 @@ function Header() {
       </Avatar>
       <div className={inMenu ? "" : "text-center"}>
         <p className="font-semibold text-base">{user.name || "User"}</p>
-        <p className="text-sm text-gray-500">{user.username}</p>
+        <p className="text-sm text-gray-500">{user.username || "No Email"}</p>
       </div>
     </div>
   );
