@@ -284,7 +284,9 @@ def signin():
                     "user_id": str(user["_id"]),
                     "username": user["username"],
                     "email": user["email"],
-                    "profile_completed": user.get("profile_completed", False),  # Include profile_completed
+                    "profile_completed": user.get(
+                        "profile_completed", False
+                    ),  # Include profile_completed
                 }
             ),
             200,

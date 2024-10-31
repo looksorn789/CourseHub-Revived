@@ -17,18 +17,20 @@ def setup_jwt(app):
     jwt = JWTManager(app)
 
     @jwt.expired_token_loader
-    def expired_token_callback(jwt_header, jwt_payload): # pylint: disable=unused-argument
+    def expired_token_callback(
+        jwt_header, jwt_payload
+    ):  # pylint: disable=unused-argument
         return (
             jsonify({"error": "token_expired", "message": "The token has expired"}),
             401,
         )
 
     @jwt.invalid_token_loader
-    def invalid_token_callback(error_string): # pylint: disable=unused-argument
+    def invalid_token_callback(error_string):  # pylint: disable=unused-argument
         return jsonify({"error": "invalid_token", "message": "Invalid token"}), 422
 
     @jwt.unauthorized_loader
-    def missing_token_callback(error_string): # pylint: disable=unused-argument
+    def missing_token_callback(error_string):  # pylint: disable=unused-argument
         return (
             jsonify(
                 {"error": "missing_token", "message": "Authentication token is missing"}
@@ -85,7 +87,7 @@ def create_app(config_class=Config):
     app.register_blueprint(profile_bp, url_prefix="/api")
 
     @app.errorhandler(404)
-    def not_found_error(error): # pylint: disable=unused-argument
+    def not_found_error(error):  # pylint: disable=unused-argument
         return jsonify({"error": "not_found", "message": "Resource not found"}), 404
 
     @app.errorhandler(500)

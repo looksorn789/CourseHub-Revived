@@ -2,14 +2,15 @@ from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 import re
 
+
 class UserModel:
-    
+
     # Validation patterns for fields
     EMAIL_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     USERNAME_PATTERN = r"^[a-zA-Z0-9_]{3,20}$"
     DATE_PATTERN = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$"
 
-     # Field definitions with validation rules
+    # Field definitions with validation rules
     PROFILE_FIELDS = {
         "firstName": {
             "type": str,
@@ -17,7 +18,7 @@ class UserModel:
             "min_length": 2,
             "max_length": 50,
             "pattern": r"^[a-zA-Z\s\-']+$",
-            "error": "First name must be 2-50 characters, letters only"
+            "error": "First name must be 2-50 characters, letters only",
         },
         "lastName": {
             "type": str,
@@ -25,65 +26,65 @@ class UserModel:
             "min_length": 2,
             "max_length": 50,
             "pattern": r"^[a-zA-Z\s\-']+$",
-            "error": "Last name must be 2-50 characters, letters only"
+            "error": "Last name must be 2-50 characters, letters only",
         },
         "bio": {
             "type": str,
             "required": False,
             "max_length": 500,
-            "error": "Bio must not exceed 500 characters"
+            "error": "Bio must not exceed 500 characters",
         },
         "school": {
             "type": str,
             "required": True,
             "min_length": 2,
             "max_length": 100,
-            "error": "School name must be 2-100 characters"
+            "error": "School name must be 2-100 characters",
         },
         "major": {
             "type": str,
             "required": True,
             "min_length": 2,
             "max_length": 100,
-            "error": "Major must be 2-100 characters"
+            "error": "Major must be 2-100 characters",
         },
         "gpa": {
             "type": (str, float),
             "required": False,
             "min_value": 0,
             "max_value": 4.0,
-            "error": "GPA must be between 0 and 4.0"
+            "error": "GPA must be between 0 and 4.0",
         },
         "graduationDate": {
             "type": str,
             "required": False,
             "pattern": r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$",
-            "error": "Invalid graduation date format"
+            "error": "Invalid graduation date format",
         },
         "selectedTopics": {
             "type": list,
             "required": False,
             "max_length": 10,
-            "error": "Maximum 10 topics allowed"
+            "error": "Maximum 10 topics allowed",
         },
         "awards": {
             "type": list,
             "required": False,
             "max_length": 10,
-            "error": "Maximum 10 awards allowed"
+            "error": "Maximum 10 awards allowed",
         },
         "clubs": {
             "type": list,
             "required": False,
             "max_length": 10,
-            "error": "Maximum 10 clubs allowed"
+            "error": "Maximum 10 clubs allowed",
         },
         "certifications": {
             "type": list,
             "required": False,
             "max_length": 10,
-            "error": "Maximum 10 certifications allowed"
-        }
+            "error": "Maximum 10 certifications allowed",
+        },
     }
 
     def __init__(self, db, supabase):
@@ -113,7 +114,10 @@ class UserModel:
 
             # Validate username
             if not re.match(self.USERNAME_PATTERN, username):
-                return None, "Username must be 3-20 characters, alphanumeric and underscores only"
+                return (
+                    None,
+                    "Username must be 3-20 characters, alphanumeric and underscores only",
+                )
 
             # Check if email already exists
             if self.find_by_email(email):
@@ -130,11 +134,11 @@ class UserModel:
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow(),
                 "profile_completed": False,  # Initially false as profile isn't set up yet
-                "last_login": datetime.utcnow() if verified else None
+                "last_login": datetime.utcnow() if verified else None,
             }
 
             result = self.collection.insert_one(user_data)
-            
+
             if not result.inserted_id:
                 return None, "Failed to create user"
 
@@ -147,16 +151,18 @@ class UserModel:
         """Serialize user data for JSON response"""
         if not user_data:
             return None
-            
+
         if "_id" in user_data:
             user_data["_id"] = str(user_data["_id"])
-            
+
         user_data.pop("verification_code", None)
         user_data.pop("verification_code_expiry", None)
-        
+
         return user_data
 
-    def validate_field(self, field_name: str, value: Any, rules: Dict) -> Tuple[bool, Optional[str]]:
+    def validate_field(
+        self, field_name: str, value: Any, rules: Dict
+    ) -> Tuple[bool, Optional[str]]:
         """Validate a single field against its rules"""
         if value is None:
             if rules.get("required", False):
@@ -169,9 +175,15 @@ class UserModel:
         # String validations
         if isinstance(value, str):
             if "min_length" in rules and len(value.strip()) < rules["min_length"]:
-                return False, f"{field_name} must be at least {rules['min_length']} characters"
+                return (
+                    False,
+                    f"{field_name} must be at least {rules['min_length']} characters",
+                )
             if "max_length" in rules and len(value.strip()) > rules["max_length"]:
-                return False, f"{field_name} must not exceed {rules['max_length']} characters"
+                return (
+                    False,
+                    f"{field_name} must not exceed {rules['max_length']} characters",
+                )
             if "pattern" in rules and not re.match(rules["pattern"], value):
                 return False, rules["error"]
 
@@ -185,17 +197,24 @@ class UserModel:
         # List validations
         if isinstance(value, list):
             if "max_length" in rules and len(value) > rules["max_length"]:
-                return False, f"{field_name} must not exceed {rules['max_length']} items"
+                return (
+                    False,
+                    f"{field_name} must not exceed {rules['max_length']} items",
+                )
 
         return True, None
 
-    def validate_profile_data(self, profile_data: Dict, is_patch: bool = False) -> Tuple[bool, list]:
+    def validate_profile_data(
+        self, profile_data: Dict, is_patch: bool = False
+    ) -> Tuple[bool, list]:
         """Validate profile data against defined rules"""
         errors = []
 
         for field_name, rules in self.PROFILE_FIELDS.items():
             if field_name in profile_data:
-                is_valid, error = self.validate_field(field_name, profile_data.get(field_name), rules)
+                is_valid, error = self.validate_field(
+                    field_name, profile_data.get(field_name), rules
+                )
                 if not is_valid:
                     errors.append(error)
             elif rules.get("required", False) and not is_patch:
@@ -236,12 +255,9 @@ class UserModel:
             }
 
             result = self.collection.find_one_and_update(
-                {
-                    "supabase_id": supabase_id,
-                    "profile_completed": False
-                },
+                {"supabase_id": supabase_id, "profile_completed": False},
                 {"$set": profile},
-                return_document=True
+                return_document=True,
             )
 
             if not result:
@@ -252,7 +268,13 @@ class UserModel:
         except Exception as e:
             return None, str(e)
 
-    def update_user_profile(self, supabase_id: str, profile_data: Dict, email: str = None, username: str = None) -> Tuple[Dict, Optional[str]]:
+    def update_user_profile(
+        self,
+        supabase_id: str,
+        profile_data: Dict,
+        email: str = None,
+        username: str = None,
+    ) -> Tuple[Dict, Optional[str]]:
         """Update user profile with validation"""
         try:
             # Validate email format if provided
@@ -261,18 +283,22 @@ class UserModel:
 
             # Validate username if provided
             if username and not re.match(r"^[a-zA-Z0-9_]{3,20}$", username):
-                return None, "Username must be 3-20 characters, alphanumeric and underscores only"
+                return (
+                    None,
+                    "Username must be 3-20 characters, alphanumeric and underscores only",
+                )
 
             # Validate profile data
-            is_patch = not all(key in profile_data for key in ["firstName", "lastName", "school", "major"])
+            is_patch = not all(
+                key in profile_data
+                for key in ["firstName", "lastName", "school", "major"]
+            )
             is_valid, errors = self.validate_profile_data(profile_data, is_patch)
-            
+
             if not is_valid:
                 return None, "\n".join(errors)
 
-            update_data = {
-                "updated_at": datetime.utcnow()
-            }
+            update_data = {"updated_at": datetime.utcnow()}
 
             if email:
                 update_data["email"] = email
@@ -284,7 +310,7 @@ class UserModel:
                     "firstName": "first_name",
                     "lastName": "last_name",
                     "graduationDate": "graduation_date",
-                    "selectedTopics": "interests"
+                    "selectedTopics": "interests",
                 }
 
                 for key, value in profile_data.items():
@@ -294,7 +320,7 @@ class UserModel:
             result = self.collection.find_one_and_update(
                 {"supabase_id": supabase_id},
                 {"$set": update_data},
-                return_document=True
+                return_document=True,
             )
 
             if not result:
@@ -314,8 +340,8 @@ class UserModel:
                     "interests": result["profile"].get("interests", []),
                     "awards": result["profile"].get("awards", []),
                     "clubs": result["profile"].get("clubs", []),
-                    "certifications": result["profile"].get("certifications", [])
-                }
+                    "certifications": result["profile"].get("certifications", []),
+                },
             }
 
             return response_data, None
