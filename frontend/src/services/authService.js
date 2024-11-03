@@ -2,7 +2,7 @@ import api from './api';
 
 export const signup = async (userData) => {
   try {
-    const response = await api.post("/auth/signup", userData);
+    const response = await api.post("/api/auth/signup", userData);
     return response.data;
   } catch (error) {
     throw error;
@@ -11,7 +11,7 @@ export const signup = async (userData) => {
 
 export const verifyEmailCode = async (email, code) => {
   try {
-    const response = await api.post("/auth/verify-email", {
+    const response = await api.post("/api/auth/verify-email", {
       email,
       code,
     });
@@ -23,7 +23,7 @@ export const verifyEmailCode = async (email, code) => {
 
 export const signin = async (email, password) => {
   try {
-    const response = await api.post("/auth/signin", {
+    const response = await api.post("/api/auth/signin", {
       email,
       password,
     });
@@ -35,7 +35,7 @@ export const signin = async (email, password) => {
 
 export const requestResetPassword = async (email) => {
   try {
-    const response = await api.post("/auth/request-reset-password", {
+    const response = await api.post("/api/auth/request-reset-password", {
       email,
     });
     return response.data;
@@ -46,7 +46,7 @@ export const requestResetPassword = async (email) => {
 
 export const resetPassword = async (token, password) => {
   try {
-    const response = await api.post(`/auth/reset-password/${token}`, {
+    const response = await api.post(`/api/auth/reset-password/${token}`, {
       password,
     });
     return response.data;
