@@ -83,11 +83,9 @@ def create_app(config_class=Config):
     setup_mongodb(app)
     setup_supabase(app)
 
-    app.register_blueprint(auth_bp, url_prefix="/auth")
-    app.register_blueprint(forum_bp, url_prefix="/forum")
-
-
-    app.register_blueprint(profile_bp, url_prefix="/api")
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(forum_bp, url_prefix="/api/forums")
+    app.register_blueprint(profile_bp, url_prefix="/api/profile")
 
     @app.errorhandler(404)
     def not_found_error(error): # pylint: disable=unused-argument
