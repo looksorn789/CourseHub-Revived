@@ -2,7 +2,7 @@ import api from "./api";
 
 export const createProfile = async (profileData) => {
   try {
-    const response = await api.post("/api/profile", profileData);
+    const response = await api.post("/api/profile/", profileData);
     return { data: response.data, error: null };
   } catch (error) {
     console.error("Profile creation error:", error);
@@ -15,7 +15,7 @@ export const createProfile = async (profileData) => {
 
 export const getUserProfile = async () => {
   try {
-    const response = await api.get("/api/user");
+    const response = await api.get("api/profile/user");
     return { data: response.data, error: null };
   } catch (error) {
     console.error("Error fetching user profile:", error);
