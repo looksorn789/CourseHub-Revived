@@ -11,7 +11,7 @@ def handle_error(e: Exception, message: str = "An error occurred"):
     return jsonify({"error": message, "details": str(e)}), 500
 
 
-@profile_bp.route("/profile", methods=["POST"])
+@profile_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_profile():
     """Create initial user profile"""
