@@ -7,6 +7,8 @@ import StudentProfile from "./components/StudentProfile/StudentProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
+import Dashboard from "./pages/Dashboard";
+import Explore from "./pages/Explore";
 
 function App() {
   return (
@@ -31,6 +33,14 @@ function App() {
           element={
             <PrivateRoute>
               <StudentProfile />
+            </PrivateRoute>
+          }
+        />
+         <Route
+          path="/explore"
+          element={
+            <PrivateRoute>
+              <Explore />
             </PrivateRoute>
           }
         />

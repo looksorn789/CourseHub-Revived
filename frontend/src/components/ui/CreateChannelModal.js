@@ -16,16 +16,12 @@ import {
 } from "../ui/Select";
 
 const tags = [
-  "Q&A",
-  "Lecture Notes",
-  "Homework Help",
-  "Study Group",
-  "Exam Prep",
-  "Career",
+  "study_group",
+  "general", 
+  "career", "project", "exam_prep", "homework_help", "q_and_a"
 ];
 const steps = [
   { title: "Basics", description: "Enter channel name and description" },
-  { title: "Category", description: "Select a category and add tags" },
   { title: "Category", description: "Select a category and add tags" },
   { title: "Images", description: "Upload profile icon and banner" },
 ];
@@ -33,7 +29,6 @@ const steps = [
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
-
 
 const FileUpload = ({ id, label, file, onFileChange, accept = "image/*" }) => {
   const handleChange = (e) => {
@@ -87,11 +82,6 @@ const FileUpload = ({ id, label, file, onFileChange, accept = "image/*" }) => {
 function CreateChannelModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [channelName, setChannelName] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedTag, setSelectedTag] = useState("");
-  const [profileIcon, setProfileIcon] = useState(null);
-  const [bannerCover, setBannerCover] = useState(null);
   const [newForum, setNewForum] = useState({
     title: "",
     description: "",
@@ -99,8 +89,8 @@ function CreateChannelModal() {
     tags: [],
   });
   const [currentTag, setCurrentTag] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  const [profileIcon, setProfileIcon] = useState(null);
+  const [bannerCover, setBannerCover] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const addTag = () => {
@@ -113,14 +103,12 @@ function CreateChannelModal() {
     }
   };
 
-
   const handleTagRemove = (index) => {
     setNewForum((prev) => ({
       ...prev,
       tags: prev.tags.filter((_, i) => i !== index), // Correctly filter tags
     }));
   };
-
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -142,9 +130,9 @@ function CreateChannelModal() {
       setLoading(true);
 
       const forumData = new FormData();
-      forumData.append("name", channelName);
-      forumData.append("description", description);
-      forumData.append("category", selectedTag);
+      forumData.append("name", newForum.title);
+      forumData.append("description", newForum.description);
+      forumData.append("category", newForum.category);
       newForum.tags.forEach((tag, index) => {
         forumData.append(`tags[${index}]`, tag);
       });
@@ -153,17 +141,13 @@ function CreateChannelModal() {
       if (bannerCover) forumData.append("banner_cover", bannerCover);
 
       try {
-        createForum(forumData);
-
+        await createForum(forumData);
         setNewForum({ title: "", description: "", category: "", tags: [] });
-        setChannelName("");
-        setDescription("");
-        setSelectedTag("");
         setCurrentTag("");
-        setIsOpen(false);
         setProfileIcon(null);
         setBannerCover(null);
         setCurrentStep(0);
+        setIsOpen(false);
       } catch (error) {
         console.error("Error creating channel:", error);
       } finally {
@@ -245,14 +229,13 @@ function CreateChannelModal() {
                   className="border-green-300 focus:border-green-500 focus:ring-green-500"
                 />
               </div>
-              </div>
             </>
           )}
           {currentStep === 1 && (
             <>
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select onValueChange={setSelectedTag}>
+                <Select onValueChange={(value) => setNewForum(prev => ({...prev, category: value}))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
@@ -272,32 +255,38 @@ function CreateChannelModal() {
                     id="tagInput"
                     value={currentTag}
                     onChange={(e) => setCurrentTag(e.target.value)}
-                    placeholder="Add a tag"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault(); // Prevent form submission
+                        addTag();
+                      }
+                    }}
+                    placeholder="Press Enter to add tag"
                     className="border-green-300 focus:border-green-500 focus:ring-green-500"
                   />
-                    <Button
+                  <Button
                     type="button"
                     onClick={addTag}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-green-600 text-white hover:bg-green-700"
                   >
-                    Add
+                    Add Tag
                   </Button>
                 </div>
-                <div className="flex flex-wrap">
+                <div className="flex flex-wrap mt-2">
                   {newForum.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="bg-green-200 text-green-800 px-2 py-1 rounded-full text-sm mr-2 mb-2 flex items-center"
+                    <div
+                      key={tag}
+                      className="bg-green-100 text-green-800 rounded-full py-1 px-3 mr-2 mb-2 flex items-center justify-between"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => handleTagRemove(index)}
-                        className="ml-1 text-red-500"
+                        className="ml-2 text-red-600 hover:text-red-800"
                       >
                         &times;
                       </button>
-                    </span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -310,32 +299,31 @@ function CreateChannelModal() {
                 label="Profile Icon"
                 file={profileIcon}
                 onFileChange={setProfileIcon}
-                accept="image/*"
               />
               <FileUpload
                 id="bannerCover"
                 label="Banner Cover"
                 file={bannerCover}
                 onFileChange={setBannerCover}
-                accept="image/*"
               />
             </>
           )}
-          <div className="flex justify-between">
+          <div className="flex justify-between mt-4">
+            {currentStep > 0 && (
+              <Button
+                type="button"
+                onClick={handlePrevious}
+                className="bg-gray-300 text-gray-800 hover:bg-gray-400"
+              >
+                Previous
+              </Button>
+            )}
             <Button
-              type="button"
-              onClick={handlePrevious}
-              disabled={currentStep === 0}
-              className="bg-gray-300 text-gray-600 hover:bg-gray-400"
+              type="submit"
+              className="bg-green-600 text-white hover:bg-green-700"
+              disabled={loading}
             >
-              Back
-            </Button>
-            <Button type="submit" className="bg-green-600 hover:bg-green-700">
-              {currentStep < steps.length - 1
-                ? "Next"
-                : loading
-                  ? "Creating..."
-                  : "Create Channel"}
+              {loading ? "Creating..." : currentStep < steps.length - 1 ? "Next" : "Create"}
             </Button>
           </div>
         </form>

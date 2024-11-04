@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Home,
   TrendingUp,
@@ -35,6 +36,7 @@ const savedPosts = [
 ];
 
 function Sidebar() {
+  const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState("Home");
   const [isChannelsOpen, setIsChannelsOpen] = useState(true);
   const [isSavedPostsOpen, setIsSavedPostsOpen] = useState(false);
@@ -67,7 +69,15 @@ function Sidebar() {
                       ? "bg-green-100 text-green-800"
                       : "text-gray-700 hover:bg-gray-100",
                   )}
-                  onClick={() => setActiveItem(item.name)}
+                  onClick={() => {
+                    setActiveItem(item.name);
+                    if (item.name === "Explore") {
+                      navigate("/explore");
+                    }
+                    else if(item.name === "Home"){
+                      navigate("/dashboard")
+                    }
+                  }}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.name}

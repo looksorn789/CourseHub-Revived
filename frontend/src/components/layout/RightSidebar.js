@@ -1,8 +1,10 @@
-import { Hash, Pin, TrendingUp } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Hash, TrendingUp } from "lucide-react";
 import Button from "../ui/Button";
 import { Card } from "../ui/Card";
 import Badge from "../ui/Badge";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar";
+import { getAllForums } from "../../services/forumServices"; // Import the getAllForums function
 
 const channelSuggestions = [
   {
@@ -27,26 +29,40 @@ const channelSuggestions = [
   },
 ];
 
-const pinnedChannels = [
-  { name: "JavaScript", image: "/placeholder.svg?height=32&width=32" },
-  { name: "Python", image: "/placeholder.svg?height=32&width=32" },
-  { name: "React", image: "/placeholder.svg?height=32&width=32" },
-];
-
-const popularTags = [
-  "react",
-  "javascript",
-  "python",
-  "machinelearning",
-  "webdev",
-  "css",
-  "html",
-  "nodejs",
-  "design",
-  "programming",
-];
-
 function RightSidebar() {
+  const [popularTags, setPopularTags] = useState([]);
+
+  useEffect(() => {
+    const fetchForums = async () => {
+      const { data, error } = await getAllForums();
+      if (error) {
+        console.error("Error fetching forums:", error);
+        return;
+      }
+      calculateTagFrequency(data.forums);
+    };
+
+    fetchForums();
+  }, []);
+
+  const calculateTagFrequency = (forums) => {
+    const tagCount = {};
+
+    forums.forEach((forum) => {
+      forum.tags.forEach((tag) => {
+        tagCount[tag] = (tagCount[tag] || 0) + 1; // Count occurrences of each tag
+      });
+    });
+
+    // Convert the tagCount object to an array, sort by frequency, and get the top 5 tags
+    const sortedTags = Object.entries(tagCount)
+      .sort(([, countA], [, countB]) => countB - countA) // Sort by count descending
+      .slice(0, 5) // Get top 5 tags
+      .map(([tag]) => tag); // Extract just the tag names
+
+    setPopularTags(sortedTags);
+  };
+
   return (
     <div className="w-80 border-l border-gray-200 p-4 space-y-6">
       {/* Channel Suggestions */}
