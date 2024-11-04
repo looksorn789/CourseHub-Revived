@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { PlusCircle, Check, Upload } from 'lucide-react'
-import axios from 'axios'
-import Button from "../ui/Button"
-import { Dialog, DialogContent } from "../ui/Dialog"
-import Input from "../ui/Input"
-import Label from "../ui/Label"
-import Textarea from "../ui/Textarea"
+import { useState } from "react";
+import { PlusCircle, Check, Upload } from "lucide-react";
+import axios from "axios";
+import Button from "../ui/Button";
+import { Dialog, DialogContent } from "../ui/Dialog";
+import Input from "../ui/Input";
+import Label from "../ui/Label";
+import Textarea from "../ui/Textarea";
+import { createForum } from "../../services/forumServices";
 import {
   Select,
   SelectContent,
@@ -14,7 +15,14 @@ import {
   SelectValue,
 } from "../ui/Select";
 
-const tags = ['Q&A', 'Lecture Notes', 'Homework Help', 'Study Group', 'Exam Prep', 'Career'];
+const tags = [
+  "Q&A",
+  "Lecture Notes",
+  "Homework Help",
+  "Study Group",
+  "Exam Prep",
+  "Career",
+];
 const steps = [
   { title: "Basics", description: "Enter channel name and description" },
   { title: "Category", description: "Select a category and add tags" },
@@ -58,7 +66,9 @@ const FileUpload = ({ id, label, file, onFileChange, accept = "image/*" }) => {
           <div
             className={cn(
               "bg-gray-200 flex items-center justify-center overflow-hidden",
-              id === "profileIcon" ? "w-12 h-12 rounded-full" : "w-24 h-12 rounded"
+              id === "profileIcon"
+                ? "w-12 h-12 rounded-full"
+                : "w-24 h-12 rounded",
             )}
           >
             <img
@@ -77,12 +87,17 @@ const FileUpload = ({ id, label, file, onFileChange, accept = "image/*" }) => {
 function CreateChannelModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [channelName, setChannelName] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedTag, setSelectedTag] = useState('');
+  const [channelName, setChannelName] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
   const [profileIcon, setProfileIcon] = useState(null);
   const [bannerCover, setBannerCover] = useState(null);
-  const [newForum, setNewForum] = useState({ title: "", description: "", category: "", tags: [] });
+  const [newForum, setNewForum] = useState({
+    title: "",
+    description: "",
+    category: "",
+    tags: [],
+  });
   const [currentTag, setCurrentTag] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -99,7 +114,7 @@ function CreateChannelModal() {
   const handleTagRemove = (index) => {
     setNewForum((prev) => ({
       ...prev,
-      tags: prev.tags.filter((_, i) => i !== index) // Correctly filter tags
+      tags: prev.tags.filter((_, i) => i !== index), // Correctly filter tags
     }));
   };
 
@@ -121,30 +136,25 @@ function CreateChannelModal() {
       handleNext();
     } else {
       setLoading(true);
-  
-      // Create a FormData object to handle both text and file inputs
+
       const forumData = new FormData();
-      forumData.append("name", newForum.title);
-      forumData.append("description", newForum.description);
-      forumData.append("category", newForum.category);
+      forumData.append("name", channelName);
+      forumData.append("description", description);
+      forumData.append("category", selectedTag);
       newForum.tags.forEach((tag, index) => {
         forumData.append(`tags[${index}]`, tag);
       });
-  
-      // Append files if they are selected
+
       if (profileIcon) forumData.append("profile_icon", profileIcon);
       if (bannerCover) forumData.append("banner_cover", bannerCover);
-  
+
       try {
-        const response = await axios.post("/api/forums/", forumData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-        console.log("Forum created successfully:", response.data);
-        
-        // Reset form state
+        createForum(forumData);
+
         setNewForum({ title: "", description: "", category: "", tags: [] });
+        setChannelName("");
+        setDescription("");
+        setSelectedTag("");
         setCurrentTag("");
         setIsOpen(false);
         setProfileIcon(null);
@@ -183,10 +193,14 @@ function CreateChannelModal() {
                 <div
                   className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-2",
-                    index <= currentStep ? "bg-green-600" : "bg-gray-300"
+                    index <= currentStep ? "bg-green-600" : "bg-gray-300",
                   )}
                 >
-                  {index < currentStep ? <Check className="w-6 h-6" /> : index + 1}
+                  {index < currentStep ? (
+                    <Check className="w-6 h-6" />
+                  ) : (
+                    index + 1
+                  )}
                 </div>
                 <div className="text-xs text-center">
                   <p className="font-semibold">{step.title}</p>
@@ -236,9 +250,9 @@ function CreateChannelModal() {
           {currentStep === 1 && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="tag">Category</Label>
-                <Select value={selectedTag} onValueChange={setSelectedTag}>
-                  <SelectTrigger className="border-green-300 focus:border-green-500 focus:ring-green-500">
+                <Label htmlFor="category">Category</Label>
+                <Select onValueChange={setSelectedTag}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -250,39 +264,41 @@ function CreateChannelModal() {
                   </SelectContent>
                 </Select>
               </div>
-              <Label htmlFor="tags">Tags</Label>
-              <div className="flex mb-4">
-                <Input
-                  type="text"
-                  placeholder="Add tag"
-                  value={currentTag}
-                  onChange={(e) => setCurrentTag(e.target.value)}
-                  className="flex-grow border-green-300 focus:border-green-500 focus:ring-green-500"
-                />
-                <Button
-                  onClick={addTag}
-                  type="button"
-                  className="ml-2 bg-green-600 hover:bg-green-700 text-white h-10"
-                >
-                  Add Tag
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {newForum.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-green-200 text-green-800 rounded-full text-xs flex items-center"
+              <div className="space-y-2">
+                <Label htmlFor="tagInput">Tags</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id="tagInput"
+                    value={currentTag}
+                    onChange={(e) => setCurrentTag(e.target.value)}
+                    placeholder="Add a tag"
+                    className="border-green-300 focus:border-green-500 focus:ring-green-500"
+                  />
+                    <Button
+                    type="button"
+                    onClick={addTag}
+                    className="bg-green-600 hover:bg-green-700 text-white"
                   >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleTagRemove(index)}
-                      className="ml-1 text-green-600 hover:text-green-800"
+                    Add
+                  </Button>
+                </div>
+                <div className="flex flex-wrap">
+                  {newForum.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="bg-green-200 text-green-800 px-2 py-1 rounded-full text-sm mr-2 mb-2 flex items-center"
                     >
-                      &times;
-                    </button>
-                  </span>
-                ))}
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleTagRemove(index)}
+                        className="ml-1 text-red-500"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -293,31 +309,32 @@ function CreateChannelModal() {
                 label="Profile Icon"
                 file={profileIcon}
                 onFileChange={setProfileIcon}
+                accept="image/*"
               />
               <FileUpload
                 id="bannerCover"
                 label="Banner Cover"
                 file={bannerCover}
                 onFileChange={setBannerCover}
+                accept="image/*"
               />
             </>
           )}
-          <div className="flex justify-between mt-4">
-            {currentStep > 0 && (
-              <Button
-                type="button"
-                onClick={handlePrevious}
-                className="bg-gray-500 hover:bg-gray-600 text-white"
-              >
-                Back
-              </Button>
-            )}
+          <div className="flex justify-between">
             <Button
-              type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white"
-              disabled={loading}
+              type="button"
+              onClick={handlePrevious}
+              disabled={currentStep === 0}
+              className="bg-gray-300 text-gray-600 hover:bg-gray-400"
             >
-              {currentStep < steps.length - 1 ? "Next" : "Create"}
+              Back
+            </Button>
+            <Button type="submit" className="bg-green-600 hover:bg-green-700">
+              {currentStep < steps.length - 1
+                ? "Next"
+                : loading
+                  ? "Creating..."
+                  : "Create Channel"}
             </Button>
           </div>
         </form>

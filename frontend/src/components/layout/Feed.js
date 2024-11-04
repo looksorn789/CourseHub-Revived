@@ -1,37 +1,48 @@
-import { useState } from 'react'
-import { formatDistanceToNow } from 'date-fns'
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, Bookmark, X, ThumbsUp } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/Avatar"
-import Button from "../ui/Button"
-import { Card, CardContent, CardFooter, CardHeader } from "../ui/Card"
-import Input from "../ui/Input"
+import { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  MoreHorizontal,
+  Send,
+  Bookmark,
+  X,
+  ThumbsUp,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/Avatar";
+import Button from "../ui/Button";
+import { Card, CardContent, CardFooter, CardHeader } from "../ui/Card";
+import Input from "../ui/Input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/DropdownMenu"
-import { Separator } from "../ui/Separator"
-import { Dialog, DialogContent } from "../ui/Dialog"
-import ScrollArea from "../ui/ScrollArea"
-import { motion, AnimatePresence } from "framer-motion"
+} from "../ui/DropdownMenu";
+import { Separator } from "../ui/Separator";
+import { Dialog, DialogContent } from "../ui/Dialog";
+import ScrollArea from "../ui/ScrollArea";
+import { motion, AnimatePresence } from "framer-motion";
 
 const posts = [
   {
     id: 1,
     author: {
-      name: 'Elias Woldie',
-      image: '',
-      channel: 'Data Structures and Algorithms',
+      name: "Elias Woldie",
+      image: "",
+      channel: "Data Structures and Algorithms",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    content: "I'm currently diving deep into graph algorithms, and it's fascinating how they're used in real-world applications like social networks and recommendation systems. Does anyone have recommendations for resources or exercises to practice these concepts?",
+    content:
+      "I'm currently diving deep into graph algorithms, and it's fascinating how they're used in real-world applications like social networks and recommendation systems. Does anyone have recommendations for resources or exercises to practice these concepts?",
     likes: 25,
     comments: [
       {
         id: 1,
-        author: { name: 'Patrick Bootchot', image: '' },
-        content: "Check out LeetCode! They have some great graph algorithm problems, especially for interview prep.",
+        author: { name: "Patrick Bootchot", image: "" },
+        content:
+          "Check out LeetCode! They have some great graph algorithm problems, especially for interview prep.",
         timestamp: new Date(Date.now() - 1000 * 60 * 30),
         likes: 8,
       },
@@ -40,18 +51,20 @@ const posts = [
   {
     id: 2,
     author: {
-      name: 'Zachary Sanchez',
-      image: '',
-      channel: 'Artificial Intelligence',
+      name: "Zachary Sanchez",
+      image: "",
+      channel: "Artificial Intelligence",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    content: "Started working on a project using neural networks to detect anomalies in datasets. It’s amazing how much potential AI has in automating tasks we thought were impossible before. Anyone here working on something similar?",
+    content:
+      "Started working on a project using neural networks to detect anomalies in datasets. It’s amazing how much potential AI has in automating tasks we thought were impossible before. Anyone here working on something similar?",
     likes: 40,
     comments: [
       {
         id: 2,
-        author: { name: 'Jenna Itani', image: '' },
-        content: "That's awesome! I'm working on image classification using CNNs. What framework are you using for your project?",
+        author: { name: "Jenna Itani", image: "" },
+        content:
+          "That's awesome! I'm working on image classification using CNNs. What framework are you using for your project?",
         timestamp: new Date(Date.now() - 1000 * 60 * 15),
         likes: 12,
       },
@@ -60,25 +73,28 @@ const posts = [
   {
     id: 3,
     author: {
-      name: 'Patrick Bootchot',
-      image: '',
-      channel: 'Machine Learning',
+      name: "Patrick Bootchot",
+      image: "",
+      channel: "Machine Learning",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5),
-    content: "After weeks of training and tweaking, I finally achieved 95% accuracy on my machine learning model! It was quite a journey, but persistence pays off. Anyone else have tips for improving model accuracy?",
+    content:
+      "After weeks of training and tweaking, I finally achieved 95% accuracy on my machine learning model! It was quite a journey, but persistence pays off. Anyone else have tips for improving model accuracy?",
     likes: 65,
     comments: [
       {
         id: 3,
-        author: { name: 'Randolf Pangilin', image: '' },
-        content: "Congrats, Patrick! Have you tried experimenting with hyperparameter tuning? It can make a big difference.",
+        author: { name: "Randolf Pangilin", image: "" },
+        content:
+          "Congrats, Patrick! Have you tried experimenting with hyperparameter tuning? It can make a big difference.",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
         likes: 9,
       },
       {
         id: 4,
-        author: { name: 'Ethan Andrews', image: '' },
-        content: "Great job! I found that using a more complex ensemble model can also help improve accuracy.",
+        author: { name: "Ethan Andrews", image: "" },
+        content:
+          "Great job! I found that using a more complex ensemble model can also help improve accuracy.",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1),
         likes: 11,
       },
@@ -87,18 +103,20 @@ const posts = [
   {
     id: 4,
     author: {
-      name: 'Ethan Andrews',
-      image: '',
-      channel: 'Operating Systems',
+      name: "Ethan Andrews",
+      image: "",
+      channel: "Operating Systems",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 9),
-    content: "Just finished a project on process synchronization in operating systems. It’s pretty cool learning how critical sections and deadlock avoidance work under the hood. Any advice for resources on advanced OS topics?",
+    content:
+      "Just finished a project on process synchronization in operating systems. It’s pretty cool learning how critical sections and deadlock avoidance work under the hood. Any advice for resources on advanced OS topics?",
     likes: 22,
     comments: [
       {
         id: 5,
-        author: { name: 'Zachary Sanchez', image: '' },
-        content: "You should check out 'Operating Systems: Three Easy Pieces.' It's a great resource for diving deeper into OS concepts.",
+        author: { name: "Zachary Sanchez", image: "" },
+        content:
+          "You should check out 'Operating Systems: Three Easy Pieces.' It's a great resource for diving deeper into OS concepts.",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
         likes: 6,
       },
@@ -107,18 +125,20 @@ const posts = [
   {
     id: 5,
     author: {
-      name: 'Jenna Itani',
-      image: '',
-      channel: 'Web Development',
+      name: "Jenna Itani",
+      image: "",
+      channel: "Web Development",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 11),
-    content: "I'm building my first full-stack application using React and Node.js. The backend setup was more complicated than I expected. Does anyone have any tips for managing API routes efficiently?",
+    content:
+      "I'm building my first full-stack application using React and Node.js. The backend setup was more complicated than I expected. Does anyone have any tips for managing API routes efficiently?",
     likes: 34,
     comments: [
       {
         id: 6,
-        author: { name: 'Elias Woldie', image: '' },
-        content: "It can be tricky at first! I recommend using Express.js and structuring your routes by resource type. Also, middleware can really help keep things clean.",
+        author: { name: "Elias Woldie", image: "" },
+        content:
+          "It can be tricky at first! I recommend using Express.js and structuring your routes by resource type. Also, middleware can really help keep things clean.",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6),
         likes: 10,
       },
@@ -127,18 +147,20 @@ const posts = [
   {
     id: 6,
     author: {
-      name: 'Randolf Pangilin',
-      image: '',
-      channel: 'Cybersecurity',
+      name: "Randolf Pangilin",
+      image: "",
+      channel: "Cybersecurity",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1),
-    content: "I'm researching the impact of quantum computing on modern encryption techniques. It’s a bit daunting, but I’m fascinated by how encryption as we know it could change in the next decade. Anyone have recommendations for papers on this?",
+    content:
+      "I'm researching the impact of quantum computing on modern encryption techniques. It’s a bit daunting, but I’m fascinated by how encryption as we know it could change in the next decade. Anyone have recommendations for papers on this?",
     likes: 50,
     comments: [
       {
         id: 7,
-        author: { name: 'Patrick Bootchot', image: '' },
-        content: "There's a great paper by Shor on quantum algorithms that you might find interesting. It explains how certain encryption techniques could be vulnerable.",
+        author: { name: "Patrick Bootchot", image: "" },
+        content:
+          "There's a great paper by Shor on quantum algorithms that you might find interesting. It explains how certain encryption techniques could be vulnerable.",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 15),
         likes: 15,
       },
@@ -147,18 +169,20 @@ const posts = [
   {
     id: 7,
     author: {
-      name: 'Elias Woldie',
-      image: '',
-      channel: 'Database Systems',
+      name: "Elias Woldie",
+      image: "",
+      channel: "Database Systems",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8),
-    content: "I've been working with NoSQL databases, and it's quite different from traditional SQL. Anyone here have experience with MongoDB? I'd love to hear your thoughts on how it compares to PostgreSQL for large-scale applications.",
+    content:
+      "I've been working with NoSQL databases, and it's quite different from traditional SQL. Anyone here have experience with MongoDB? I'd love to hear your thoughts on how it compares to PostgreSQL for large-scale applications.",
     likes: 27,
     comments: [
       {
         id: 8,
-        author: { name: 'Zachary Sanchez', image: '' },
-        content: "MongoDB is great for unstructured data, but you may run into challenges with complex queries. PostgreSQL offers more in terms of relational integrity.",
+        author: { name: "Zachary Sanchez", image: "" },
+        content:
+          "MongoDB is great for unstructured data, but you may run into challenges with complex queries. PostgreSQL offers more in terms of relational integrity.",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4),
         likes: 7,
       },
@@ -167,18 +191,20 @@ const posts = [
   {
     id: 8,
     author: {
-      name: 'Zachary Sanchez',
-      image: '',
-      channel: 'Cloud Computing',
+      name: "Zachary Sanchez",
+      image: "",
+      channel: "Cloud Computing",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4),
-    content: "Just deployed my first application using AWS Lambda. It’s incredible how serverless architecture can streamline deployment, but there’s definitely a learning curve. Any tips on optimizing cold starts?",
+    content:
+      "Just deployed my first application using AWS Lambda. It’s incredible how serverless architecture can streamline deployment, but there’s definitely a learning curve. Any tips on optimizing cold starts?",
     likes: 38,
     comments: [
       {
         id: 9,
-        author: { name: 'Ethan Andrews', image: '' },
-        content: "One trick is to pre-warm your Lambda functions by sending scheduled requests. It helps reduce cold start times significantly.",
+        author: { name: "Ethan Andrews", image: "" },
+        content:
+          "One trick is to pre-warm your Lambda functions by sending scheduled requests. It helps reduce cold start times significantly.",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1),
         likes: 12,
       },
@@ -187,18 +213,20 @@ const posts = [
   {
     id: 9,
     author: {
-      name: 'Jenna Itani',
-      image: '',
-      channel: 'DevOps',
+      name: "Jenna Itani",
+      image: "",
+      channel: "DevOps",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8),
-    content: "I've been diving into CI/CD pipelines, and I’m amazed at how they can improve development workflow. Jenkins and Docker are powerful tools, but I’m curious if anyone has experience with alternatives like GitLab CI?",
+    content:
+      "I've been diving into CI/CD pipelines, and I’m amazed at how they can improve development workflow. Jenkins and Docker are powerful tools, but I’m curious if anyone has experience with alternatives like GitLab CI?",
     likes: 45,
     comments: [
       {
         id: 10,
-        author: { name: 'Randolf Pangilin', image: '' },
-        content: "I’ve used GitLab CI on a few projects, and it's solid! The built-in integration with GitLab repositories makes it really easy to set up pipelines.",
+        author: { name: "Randolf Pangilin", image: "" },
+        content:
+          "I’ve used GitLab CI on a few projects, and it's solid! The built-in integration with GitLab repositories makes it really easy to set up pipelines.",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 7),
         likes: 13,
       },
@@ -207,18 +235,20 @@ const posts = [
   {
     id: 10,
     author: {
-      name: 'Patrick Bootchot',
-      image: '',
-      channel: 'Software Engineering',
+      name: "Patrick Bootchot",
+      image: "",
+      channel: "Software Engineering",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 9),
-    content: "Finally wrapping up my capstone project! Building a real-time collaboration tool was both exciting and challenging. I had to handle concurrency issues and ensure smooth performance across multiple users. Anyone else working on large-scale projects?",
+    content:
+      "Finally wrapping up my capstone project! Building a real-time collaboration tool was both exciting and challenging. I had to handle concurrency issues and ensure smooth performance across multiple users. Anyone else working on large-scale projects?",
     likes: 52,
     comments: [
       {
         id: 11,
-        author: { name: 'Zachary Sanchez', image: '' },
-        content: "Congrats on finishing! I’m working on a real-time chat app, and concurrency has definitely been tricky. Any tips?",
+        author: { name: "Zachary Sanchez", image: "" },
+        content:
+          "Congrats on finishing! I’m working on a real-time chat app, and concurrency has definitely been tricky. Any tips?",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6),
         likes: 18,
       },
@@ -226,23 +256,22 @@ const posts = [
   },
 ];
 
-
 function PostCard({ post, onClick }) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [isLiked, setIsLiked] = useState(false)
-  const [isSaved, setIsSaved] = useState(false)
-  const [likeCount, setLikeCount] = useState(post.likes)
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likes);
 
   const toggleLike = (e) => {
-    e.stopPropagation()
-    setIsLiked(!isLiked)
-    setLikeCount(isLiked ? likeCount - 1 : likeCount + 1)
-  }
+    e.stopPropagation();
+    setIsLiked(!isLiked);
+    setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
+  };
 
   const toggleSave = (e) => {
-    e.stopPropagation()
-    setIsSaved(!isSaved)
-  }
+    e.stopPropagation();
+    setIsSaved(!isSaved);
+  };
 
   return (
     <motion.div
@@ -250,7 +279,7 @@ function PostCard({ post, onClick }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card 
+      <Card
         className="mb-6 bg-gradient-to-br from-white to-green-50 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden border-none cursor-pointer"
         onClick={onClick}
       >
@@ -263,11 +292,15 @@ function PostCard({ post, onClick }) {
               </Avatar>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">{post.author.name}</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {post.author.name}
+              </p>
               <div className="flex items-center text-xs text-gray-500">
                 <span>{post.author.channel}</span>
                 <span className="mx-1">•</span>
-                <span>{formatDistanceToNow(post.timestamp, { addSuffix: true })}</span>
+                <span>
+                  {formatDistanceToNow(post.timestamp, { addSuffix: true })}
+                </span>
               </div>
             </div>
           </div>
@@ -276,7 +309,9 @@ function PostCard({ post, onClick }) {
               variant="ghost"
               size="icon"
               className={`rounded-full transition-colors duration-200 ${
-                isSaved ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'
+                isSaved
+                  ? "text-green-600 hover:text-green-700"
+                  : "text-gray-400 hover:text-gray-600"
               }`}
               onClick={toggleSave}
             >
@@ -290,7 +325,7 @@ function PostCard({ post, onClick }) {
                   <MoreHorizontal className="h-5 w-5 text-gray-500" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40"> 
+              <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem>Unfollow User</DropdownMenuItem>
                 <DropdownMenuItem>Block user</DropdownMenuItem>
                 <DropdownMenuItem>Report</DropdownMenuItem>
@@ -299,7 +334,7 @@ function PostCard({ post, onClick }) {
           </div>
         </CardHeader>
         <CardContent className="pt-3">
-          <p className={`text-gray-700 ${!isExpanded ? 'line-clamp-3' : ''}`}>
+          <p className={`text-gray-700 ${!isExpanded ? "line-clamp-3" : ""}`}>
             {post.content}
           </p>
           {post.content.length > 150 && (
@@ -307,11 +342,11 @@ function PostCard({ post, onClick }) {
               variant="link"
               className="p-0 h-auto text-green-600 hover:text-green-700"
               onClick={(e) => {
-                e.stopPropagation()
-                setIsExpanded(!isExpanded)
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
               }}
             >
-              {isExpanded ? 'See less' : 'See more'}
+              {isExpanded ? "See less" : "See more"}
             </Button>
           )}
         </CardContent>
@@ -321,7 +356,9 @@ function PostCard({ post, onClick }) {
               variant="ghost"
               size="sm"
               className={`rounded-full transition-colors duration-200 ${
-                isLiked ? 'text-green-600 hover:text-green-700' : 'text-gray-600 hover:text-gray-800'
+                isLiked
+                  ? "text-green-600 hover:text-green-700"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
               onClick={toggleLike}
             >
@@ -350,8 +387,8 @@ function PostCard({ post, onClick }) {
               className="flex-grow bg-white border border-gray-200 text-sm rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
               onClick={(e) => e.stopPropagation()}
             />
-            <Button 
-              size="icon" 
+            <Button
+              size="icon"
               className="rounded-full bg-green-600 hover:bg-green-700 text-white"
               onClick={(e) => e.stopPropagation()}
             >
@@ -362,7 +399,7 @@ function PostCard({ post, onClick }) {
         </CardFooter>
       </Card>
     </motion.div>
-  )
+  );
 }
 
 function Comment({ comment }) {
@@ -378,18 +415,28 @@ function Comment({ comment }) {
           <p className="text-sm text-gray-700">{comment.content}</p>
         </div>
         <div className="flex items-center mt-2 text-xs text-gray-500">
-          <span>{formatDistanceToNow(comment.timestamp, { addSuffix: true })}</span>
-          <Button variant="ghost" size="sm" className="ml-2 text-gray-500 hover:text-green-600">
+          <span>
+            {formatDistanceToNow(comment.timestamp, { addSuffix: true })}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-2 text-gray-500 hover:text-green-600"
+          >
             <ThumbsUp className="h-3 w-3 mr-1" />
             {comment.likes}
           </Button>
-          <Button variant="ghost" size="sm" className="ml-2 text-gray-500 hover:text-green-600">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-2 text-gray-500 hover:text-green-600"
+          >
             Reply
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function FullPostModal({ post, isOpen, onClose }) {
@@ -409,7 +456,12 @@ function FullPostModal({ post, isOpen, onClose }) {
               <p className="text-xs text-gray-500">{post.author.channel}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-gray-200">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-full hover:bg-gray-200"
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -418,16 +470,28 @@ function FullPostModal({ post, isOpen, onClose }) {
             <p className="text-gray-700 mb-4 text-lg">{post.content}</p>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-green-600"
+                >
                   <Heart className="mr-1 h-4 w-4" />
                   <span>{post.likes}</span>
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-green-600"
+                >
                   <MessageCircle className="mr-1 h-4 w-4" />
                   <span>{post.comments.length}</span>
                 </Button>
               </div>
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-600 hover:text-green-600"
+              >
                 <Share2 className="h-4 w-4" />
                 <span className="ml-1">Share</span>
               </Button>
@@ -448,7 +512,10 @@ function FullPostModal({ post, isOpen, onClose }) {
               placeholder="Add a comment..."
               className="flex-grow bg-gray-100 border-none text-sm rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
-            <Button size="icon" className="rounded-full bg-green-600 hover:bg-green-700 text-white">
+            <Button
+              size="icon"
+              className="rounded-full bg-green-600 hover:bg-green-700 text-white"
+            >
               <Send className="h-4 w-4" />
               <span className="sr-only">Send comment</span>
             </Button>
@@ -456,18 +523,18 @@ function FullPostModal({ post, isOpen, onClose }) {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 function Feed() {
-  const [selectedPost, setSelectedPost] = useState(null)
+  const [selectedPost, setSelectedPost] = useState(null);
 
   return (
     <div className="px-4 py-8">
       {posts.map((post) => (
-        <PostCard 
-          key={post.id} 
-          post={post} 
+        <PostCard
+          key={post.id}
+          post={post}
           onClick={() => setSelectedPost(post)}
         />
       ))}
@@ -481,7 +548,7 @@ function Feed() {
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
-export default Feed
+export default Feed;

@@ -20,24 +20,24 @@ import { Separator } from "../ui/Separator";
 import CreateChannelModal from "../ui/CreateChannelModal";
 
 const channels = [
-  { name: 'Web Development', icon: '💻' },
-  { name: 'Data Science', icon: '📊' },
-  { name: 'Machine Learning', icon: '🤖' },
-  { name: 'UI/UX Design', icon: '🎨' },
-  { name: 'Mobile Development', icon: '📱' },
-  { name: 'DevOps', icon: '🛠️' },
-]
+  { name: "Web Development", icon: "💻" },
+  { name: "Data Science", icon: "📊" },
+  { name: "Machine Learning", icon: "🤖" },
+  { name: "UI/UX Design", icon: "🎨" },
+  { name: "Mobile Development", icon: "📱" },
+  { name: "DevOps", icon: "🛠️" },
+];
 
 const savedPosts = [
-  { name: 'How to train ML model' },
-  { name: 'What is the correct way to solve Q4?' },
-  { name: 'Understanding UI/UX Principles' },
-]
+  { name: "How to train ML model" },
+  { name: "What is the correct way to solve Q4?" },
+  { name: "Understanding UI/UX Principles" },
+];
 
 function Sidebar() {
   const [activeItem, setActiveItem] = useState("Home");
   const [isChannelsOpen, setIsChannelsOpen] = useState(true);
-  const [isSavedPostsOpen, setIsSavedPostsOpen] = useState(false)
+  const [isSavedPostsOpen, setIsSavedPostsOpen] = useState(false);
   const contentRef = useRef(null);
   const [contentHeight, setContentHeight] = useState("auto");
 
@@ -53,9 +53,10 @@ function Sidebar() {
       <div className="flex-1 flex flex-col min-h-0">
         <nav className="flex-1 px-4 py-6 overflow-y-auto">
           <ul className="space-y-1">
-            {[ { name: "Home", icon: Home },
-            { name: 'Explore', icon: TrendingUp},
-            { name: 'Friends', icon: Users },
+            {[
+              { name: "Home", icon: Home },
+              { name: "Explore", icon: TrendingUp },
+              { name: "Friends", icon: Users },
             ].map((item) => (
               <li key={item.name}>
                 <Button
@@ -79,11 +80,22 @@ function Sidebar() {
           <div className="mt-6">
             <Separator className="my-4" />
             <div className="flex flex-col">
-              <Collapsible open={isSavedPostsOpen} onOpenChange={setIsSavedPostsOpen}>
+              <Collapsible
+                open={isSavedPostsOpen}
+                onOpenChange={setIsSavedPostsOpen}
+              >
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between px-4 h-10 text-gray-700 hover:bg-gray-100 font-medium">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between px-4 h-10 text-gray-700 hover:bg-gray-100 font-medium"
+                  >
                     <span className="text-sm">Saved Posts</span>
-                    <ChevronDown className={cn("h-5 w-5 text-gray-500 transition-transform", isSavedPostsOpen ? "rotate-180" : "rotate-0")} />
+                    <ChevronDown
+                      className={cn(
+                        "h-5 w-5 text-gray-500 transition-transform",
+                        isSavedPostsOpen ? "rotate-180" : "rotate-0",
+                      )}
+                    />
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -97,7 +109,7 @@ function Sidebar() {
                           style={{
                             opacity: isSavedPostsOpen ? 1 : 0,
                             transform: `translateY(${isSavedPostsOpen ? 0 : -10}px)`,
-                            transitionDelay: `${index * 30}ms`
+                            transitionDelay: `${index * 30}ms`,
                           }}
                         >
                           <span className="text-sm">{post.name}</span>
@@ -114,7 +126,10 @@ function Sidebar() {
           <div className="mt-6">
             <Separator className="my-4" />
             <div className="flex flex-col">
-              <Collapsible open={isChannelsOpen} onOpenChange={setIsChannelsOpen}>
+              <Collapsible
+                open={isChannelsOpen}
+                onOpenChange={setIsChannelsOpen}
+              >
                 <CollapsibleTrigger asChild>
                   <Button
                     variant="ghost"
