@@ -26,12 +26,14 @@ const tags = [
 const steps = [
   { title: "Basics", description: "Enter channel name and description" },
   { title: "Category", description: "Select a category and add tags" },
+  { title: "Category", description: "Select a category and add tags" },
   { title: "Images", description: "Upload profile icon and banner" },
 ];
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
+
 
 const FileUpload = ({ id, label, file, onFileChange, accept = "image/*" }) => {
   const handleChange = (e) => {
@@ -66,9 +68,7 @@ const FileUpload = ({ id, label, file, onFileChange, accept = "image/*" }) => {
           <div
             className={cn(
               "bg-gray-200 flex items-center justify-center overflow-hidden",
-              id === "profileIcon"
-                ? "w-12 h-12 rounded-full"
-                : "w-24 h-12 rounded",
+              id === "profileIcon" ? "w-12 h-12 rounded-full" : "w-24 h-12 rounded"
             )}
           >
             <img
@@ -101,6 +101,8 @@ function CreateChannelModal() {
   const [currentTag, setCurrentTag] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+
   const addTag = () => {
     if (currentTag && !newForum.tags.includes(currentTag)) {
       setNewForum((prev) => ({
@@ -111,12 +113,14 @@ function CreateChannelModal() {
     }
   };
 
+
   const handleTagRemove = (index) => {
     setNewForum((prev) => ({
       ...prev,
       tags: prev.tags.filter((_, i) => i !== index), // Correctly filter tags
     }));
   };
+
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -193,14 +197,10 @@ function CreateChannelModal() {
                 <div
                   className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-2",
-                    index <= currentStep ? "bg-green-600" : "bg-gray-300",
+                    index <= currentStep ? "bg-green-600" : "bg-gray-300"
                   )}
                 >
-                  {index < currentStep ? (
-                    <Check className="w-6 h-6" />
-                  ) : (
-                    index + 1
-                  )}
+                  {index < currentStep ? <Check className="w-6 h-6" /> : index + 1}
                 </div>
                 <div className="text-xs text-center">
                   <p className="font-semibold">{step.title}</p>
@@ -223,8 +223,8 @@ function CreateChannelModal() {
                 <Label htmlFor="channelName">Channel Name</Label>
                 <Input
                   id="channelName"
-                  value={channelName}
-                  onChange={(e) => setChannelName(e.target.value)}
+                  value={newForum.title}
+                  onChange={(e) => setNewForum(prev => ({...prev, title: e.target.value}))}
                   placeholder="Enter channel name"
                   required
                   minLength={3}
@@ -237,13 +237,14 @@ function CreateChannelModal() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={newForum.description}
+                  onChange={(e) => setNewForum(prev => ({...prev, description: e.target.value}))}
                   placeholder="Brief description of the channel"
                   required
                   maxLength={200}
                   className="border-green-300 focus:border-green-500 focus:ring-green-500"
                 />
+              </div>
               </div>
             </>
           )}

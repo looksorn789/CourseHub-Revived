@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
-import Dashboard from "./pages/Dashboard";
 import StudentProfile from "./components/StudentProfile/StudentProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -20,13 +19,13 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route
           path="/dashboard"
-          element={
-            <PrivateRoute>
+         element={
+           <PrivateRoute>
               <Dashboard />
-            </PrivateRoute>
+           </PrivateRoute>
           }
         />
-
+         
         <Route
           path="/student-profile"
           element={
