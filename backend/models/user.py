@@ -225,9 +225,9 @@ class UserModel:
     def create_initial_profile(self, supabase_id, profile_data):
         """Create the initial profile for a new user"""
         try:
-            missing_fields = self.validate_profile_data(profile_data)
-            if missing_fields:
-                return None, f"Missing required fields: {', '.join(missing_fields)}"
+            is_valid, errors = self.validate_profile_data(profile_data)
+            if not is_valid:
+                return None, f"Validation errors: {', '.join(errors)}"
 
             avatar_config = {
                 "style": profile_data.get("avatarStyle", "adventurer"),
