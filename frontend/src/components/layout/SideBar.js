@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Home,
   TrendingUp,
   Users,
   Bookmark,
-  PlusCircle,
   Settings,
   HelpCircle,
   ChevronDown,
@@ -39,6 +39,7 @@ function Sidebar() {
   const [isChannelsOpen, setIsChannelsOpen] = useState(true);
   const contentRef = useRef(null);
   const [contentHeight, setContentHeight] = useState("auto");
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (contentRef.current) {
@@ -46,6 +47,13 @@ function Sidebar() {
       setContentHeight(isChannelsOpen ? `${height}px` : "0px");
     }
   }, [isChannelsOpen]);
+
+  const handleNavigation = (itemName) => {
+    setActiveItem(itemName);
+    if (itemName === "Home") {
+      navigate("/home");
+    }
+  };
 
   return (
     <div className="w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 flex flex-col">
@@ -65,9 +73,9 @@ function Sidebar() {
                     "w-full justify-start",
                     activeItem === item.name
                       ? "bg-green-100 text-green-800"
-                      : "text-gray-700 hover:bg-gray-100",
+                      : "text-gray-700 hover:bg-gray-100"
                   )}
-                  onClick={() => setActiveItem(item.name)}
+                  onClick={() => handleNavigation(item.name)}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.name}
@@ -93,7 +101,7 @@ function Sidebar() {
                     <ChevronDown
                       className={cn(
                         "h-5 w-5 text-gray-500 transition-transform duration-300 ease-in-out",
-                        isChannelsOpen ? "rotate-180" : "rotate-0",
+                        isChannelsOpen ? "rotate-180" : "rotate-0"
                       )}
                     />
                   </Button>
@@ -140,7 +148,7 @@ function Sidebar() {
         <div
           className={cn(
             "px-4 py-4 transition-all duration-300 ease-in-out",
-            isChannelsOpen ? "translate-y-0" : "translate-y-0",
+            isChannelsOpen ? "translate-y-0" : "translate-y-0"
           )}
         >
           <Separator className="my-4" />

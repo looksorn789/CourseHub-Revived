@@ -84,7 +84,7 @@ function StudentProfile() {
       }
 
       console.log("Profile created successfully:", data);
-      navigate("/dashboard");
+      navigate("/home");
     } catch (err) {
       console.error("Profile creation failed:", err);
       setError(err.message || "Something went wrong. Please try again.");

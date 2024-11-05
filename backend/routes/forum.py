@@ -7,6 +7,7 @@ from models.user import UserModel
 from typing import Optional, Dict, Tuple
 import bleach
 from bson import ObjectId
+from bson.errors import InvalidId
 
 forum_bp = Blueprint("forum_bp", __name__)
 
@@ -281,26 +282,31 @@ def create_forum():
         return jsonify({"success": False, "errors": [str(e)]}), 500
 
 
-@forum_bp.route("/<forum_id>", methods=["GET"])
-def get_forum(forum_id):
-    """Get forum details"""
+@forum_bp.route("/<forum_identifier>", methods=["GET"])
+def get_forum(forum_identifier):
+    """Get forum details by ID or slug"""
     try:
         forum_model = Forum(current_app.db, current_app.supabase)
-        forum = forum_model.find_by_id(forum_id)
+
+        try:
+            forum = forum_model.find_by_id(forum_identifier)
+        except (InvalidId, Exception):
+            forum = None
+
+        if not forum:
+            forum = forum_model.find_by_slug(forum_identifier)
 
         if not forum:
             return jsonify({"error": "Forum not found"}), 404
 
         # Increment view count
         forum_model.collection.update_one(
-            {"_id": ObjectId(forum_id)}, {"$inc": {"metadata.views": 1}}
+            {"_id": forum["_id"]}, {"$inc": {"metadata.views": 1}}
         )
-
-        # Clean response data
         forum["_id"] = str(forum["_id"])
 
         # Include member count and stats
-        stats = forum_model.get_forum_stats(forum_id)
+        stats = forum_model.get_forum_stats(str(forum["_id"]))
         if stats:
             forum["stats"] = stats
 
@@ -309,6 +315,7 @@ def get_forum(forum_id):
     except Exception as e:
         current_app.logger.error(f"Error getting forum: {str(e)}")
         return jsonify({"error": "Error retrieving forum"}), 500
+
 
 
 @forum_bp.route("/<forum_id>", methods=["PATCH"])

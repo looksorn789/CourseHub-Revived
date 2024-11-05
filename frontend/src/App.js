@@ -3,11 +3,13 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
-import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
 import StudentProfile from "./components/StudentProfile/StudentProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
+import ChannelPage from './pages/ChannelPage';
+
 
 function App() {
   return (
@@ -19,10 +21,10 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route
-          path="/dashboard"
+          path="/home"
           element={
             <PrivateRoute>
-              <Dashboard />
+              <Home />
             </PrivateRoute>
           }
         />
@@ -31,6 +33,14 @@ function App() {
           element={
             <PrivateRoute>
               <StudentProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/channel/:slug"
+          element={
+            <PrivateRoute>
+              <ChannelPage />
             </PrivateRoute>
           }
         />

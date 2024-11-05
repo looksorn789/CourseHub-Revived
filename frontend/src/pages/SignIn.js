@@ -52,7 +52,7 @@ function SignIn() {
         }),
       );
 
-      navigate("/dashboard");
+      navigate("/home");
     } catch (err) {
       console.error("Error during sign-in:", err);
       setError(err.message || "Signin failed");
