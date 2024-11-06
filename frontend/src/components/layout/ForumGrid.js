@@ -81,11 +81,11 @@ function ForumGrid() {
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
       {forums.map((forum) => (
-        <Card key={forum._id} className="w-full h-auto max-w-[500px] p-4"> {/* Set max width and allow height to grow */}
+        <Card key={forum._id} className="w-full h-full max-w-[500px] p-4 flex flex-col justify-between"> {/* Flex container */}
           <CardHeader>
             <div className="w-full h-40 bg-gray-300"></div>
           </CardHeader>
-          <CardContent className="flex flex-col">
+          <CardContent className="flex flex-col flex-grow">
             <CardTitle className="text-lg font-bold">{forum.name}</CardTitle>
             <CardDescription>
               <div 
@@ -104,8 +104,9 @@ function ForumGrid() {
               ))}
             </div>
             <div className="text-sm text-gray-500 mb-4">Members: {forum.member_count}</div>
+            {/* Join Button */}
             <Button 
-              className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white py-2" 
+              className="mt-auto w-full bg-green-500 hover:bg-green-600 text-white py-2" 
               variant="primary"
               onClick={() => {
                 if (joinedForums.has(forum._id)) {
