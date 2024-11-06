@@ -450,7 +450,12 @@ class Forum:
 
     def find_by_slug(self, slug: str) -> Optional[Dict]:
         """Find forum by slug"""
-        return self.collection.find_one({"slug": slug})
+        try:
+            forum = self.collection.find_one({"slug": slug})
+            return forum
+        except Exception as e:
+            current_app.logger.error(f"Error finding forum by slug: {str(e)}")
+            return None
 
     def get_forum_stats(self, forum_id: str) -> Optional[Dict]:
         """Get forum statistics"""

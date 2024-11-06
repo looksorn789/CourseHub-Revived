@@ -5,7 +5,6 @@ import {
   TrendingUp,
   Users,
   Bookmark,
-  PlusCircle,
   Settings,
   HelpCircle,
   ChevronDown,
@@ -50,6 +49,13 @@ function Sidebar() {
     }
   }, [isChannelsOpen]);
 
+  const handleNavigation = (itemName) => {
+    setActiveItem(itemName);
+    if (itemName === "Home") {
+      navigate("/home");
+    }
+  };
+
   return (
     <div className="w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 flex flex-col">
       <div className="flex-1 flex flex-col min-h-0">
@@ -67,7 +73,7 @@ function Sidebar() {
                     "w-full justify-start",
                     activeItem === item.name
                       ? "bg-green-100 text-green-800"
-                      : "text-gray-700 hover:bg-gray-100",
+                      : "text-gray-700 hover:bg-gray-100"
                   )}
                   onClick={() => {
                     setActiveItem(item.name);
@@ -75,7 +81,7 @@ function Sidebar() {
                       navigate("/explore");
                     }
                     else if(item.name === "Home"){
-                      navigate("/dashboard")
+                      navigate("/home")
                     }
                   }}
                 >
@@ -149,7 +155,7 @@ function Sidebar() {
                     <ChevronDown
                       className={cn(
                         "h-5 w-5 text-gray-500 transition-transform duration-300 ease-in-out",
-                        isChannelsOpen ? "rotate-180" : "rotate-0",
+                        isChannelsOpen ? "rotate-180" : "rotate-0"
                       )}
                     />
                   </Button>
@@ -196,7 +202,7 @@ function Sidebar() {
         <div
           className={cn(
             "px-4 py-4 transition-all duration-300 ease-in-out",
-            isChannelsOpen ? "translate-y-0" : "translate-y-0",
+            isChannelsOpen ? "translate-y-0" : "translate-y-0"
           )}
         >
           <Separator className="my-4" />
