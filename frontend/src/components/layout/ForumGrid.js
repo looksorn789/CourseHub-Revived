@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getAllForums, joinForum, leaveForum } from "../../services/forumServices"; // Import leaveForum
+import { forumService } from "../../services/forumServices";
 import Button from "../ui/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/Card"; // Import card components
 
@@ -15,7 +15,7 @@ function ForumGrid() {
 
   useEffect(() => {
     const fetchForums = async () => {
-      const { data, error } = await getAllForums();
+      const { data, error } = await forumService.getAllForums();
       if (error) {
         setError(error);
       } else {
@@ -28,7 +28,7 @@ function ForumGrid() {
   }, []);
 
   const handleJoinForum = async (forumId, forumName) => {
-    const { data, error } = await joinForum(forumId);
+    const { data, error } = await forumService.joinForum(forumId);
     if (error) {
       setJoinError(error);
       console.error("Join forum error:", error);
@@ -40,7 +40,7 @@ function ForumGrid() {
   };
 
   const handleLeaveForum = async (forumId, forumName) => {
-    const { data, error } = await leaveForum(forumId);
+    const { data, error } = await forumService.leaveForum(forumId);
     if (error) {
       console.error("Leave forum error:", error);
     } else {

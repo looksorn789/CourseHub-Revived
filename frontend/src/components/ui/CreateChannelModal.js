@@ -6,7 +6,7 @@ import { Dialog, DialogContent } from "../ui/Dialog";
 import Input from "../ui/Input";
 import Label from "../ui/Label";
 import Textarea from "../ui/Textarea";
-import { createForum } from "../../services/forumServices";
+import { forumService } from "../../services/forumServices";
 import {
   Select,
   SelectContent,
@@ -106,7 +106,7 @@ function CreateChannelModal() {
   const handleTagRemove = (index) => {
     setNewForum((prev) => ({
       ...prev,
-      tags: prev.tags.filter((_, i) => i !== index), // Correctly filter tags
+      tags: prev.tags.filter((_, i) => i !== index), 
     }));
   };
 
@@ -141,7 +141,7 @@ function CreateChannelModal() {
       if (bannerCover) forumData.append("banner_cover", bannerCover);
 
       try {
-        await createForum(forumData);
+        await forumService.createForum(forumData);
         setNewForum({ title: "", description: "", category: "", tags: [] });
         setCurrentTag("");
         setProfileIcon(null);

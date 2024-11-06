@@ -4,7 +4,7 @@ import Button from "../ui/Button";
 import { Card } from "../ui/Card";
 import Badge from "../ui/Badge";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar";
-import { getAllForums } from "../../services/forumServices"; // Import the getAllForums function
+import { forumService } from "../../services/forumServices";
 
 const channelSuggestions = [
   {
@@ -34,7 +34,7 @@ function RightSidebar() {
 
   useEffect(() => {
     const fetchForums = async () => {
-      const { data, error } = await getAllForums();
+      const { data, error } = await forumService.getAllForums();
       if (error) {
         console.error("Error fetching forums:", error);
         return;
