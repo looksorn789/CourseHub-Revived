@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { forumService } from "../../services/forumServices";
+import { forumService } from "../../services/forumService";
 import Button from "../ui/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/Card"; // Import card components
 

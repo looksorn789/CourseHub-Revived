@@ -9,7 +9,7 @@ import { Post } from '../posts/Post';
 import { CreatePostModal } from '../posts/CreatePostModal';
 import { FullPostModal } from '../posts/FullPostModal';
 import { ChannelSidebar } from './ChannelSidebar';
-import { forumService } from '../../services/forumServices';
+import { forumService } from '../../services/forumService';
 import { postData } from '../posts/postData';
 
 

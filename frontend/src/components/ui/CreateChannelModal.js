@@ -6,7 +6,7 @@ import { Dialog, DialogContent } from "../ui/Dialog";
 import Input from "../ui/Input";
 import Label from "../ui/Label";
 import Textarea from "../ui/Textarea";
-import { forumService } from "../../services/forumServices";
+import { forumService } from "../../services/forumService";
 import {
   Select,
   SelectContent,

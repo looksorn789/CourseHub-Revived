@@ -4,7 +4,7 @@ import Button from "../ui/Button";
 import { Card } from "../ui/Card";
 import Badge from "../ui/Badge";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar";
-import { forumService } from "../../services/forumServices";
+import { forumService } from "../../services/forumService";
 
 const channelSuggestions = [
   {
