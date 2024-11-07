@@ -23,7 +23,6 @@ const isTokenValid = (token) => {
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("jwt_token");
-    console.log("session token" + token);
     // If token exists and is valid, we add it to headers
     if (token && isTokenValid(token)) {
       config.headers.Authorization = `Bearer ${token}`;

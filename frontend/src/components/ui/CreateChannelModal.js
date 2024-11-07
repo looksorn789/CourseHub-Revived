@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { PlusCircle, Check, Upload } from "lucide-react";
-import axios from "axios";
 import Button from "../ui/Button";
 import { Dialog, DialogContent } from "../ui/Dialog";
 import Input from "../ui/Input";
 import Label from "../ui/Label";
 import Textarea from "../ui/Textarea";
 import { forumService } from "../../services/forumService";
+import CustomLoader from "../ui/CustomLoader";
 import {
   Select,
   SelectContent,
@@ -16,9 +16,13 @@ import {
 } from "../ui/Select";
 
 const tags = [
-  "study_group",
-  "general", 
-  "career", "project", "exam_prep", "homework_help", "q_and_a"
+  "Study Group",
+  "General",
+  "Career",
+  "Project",
+  "Exam Prep",
+  "Homework Help",
+  "Q & A",
 ];
 const steps = [
   { title: "Basics", description: "Enter channel name and description" },
@@ -63,7 +67,9 @@ const FileUpload = ({ id, label, file, onFileChange, accept = "image/*" }) => {
           <div
             className={cn(
               "bg-gray-200 flex items-center justify-center overflow-hidden",
-              id === "profileIcon" ? "w-12 h-12 rounded-full" : "w-24 h-12 rounded"
+              id === "profileIcon"
+                ? "w-12 h-12 rounded-full"
+                : "w-24 h-12 rounded",
             )}
           >
             <img
@@ -106,7 +112,7 @@ function CreateChannelModal() {
   const handleTagRemove = (index) => {
     setNewForum((prev) => ({
       ...prev,
-      tags: prev.tags.filter((_, i) => i !== index), 
+      tags: prev.tags.filter((_, i) => i !== index),
     }));
   };
 
@@ -181,10 +187,14 @@ function CreateChannelModal() {
                 <div
                   className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-2",
-                    index <= currentStep ? "bg-green-600" : "bg-gray-300"
+                    index <= currentStep ? "bg-green-600" : "bg-gray-300",
                   )}
                 >
-                  {index < currentStep ? <Check className="w-6 h-6" /> : index + 1}
+                  {index < currentStep ? (
+                    <Check className="w-6 h-6" />
+                  ) : (
+                    index + 1
+                  )}
                 </div>
                 <div className="text-xs text-center">
                   <p className="font-semibold">{step.title}</p>
@@ -208,7 +218,9 @@ function CreateChannelModal() {
                 <Input
                   id="channelName"
                   value={newForum.title}
-                  onChange={(e) => setNewForum(prev => ({...prev, title: e.target.value}))}
+                  onChange={(e) =>
+                    setNewForum((prev) => ({ ...prev, title: e.target.value }))
+                  }
                   placeholder="Enter channel name"
                   required
                   minLength={3}
@@ -222,7 +234,12 @@ function CreateChannelModal() {
                 <Textarea
                   id="description"
                   value={newForum.description}
-                  onChange={(e) => setNewForum(prev => ({...prev, description: e.target.value}))}
+                  onChange={(e) =>
+                    setNewForum((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Brief description of the channel"
                   required
                   maxLength={200}
@@ -235,7 +252,11 @@ function CreateChannelModal() {
             <>
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select onValueChange={(value) => setNewForum(prev => ({...prev, category: value}))}>
+                <Select
+                  onValueChange={(value) =>
+                    setNewForum((prev) => ({ ...prev, category: value }))
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
@@ -255,13 +276,8 @@ function CreateChannelModal() {
                     id="tagInput"
                     value={currentTag}
                     onChange={(e) => setCurrentTag(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault(); // Prevent form submission
-                        addTag();
-                      }
-                    }}
-                    placeholder="Press Enter to add tag"
+                    placeholder="Add tag"
+                    maxLength={15}
                     className="border-green-300 focus:border-green-500 focus:ring-green-500"
                   />
                   <Button
@@ -272,21 +288,21 @@ function CreateChannelModal() {
                     Add Tag
                   </Button>
                 </div>
-                <div className="flex flex-wrap mt-2">
+                <div className="flex flex-wrap gap-2 mt-2">
                   {newForum.tags.map((tag, index) => (
-                    <div
-                      key={tag}
-                      className="bg-green-100 text-green-800 rounded-full py-1 px-3 mr-2 mb-2 flex items-center justify-between"
+                    <span
+                      key={index}
+                      className="bg-green-600 text-white rounded-full px-3 py-1 text-sm flex items-center"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => handleTagRemove(index)}
-                        className="ml-2 text-red-600 hover:text-red-800"
+                        className="ml-2 text-white hover:text-gray-300"
                       >
                         &times;
                       </button>
-                    </div>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -308,22 +324,26 @@ function CreateChannelModal() {
               />
             </>
           )}
-          <div className="flex justify-between mt-4">
+          <div className="flex justify-between mt-6">
             {currentStep > 0 && (
               <Button
                 type="button"
                 onClick={handlePrevious}
-                className="bg-gray-300 text-gray-800 hover:bg-gray-400"
-              >
-                Previous
-              </Button>
+                className="bg-white text-green-600 border-green-600 hover:bg-green-50"
+              ></Button>
             )}
             <Button
               type="submit"
               className="bg-green-600 text-white hover:bg-green-700"
               disabled={loading}
             >
-              {loading ? "Creating..." : currentStep < steps.length - 1 ? "Next" : "Create"}
+              {loading ? (
+                <CustomLoader />
+              ) : currentStep < steps.length - 1 ? (
+                "Next"
+              ) : (
+                "Create"
+              )}
             </Button>
           </div>
         </form>

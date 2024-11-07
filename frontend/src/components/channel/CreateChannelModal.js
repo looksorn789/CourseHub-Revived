@@ -4,11 +4,16 @@ import Button from "./Button";
 import Input from "./Input";
 import Label from "./Label";
 import Textarea from "./Textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./Select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./Select";
 import { Dialog, DialogContent } from "./Dialog";
 import { FileUpload } from "./FileUpload";
 import { CHANNEL_TAGS, CREATION_STEPS } from "./constants";
-
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -174,7 +179,9 @@ export function CreateChannelModal() {
           <div className="mt-4 h-2 bg-gray-200 rounded-full">
             <div
               className="h-full bg-green-600 rounded-full transition-all duration-300 ease-in-out"
-              style={{ width: `${((currentStep + 1) / CREATION_STEPS.length) * 100}%` }}
+              style={{
+                width: `${((currentStep + 1) / CREATION_STEPS.length) * 100}%`,
+              }}
             />
           </div>
         </div>
@@ -194,7 +201,9 @@ export function CreateChannelModal() {
               type="submit"
               className="bg-green-600 hover:bg-green-700 text-white ml-auto"
             >
-              {currentStep < CREATION_STEPS.length - 1 ? "Next" : "Create Channel"}
+              {currentStep < CREATION_STEPS.length - 1
+                ? "Next"
+                : "Create Channel"}
             </Button>
           </div>
         </form>

@@ -1,12 +1,18 @@
 import { Button } from "./Button";
-import  Label  from "./Label";
+import Label from "./Label";
 import { Upload } from "lucide-react";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function FileUpload({ id, label, file, onFileChange, accept = "image/*" }) {
+export function FileUpload({
+  id,
+  label,
+  file,
+  onFileChange,
+  accept = "image/*",
+}) {
   const handleChange = (e) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
