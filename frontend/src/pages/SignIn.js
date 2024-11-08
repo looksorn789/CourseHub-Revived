@@ -19,7 +19,6 @@ function SignIn() {
 
   const { email, password } = formData;
 
-  // Handle input change
   const handleChange = (e) => {
     setFormData((prevState) => ({
       ...prevState,
@@ -27,7 +26,6 @@ function SignIn() {
     }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -36,11 +34,10 @@ function SignIn() {
 
       if (!data || !data.jwt_token) {
         setError("Failed to sign in: Invalid response from server");
-        setIsLoading(false);
         return;
       }
 
-      // Save the JWT token and user info
+      // Store user data
       localStorage.setItem("jwt_token", data.jwt_token);
       localStorage.setItem(
         "user",
@@ -50,11 +47,12 @@ function SignIn() {
           email: data.email,
           first_name: data.first_name,
           last_name: data.last_name,
+          profile_completed: data.profile_completed,
+          avatar: data.avatar,
         }),
       );
 
-      // Redirect to feed
-      navigate("/feed");
+      navigate("/dashboard");
     } catch (err) {
       console.error("Error during sign-in:", err);
       setError(err.message || "Signin failed");

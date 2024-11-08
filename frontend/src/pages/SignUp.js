@@ -5,6 +5,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Label from "../components/ui/Label";
 import CustomLoader from "../components/ui/CustomLoader";
+import zxcvbn from "zxcvbn";
 import {
   BookOpen,
   User,
@@ -20,6 +21,7 @@ function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState(1);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   // State variables for form inputs
   const [username, setUsername] = useState("");
@@ -28,6 +30,7 @@ function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState(Array(6).fill(""));
   const verificationInputRefs = useRef([]);
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
   // Error handling
   const [error, setError] = useState("");
@@ -42,6 +45,10 @@ function SignUp() {
       verificationInputRefs.current[0]?.focus();
     }
   }, [step]);
+
+  useEffect(() => {
+    setPasswordStrength(zxcvbn(password).score);
+  }, [password]);
 
   const handleVerificationCodeChange = (index, value) => {
     const newCode = [...verificationCode];
@@ -79,6 +86,12 @@ function SignUp() {
       return;
     }
 
+    if (passwordStrength < 3) {
+      setError("Password is not strong enough");
+      setIsLoading(false);
+      return;
+    }
+
     // User data
     const userData = {
       username,
@@ -109,6 +122,23 @@ function SignUp() {
       setError(err.message || "Verification failed");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getPasswordStrengthClass = () => {
+    switch (passwordStrength) {
+      case 0:
+        return "bg-red-500";
+      case 1:
+        return "bg-orange-500";
+      case 2:
+        return "bg-yellow-500";
+      case 3:
+        return "bg-lime-500";
+      case 4:
+        return "bg-green-500";
+      default:
+        return "bg-gray-200";
     }
   };
 
@@ -201,7 +231,15 @@ function SignUp() {
                     className="block w-full pl-10 pr-10 sm:text-sm border-green-200 rounded-md focus:ring-green-500 focus:border-green-500"
                     placeholder="Create a password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setIsPasswordFocused(true);
+                    }}
+                    onBlur={() => {
+                      if (passwordStrength >= 3) {
+                        setIsPasswordFocused(false);
+                      }
+                    }}
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <button
@@ -217,6 +255,24 @@ function SignUp() {
                     </button>
                   </div>
                 </div>
+                {isPasswordFocused && password.length > 0 && (
+                  <div className="mt-2">
+                    <div className="bg-gray-200 h-1 rounded-full">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${getPasswordStrengthClass()}`}
+                        style={{ width: `${(passwordStrength + 1) * 20}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Password strength:{" "}
+                      {
+                        ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"][
+                          passwordStrength
+                        ]
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="space-y-1">
                 <Label

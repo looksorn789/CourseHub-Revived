@@ -3,10 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
-import Feed from "./pages/Feed";
-import PostDetails from "./pages/PostDetails";
-import Profile from "./pages/Profile.js";
-import StudentProfilePage from "./pages/StudentProfilePage";
+import Dashboard from "./pages/Dashboard";
+import StudentProfile from "./components/StudentProfile/StudentProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
@@ -20,34 +18,23 @@ function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/student-profile" element={<StudentProfilePage />} />
         <Route
           path="/feed"
           element={
-            //<PrivateRoute>
-              <Feed />
-            //</PrivateRoute>
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
           }
         />
-      <Route
-            path="/postdetails"
-            element={
-              //<PrivateRoute>
-                <PostDetails/>
-              //</PrivateRoute>
-
-            }
-          />
-           <Route
-            path="/profile"
-            element={
-              <PrivateRoute>
-                <Profile/>
-              </PrivateRoute>
-
-            }
-          />
-          </Routes>
+        <Route
+          path="/student-profile"
+          element={
+            <PrivateRoute>
+              <StudentProfile />
+            </PrivateRoute>
+          }
+        />
+      </Routes>
     </Router>
   );
 }
