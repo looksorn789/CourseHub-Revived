@@ -158,7 +158,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost }) {
                 key="post-tags"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 2.3 }}
+                transition={{ delay: 0.3 }}
               >
                 <Label className="block text-sm font-medium text-gray-700 mb-2">Tags</Label>
                 <div className="flex flex-wrap gap-2 mb-2">
