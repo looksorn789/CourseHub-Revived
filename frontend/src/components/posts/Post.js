@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from "date-fns";
 import {
   Heart,
@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/DropdownMenu";
 
+
 export function Post({ post, onClick, showChannelHash = true }) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -33,23 +34,22 @@ export function Post({ post, onClick, showChannelHash = true }) {
   const getChannelSlug = (channelName) => {
     return channelName
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
   };
 
   const handleChannelClick = (e) => {
     e.stopPropagation();
-    const channelSlug =
-      post.author.slug ||
-      post.author.channelSlug ||
-      getChannelSlug(post.author.channel);
+    const channelSlug = post.author.slug || 
+                       post.author.channelSlug || 
+                       getChannelSlug(post.author.channel);
 
     console.log("Channel data:", {
       authorSlug: post.author.slug,
       channelSlug: post.author.channelSlug,
       channelName: post.author.channel,
       generatedSlug: getChannelSlug(post.author.channel),
-      finalSlug: channelSlug,
+      finalSlug: channelSlug
     });
 
     if (channelSlug) {
@@ -76,7 +76,7 @@ export function Post({ post, onClick, showChannelHash = true }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card
+      <Card 
         className="mb-6 bg-gradient-to-br from-white to-green-50 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden border-none cursor-pointer"
         onClick={onClick}
       >
@@ -89,9 +89,7 @@ export function Post({ post, onClick, showChannelHash = true }) {
               </Avatar>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">
-                {post.author.name}
-              </p>
+              <p className="text-sm font-semibold text-gray-900">{post.author.name}</p>
               <div className="flex items-center text-xs text-gray-500">
                 {showChannelHash && <Hash className="h-3 w-3 mr-1" />}
                 <button
@@ -101,9 +99,7 @@ export function Post({ post, onClick, showChannelHash = true }) {
                   {post.author.channel}
                 </button>
                 <span className="mx-1">•</span>
-                <span>
-                  {formatDistanceToNow(post.timestamp, { addSuffix: true })}
-                </span>
+                <span>{formatDistanceToNow(post.timestamp, { addSuffix: true })}</span>
               </div>
             </div>
           </div>
@@ -112,9 +108,7 @@ export function Post({ post, onClick, showChannelHash = true }) {
               variant="ghost"
               size="icon"
               className={`rounded-full transition-colors duration-200 ${
-                isSaved
-                  ? "text-green-600 hover:text-green-700"
-                  : "text-gray-400 hover:text-gray-600"
+                isSaved ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'
               }`}
               onClick={toggleSave}
             >
@@ -134,7 +128,7 @@ export function Post({ post, onClick, showChannelHash = true }) {
           </div>
         </CardHeader>
         <CardContent className="pt-3">
-          <p className={`text-gray-700 ${!isExpanded ? "line-clamp-3" : ""}`}>
+          <p className={`text-gray-700 ${!isExpanded ? 'line-clamp-3' : ''}`}>
             {post.content}
           </p>
           {post.content.length > 150 && (
@@ -146,17 +140,13 @@ export function Post({ post, onClick, showChannelHash = true }) {
                 setIsExpanded(!isExpanded);
               }}
             >
-              {isExpanded ? "See less" : "See more"}
+              {isExpanded ? 'See less' : 'See more'}
             </Button>
           )}
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {post.tags.map((tag, index) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs"
-                >
+                <Badge key={index} variant="secondary" className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
                   {tag}
                 </Badge>
               ))}
@@ -169,9 +159,7 @@ export function Post({ post, onClick, showChannelHash = true }) {
               variant="ghost"
               size="sm"
               className={`rounded-full transition-colors duration-200 ${
-                isLiked
-                  ? "text-green-600 hover:text-green-700"
-                  : "text-gray-600 hover:text-gray-800"
+                isLiked ? 'text-green-600 hover:text-green-700' : 'text-gray-600 hover:text-gray-800'
               }`}
               onClick={toggleLike}
             >
@@ -200,8 +188,8 @@ export function Post({ post, onClick, showChannelHash = true }) {
               className="flex-grow bg-white border border-gray-200 text-sm rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
               onClick={(e) => e.stopPropagation()}
             />
-            <Button
-              size="icon"
+            <Button 
+              size="icon" 
               className="rounded-full bg-green-600 hover:bg-green-700 text-white"
               onClick={(e) => e.stopPropagation()}
             >

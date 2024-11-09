@@ -28,7 +28,7 @@ function App() {
             </PrivateRoute>
           }
         />
-
+         
         <Route
           path="/student-profile"
           element={

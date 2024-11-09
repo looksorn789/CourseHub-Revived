@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
-import { Post } from "../components/posts/Post";
-import { FullPostModal } from "../components/posts/FullPostModal";
-import { postData } from "../components/posts/postData";
+import { useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { Post } from '../components/posts/Post';
+import { FullPostModal } from '../components/posts/FullPostModal';
+import { postData } from '../components/posts/postData';
+
 
 export function Feed() {
   const [selectedPost, setSelectedPost] = useState(null);
-  const [posts] = useState(postData);
+  const [posts] = useState(postData); 
 
   return (
     <div className="px-4 py-8">
@@ -18,7 +19,7 @@ export function Feed() {
           showChannelHash={true}
         />
       ))}
-
+      
       <AnimatePresence>
         {selectedPost && (
           <FullPostModal

@@ -26,13 +26,13 @@ class ForumRole(Enum):
 
 
 class ForumCategory(Enum):
-    STUDY_GROUP = "Study Group"
-    LECTURE_NOTES = "General"
-    CAREER = "Career"
-    PROJECT = "Project"
-    EXAM_PREP = "Exam Prep"
-    HOMEWORK_HELP = "Homework Help"
-    Q_AND_A = "Q & A"
+    STUDY_GROUP = "study_group"
+    LECTURE_NOTES = "general"
+    CAREER = "career"
+    PROJECT = "project"
+    EXAM_PREP = "exam_prep"
+    HOMEWORK_HELP = "homework_help"
+    Q_AND_A = "q_and_a"
 
 
 class Forum:

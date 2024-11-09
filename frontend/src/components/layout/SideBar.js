@@ -73,14 +73,15 @@ function Sidebar() {
                     "w-full justify-start",
                     activeItem === item.name
                       ? "bg-green-100 text-green-800"
-                      : "text-gray-700 hover:bg-gray-100",
+                      : "text-gray-700 hover:bg-gray-100"
                   )}
                   onClick={() => {
                     setActiveItem(item.name);
                     if (item.name === "Explore") {
                       navigate("/explore");
-                    } else if (item.name === "Home") {
-                      navigate("/home");
+                    }
+                    else if(item.name === "Home"){
+                      navigate("/home")
                     }
                   }}
                 >
@@ -154,7 +155,7 @@ function Sidebar() {
                     <ChevronDown
                       className={cn(
                         "h-5 w-5 text-gray-500 transition-transform duration-300 ease-in-out",
-                        isChannelsOpen ? "rotate-180" : "rotate-0",
+                        isChannelsOpen ? "rotate-180" : "rotate-0"
                       )}
                     />
                   </Button>
@@ -201,7 +202,7 @@ function Sidebar() {
         <div
           className={cn(
             "px-4 py-4 transition-all duration-300 ease-in-out",
-            isChannelsOpen ? "translate-y-0" : "translate-y-0",
+            isChannelsOpen ? "translate-y-0" : "translate-y-0"
           )}
         >
           <Separator className="my-4" />
