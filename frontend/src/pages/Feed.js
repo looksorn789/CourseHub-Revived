@@ -10,16 +10,14 @@ export function Feed() {
   const [posts] = useState(postData); 
 
   return (
-    <div className="px-4 py-8">
+    <div className="w-full h-full px-4 py-8">
       {posts.map((post) => (
         <Post
-          key={post.id}
-          post={post}
+          key={post.id} 
+          post={post} 
           onClick={() => setSelectedPost(post)}
-          showChannelHash={true}
         />
       ))}
-      
       <AnimatePresence>
         {selectedPost && (
           <FullPostModal
@@ -30,5 +28,5 @@ export function Feed() {
         )}
       </AnimatePresence>
     </div>
-  );
+  )
 }
