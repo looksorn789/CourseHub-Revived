@@ -3,10 +3,10 @@ import Header from "./Header";
 import Sidebar from "./SideBar";
 import RightSidebar from "./RightSidebar";
 
-export function MainLayout({ 
-  children, 
-  showRightSidebar = true, 
-  maxWidth = "3xl" 
+export function MainLayout({
+  children,
+  showRightSidebar = true,
+  maxWidth = "3xl",
 }) {
   return (
     <div className="min-h-screen">
@@ -19,7 +19,9 @@ export function MainLayout({
         {/* Center*/}
         <main className="flex-1 min-h-[calc(100vh-4rem)]">
           <div className="flex justify-center">
-            <div className={`w-full ${maxWidth === "7xl" ? "max-w-7xl" : "max-w-3xl"}`}>
+            <div
+              className={`w-full ${maxWidth === "7xl" ? "max-w-7xl" : "max-w-3xl"}`}
+            >
               {children}
             </div>
           </div>

@@ -8,8 +8,8 @@ import StudentProfile from "./components/StudentProfile/StudentProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
-import ChannelPage from './pages/ChannelPage';
-
+import Explore from "./pages/Explore";
+import ChannelPage from "./pages/ChannelPage";
 
 function App() {
   return (
@@ -28,11 +28,20 @@ function App() {
             </PrivateRoute>
           }
         />
+
         <Route
           path="/student-profile"
           element={
             <PrivateRoute>
               <StudentProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/explore"
+          element={
+            <PrivateRoute>
+              <Explore />
             </PrivateRoute>
           }
         />

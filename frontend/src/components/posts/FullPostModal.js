@@ -27,26 +27,43 @@ export function FullPostModal({ post, isOpen, onClose }) {
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-gray-200">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-full hover:bg-gray-200"
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
-        
+
         <ScrollArea className="max-h-[calc(90vh-140px)]">
           <div className="p-6">
             <p className="text-gray-700 mb-4 text-lg">{post.content}</p>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-green-600"
+                >
                   <Heart className="mr-1 h-4 w-4" />
                   <span>{post.likes}</span>
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-green-600"
+                >
                   <MessageCircle className="mr-1 h-4 w-4" />
                   <span>{post.comments.length}</span>
                 </Button>
               </div>
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-600 hover:text-green-600"
+              >
                 <Share2 className="h-4 w-4" />
                 <span className="ml-1">Share</span>
               </Button>
@@ -67,7 +84,10 @@ export function FullPostModal({ post, isOpen, onClose }) {
               placeholder="Add a comment..."
               className="flex-grow bg-gray-100 border-none text-sm rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
-            <Button size="icon" className="rounded-full bg-green-600 hover:bg-green-700 text-white">
+            <Button
+              size="icon"
+              className="rounded-full bg-green-600 hover:bg-green-700 text-white"
+            >
               <Send className="h-4 w-4" />
             </Button>
           </div>
