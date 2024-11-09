@@ -7,7 +7,6 @@ from pymongo.errors import ConnectionFailure
 from supabase import create_client, Client
 from config import Config
 from routes.auth import auth_bp
-from routes.profile import profile_bp
 from routes.forum import forum_bp
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -85,7 +84,6 @@ def create_app(config_class=Config):
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(forum_bp, url_prefix="/api/forums")
-    app.register_blueprint(profile_bp, url_prefix="/api/profile")
 
     @app.errorhandler(404)
     def not_found_error(error):  # pylint: disable=unused-argument
