@@ -10,7 +10,8 @@ import { CreatePostModal } from '../posts/CreatePostModal';
 import { FullPostModal } from '../posts/FullPostModal';
 import { ChannelSidebar } from './ChannelSidebar';
 import { forumService } from '../../services/forumService';
-import { postData } from '../posts/postData';
+import PostService from '../../services/postService';
+import { getUserById } from '../../services/profileService';
 
 
 const LoadingState = () => (
@@ -27,6 +28,72 @@ const LoadingState = () => (
   </div>
 );
 
+const tempImage = 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&h=400&q=80';
+
+const transformPost = async (post, forumName = 'Unknown Channel') => {
+  try {
+    const { data: userData, error } = await getUserById(post.user_id);
+    
+    if (error || !userData) {
+      console.warn(`Could not fetch user data for post ${post._id}:`, error);
+      return {
+        id: post._id,
+        author: {
+          name: 'Anonymous',
+          image: tempImage,
+          username: 'anonymous',
+          channel: forumName
+        },
+        title: post.title,
+        content: post.content,
+        timestamp: new Date(post.created_at),
+        likes: 0,
+        comments: [],
+        type: post.type,
+        metadata: post.metadata,
+        view_count: post.view_count
+      };
+    }
+
+    return {
+      id: post._id,
+      author: {
+        name: userData.profile ? `${userData.profile.first_name} ${userData.profile.last_name}` : 'Anonymous',
+        image: userData.profile?.avatar_url || tempImage,
+        username: userData.username || 'anonymous',
+        channel: forumName
+      },
+      title: post.title,
+      content: post.content,
+      timestamp: new Date(post.created_at),
+      likes: 0,
+      comments: [],
+      type: post.type,
+      metadata: post.metadata,
+      view_count: post.view_count
+    };
+  } catch (error) {
+    console.error('Error transforming post:', error);
+    return {
+      id: post._id,
+      author: {
+        name: 'Anonymous',
+        image: tempImage,
+        username: 'anonymous',
+        channel: forumName
+      },
+      title: post.title || 'Untitled Post',
+      content: post.content || '',
+      timestamp: new Date(post.created_at || Date.now()),
+      likes: 0,
+      comments: [],
+      type: post.type || 'discussion',
+      metadata: post.metadata || {},
+      view_count: post.view_count || 0
+    };
+  }
+};
+
 export function ChannelProfile() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -39,6 +106,12 @@ export function ChannelProfile() {
   const [channelPosts, setChannelPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const transformForumData = (forumData) => {
     if (!forumData) return null;
@@ -60,6 +133,37 @@ export function ChannelProfile() {
       updated_at: forumData.updated_at || new Date().toISOString(),
       metadata: forumData.metadata || { views: 0, trending_score: 0 }
     };
+  };
+
+  const fetchPostsWithUserData = async (forumId, forumName, page = 1) => {
+    try {
+      const postsResponse = await PostService.getForumPosts(forumId, page);
+      
+      if (!postsResponse.data?.posts) {
+        throw new Error('Invalid posts response');
+      }
+
+      const transformedPosts = await Promise.all(
+        postsResponse.data.posts.map(post => transformPost(post, forumName))
+      );
+
+      return {
+        posts: transformedPosts,
+        total: postsResponse.data.total || 0,
+        page: postsResponse.data.page || 1,
+        total_pages: postsResponse.data.total_pages || 1,
+        per_page: postsResponse.data.per_page || 20
+      };
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      return {
+        posts: [],
+        total: 0,
+        page: 1,
+        total_pages: 1,
+        per_page: 20
+      };
+    }
   };
 
   useEffect(() => {
@@ -84,10 +188,10 @@ export function ChannelProfile() {
 
         setChannelData(transformedData);
 
-        const relevantPosts = postData.filter(
-          post => post.author.channel.toLowerCase() === transformedData.name.toLowerCase()
-        );
-        setChannelPosts(relevantPosts);
+        const postsData = await fetchPostsWithUserData(transformedData._id, 1);
+        setChannelPosts(postsData.posts);
+        setTotalPages(Math.ceil(postsData.total / postsData.per_page));
+        setHasMore(postsData.page < postsData.total_pages);
 
         const isUserMember = transformedData.members.some(
           member => member.user_id === 'current-user-id'
@@ -110,24 +214,40 @@ export function ChannelProfile() {
     }
   }, [slug, navigate]);
 
-  const handleCreatePost = (newPost) => {
-    if (!channelData) return;
-    
-    setChannelPosts([
-      {
-        ...newPost,
-        id: Date.now(),
-        author: {
-          ...newPost.author,
-          channel: channelData.name,
-          channelSlug: slug
-        },
-        timestamp: new Date(),
-        likes: 0,
-        comments: []
-      },
-      ...channelPosts
-    ]);
+  const loadMorePosts = async () => {
+    if (loadingMore || !hasMore || !channelData) return;
+
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const postsData = await fetchPostsWithUserData(channelData._id, nextPage);
+      
+      setChannelPosts(prevPosts => [...prevPosts, ...postsData.posts]);
+      setCurrentPage(nextPage);
+      setHasMore(postsData.page < postsData.total_pages);
+    } catch (err) {
+      console.error('Error loading more posts:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleCreatePost = async (postData) => {
+    if (!channelData?._id) return;
+
+    try {
+      const response = await PostService.createPost(channelData._id, postData);
+      
+      if (response.data.success === false) {
+        throw new Error(response.data.details || 'Failed to create post');
+      }
+      
+      const transformedPost = await transformPost(response.data.data, channelData.name);
+      setChannelPosts(prevPosts => [transformedPost, ...prevPosts]);
+      setIsCreatePostModalOpen(false);
+    } catch (err) {
+      throw new Error(err.response?.data?.details || err.message || 'Failed to create post');
+    }
   };
 
   const handleJoinChannel = async () => {
@@ -212,7 +332,7 @@ export function ChannelProfile() {
         <div className="flex-grow max-w-3xl">
           <div className="flex items-center space-x-4 mb-6 bg-white rounded-full shadow-md p-2 border border-gray-200 hover:shadow-lg transition-shadow duration-300">
             <Avatar className="h-10 w-10">
-              <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Your profile" />
+              {/* <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Your profile" /> */}
               <AvatarFallback>You</AvatarFallback>
             </Avatar>
             <Input
@@ -227,6 +347,7 @@ export function ChannelProfile() {
               Post
             </Button>
           </div>
+          
           <AnimatePresence>
             {channelPosts.map((post) => (
               <Post 
@@ -237,6 +358,18 @@ export function ChannelProfile() {
               />
             ))}
           </AnimatePresence>
+
+          {hasMore && (
+            <div className="text-center mt-4">
+              <Button
+                onClick={loadMorePosts}
+                disabled={loadingMore}
+                className="bg-green-50 text-green-600 hover:bg-green-100"
+              >
+                {loadingMore ? 'Loading...' : 'Load More Posts'}
+              </Button>
+            </div>
+          )}
         </div>
         <ChannelSidebar channelData={channelData} />
       </div>
