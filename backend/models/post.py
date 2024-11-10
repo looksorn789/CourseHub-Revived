@@ -19,7 +19,7 @@ class PostType(Enum):
 
 class Post:
     # Validation patterns
-    TITLE_PATTERN = r"^[a-zA-Z0-9\s\-_.,!?()]{3,150}$"
+    TITLE_PATTERN = r"^[a-zA-Z0-9\s\-_.,!?'\"()]{3,150}$"
 
     # Field validation rules
     POST_FIELDS = {
