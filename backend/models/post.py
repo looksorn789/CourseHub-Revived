@@ -44,6 +44,12 @@ class Post:
             "allowed_values": [t.value for t in PostType],
             "error": f"Type must be one of: {', '.join(t.value for t in PostType)}",
         },
+        "tags": {
+            "type": list,
+            "required": False,
+            "max_items": 5,
+            "error": "Maximum 5 tags allowed"
+        },
         "forum_id": {
             "type": str,
             "required": True,
@@ -98,6 +104,7 @@ class Post:
                             "title": data["title"].strip(),
                             "content": data["content"].strip(),
                             "type": data["type"],
+                            "tags": data.get("tags", [])[:5],
                             "created_at": current_time,
                             "updated_at": current_time,
                             "last_activity_at": current_time,
@@ -201,6 +208,11 @@ class Post:
                 if not isinstance(data[field_name], rules["type"]):
                     errors.append(f"{field_name} must be of type {rules['type'].__name__}")
                     continue
+                
+                # List validations
+                if field_name == "tags":
+                    if len(data[field_name]) > rules["max_items"]:
+                        errors.append(rules["error"])
 
                 # String validations
                 if isinstance(data[field_name], str):

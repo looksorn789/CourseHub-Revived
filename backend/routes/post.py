@@ -49,7 +49,8 @@ def create_post(forum_id):
                 tags=["p", "br", "strong", "em", "u", "code", "pre", "blockquote"],
                 strip=True
             ),
-            "type": str(data.get("type", "")).strip()
+            "type": str(data.get("type", "")).strip(),
+            "tags": [bleach.clean(tag) for tag in data.get("tags", [])][:5]
         }
 
         # Create post
@@ -78,6 +79,7 @@ def create_post(forum_id):
             "user_id": str(created_post["user_id"]),
             "title": created_post["title"],
             "content": created_post["content"],
+            "tags": post_data.get("tags", []),
             "type": created_post["type"],
             "created_at": created_post["created_at"],
             "updated_at": created_post["updated_at"],
