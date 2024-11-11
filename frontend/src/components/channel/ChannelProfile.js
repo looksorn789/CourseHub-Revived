@@ -65,6 +65,7 @@ const transformPost = async (post, forumName = 'Unknown Channel') => {
       },
       title: post.title,
       content: post.content,
+      tags: post.tags || [],
       timestamp: new Date(post.created_at),
       likes: 0,
       comments: [],
@@ -84,6 +85,7 @@ const transformPost = async (post, forumName = 'Unknown Channel') => {
       },
       title: post.title || 'Untitled Post',
       content: post.content || '',
+      tags: post.tags || [],
       timestamp: new Date(post.created_at || Date.now()),
       likes: 0,
       comments: [],
@@ -236,12 +238,13 @@ export function ChannelProfile() {
     if (!channelData?._id) return;
 
     try {
+      console.log('Creating post with data:', postData);
       const response = await PostService.createPost(channelData._id, postData);
       
       if (response.data.success === false) {
         throw new Error(response.data.details || 'Failed to create post');
       }
-      
+      console.log('Post creation response:', response.data);
       const transformedPost = await transformPost(response.data.data, channelData.name);
       setChannelPosts(prevPosts => [transformedPost, ...prevPosts]);
       setIsCreatePostModalOpen(false);

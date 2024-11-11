@@ -306,12 +306,12 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost }) {
                       }
                     }}
                   />
-                  <Button
+                  {/* <Button
                     onClick={handleAddTag}
                     className="bg-green-600 text-white hover:bg-green-700 transition-colors"
                   >
                     Add Tag
-                  </Button>
+                  </Button> */}
                 </div>
               </motion.div>
             </motion.div>

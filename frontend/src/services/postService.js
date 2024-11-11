@@ -7,6 +7,10 @@ class PostService {
     }
 
     try {
+      if (postData.tags && postData.tags.length > 5) {
+        throw new Error('Maximum 5 tags allowed');
+      }
+      
       const response = await api.post(`/api/posts/forum/${forumId}`, {
         title: postData.title,
         content: postData.content,

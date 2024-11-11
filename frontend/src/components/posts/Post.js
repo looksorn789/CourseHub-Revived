@@ -130,8 +130,8 @@ export function Post({ post, onClick, showChannelHash = true }) {
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {post.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                  {tag}
+                <Badge key={index} variant="secondary" className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                  #{tag}
                 </Badge>
               ))}
             </div>
