@@ -124,7 +124,11 @@ def get_user_by_id(user_id):
                 "school": user_data.get("profile", {}).get("school", ""),
                 "major": user_data.get("profile", {}).get("major", ""),
                 "graduation_date": user_data.get("profile", {}).get("graduation_date"),
-                "avatar_url": user_data.get("profile", {}).get("avatar_url", ""),
+                "avatar_config": user_data.get("profile", {}).get("avatar_config", {
+                    "style": "adventurer",
+                    "seed": user_data.get("username", "anonymous"),
+                    "options": {}
+                }),
                 "interests": user_data.get("profile", {}).get("interests", []),
                 "awards": user_data.get("profile", {}).get("awards", []),
                 "clubs": user_data.get("profile", {}).get("clubs", []),

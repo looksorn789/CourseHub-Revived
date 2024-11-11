@@ -12,6 +12,8 @@ import { ChannelSidebar } from './ChannelSidebar';
 import { forumService } from '../../services/forumService';
 import PostService from '../../services/postService';
 import { getUserById } from '../../services/profileService';
+import { getUserProfile } from '../../services/profileService';
+import { generateAvatarSvg } from '../../utils/avatarUtils';
 
 
 const LoadingState = () => (
@@ -31,67 +33,65 @@ const LoadingState = () => (
 const tempImage = 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&h=400&q=80';
 
 const transformPost = async (post, forumName = 'Unknown Channel') => {
+  // Default author object
+  const defaultAuthor = {
+    name: 'Anonymous',
+    image: tempImage,
+    username: 'anonymous',
+    channel: forumName
+  };
+
+  // Base post structure with defaults
+  const basePost = {
+    id: post._id,
+    title: post.title || 'Untitled Post',
+    content: post.content || '',
+    tags: post.tags || [],
+    timestamp: new Date(post.created_at || Date.now()),
+    likes: 0,
+    comments: [],
+    type: post.type || 'discussion',
+    metadata: post.metadata || {},
+    view_count: post.view_count || 0
+  };
+
   try {
     const { data: userData, error } = await getUserById(post.user_id);
     
+    // If no user data, return post with default author
     if (error || !userData) {
       console.warn(`Could not fetch user data for post ${post._id}:`, error);
       return {
-        id: post._id,
-        author: {
-          name: 'Anonymous',
-          image: tempImage,
-          username: 'anonymous',
-          channel: forumName
-        },
-        title: post.title,
-        content: post.content,
-        timestamp: new Date(post.created_at),
-        likes: 0,
-        comments: [],
-        type: post.type,
-        metadata: post.metadata,
-        view_count: post.view_count
+        ...basePost,
+        author: defaultAuthor
       };
     }
 
+    // Generate avatar URL from avatar_config
+    let avatarUrl = tempImage;
+    if (userData.profile?.avatar_config) {
+      const { style, seed, options } = userData.profile.avatar_config;
+      const svg = generateAvatarSvg(style, seed, options);
+      avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    }
+
+    const firstName = userData.profile?.first_name || '';
+    const lastName = userData.profile?.last_name || '';
+
     return {
-      id: post._id,
+      ...basePost,
       author: {
-        name: userData.profile ? `${userData.profile.first_name} ${userData.profile.last_name}` : 'Anonymous',
-        image: userData.profile?.avatar_url || tempImage,
+        name: userData.profile ? `${firstName} ${lastName}` : userData.username || 'Anonymous',
+        image: avatarUrl,
         username: userData.username || 'anonymous',
         channel: forumName
-      },
-      title: post.title,
-      content: post.content,
-      tags: post.tags || [],
-      timestamp: new Date(post.created_at),
-      likes: 0,
-      comments: [],
-      type: post.type,
-      metadata: post.metadata,
-      view_count: post.view_count
+      }
     };
   } catch (error) {
     console.error('Error transforming post:', error);
     return {
-      id: post._id,
-      author: {
-        name: 'Anonymous',
-        image: tempImage,
-        username: 'anonymous',
-        channel: forumName
-      },
-      title: post.title || 'Untitled Post',
-      content: post.content || '',
-      tags: post.tags || [],
-      timestamp: new Date(post.created_at || Date.now()),
-      likes: 0,
-      comments: [],
-      type: post.type || 'discussion',
-      metadata: post.metadata || {},
-      view_count: post.view_count || 0
+      ...basePost,
+      author: defaultAuthor
     };
   }
 };
@@ -114,6 +114,12 @@ export function ChannelProfile() {
   const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [currentUser, setCurrentUser] = useState({
+    name: "",
+    username: "",
+    avatarUrl: "",
+    initials: ""
+  });
 
   const transformForumData = (forumData) => {
     if (!forumData) return null;
@@ -167,6 +173,39 @@ export function ChannelProfile() {
       };
     }
   };
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const { data, error } = await getUserProfile();
+        if (data && data.profile) {
+          const { first_name, last_name, avatar_config } = data.profile;
+          const fullName = `${first_name} ${last_name}`;
+          const username = data.username;
+          let avatarUrl = "";
+
+          if (avatar_config) {
+            const { style, seed, options } = avatar_config;
+            const svg = generateAvatarSvg(style, seed, options);
+            avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+          }
+
+          setCurrentUser({
+            name: fullName,
+            username: username,
+            avatarUrl: avatarUrl,
+            initials: `${first_name?.[0] || ''}${last_name?.[0] || ''}`
+          });
+        } else if (error) {
+          console.error("Failed to fetch user data:", error);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -335,8 +374,8 @@ export function ChannelProfile() {
         <div className="flex-grow max-w-3xl">
           <div className="flex items-center space-x-4 mb-6 bg-white rounded-full shadow-md p-2 border border-gray-200 hover:shadow-lg transition-shadow duration-300">
             <Avatar className="h-10 w-10">
-              {/* <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Your profile" /> */}
-              <AvatarFallback>You</AvatarFallback>
+              <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+              <AvatarFallback>{currentUser.initials || '?'}</AvatarFallback>
             </Avatar>
             <Input
               placeholder="Let's share what's going on your mind..."
