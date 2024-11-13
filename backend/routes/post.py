@@ -3,6 +3,7 @@ from typing import Optional
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.user import UserModel
 from models.post import Post, PostType
+from utils.helpers import serialize_mongo_doc
 import bleach
 
 post_bp = Blueprint("post_bp", __name__)
@@ -181,24 +182,32 @@ def update_post(post_id):
                 "error": "Error retrieving updated post"
             }), 500
 
-        # Format response
-        response_data = {
-            "id": str(updated_post["_id"]),
-            "forum_id": str(updated_post["forum_id"]),
-            "user_id": str(updated_post["user_id"]),
+        # Serialize the complete post data
+        serialized_post = serialize_mongo_doc({
+            "_id": updated_post["_id"],
+            "forum_id": updated_post["forum_id"],
+            "user_id": updated_post["user_id"],
             "title": updated_post["title"],
             "content": updated_post["content"],
             "type": updated_post["type"],
-            "status": updated_post["status"],
+            "tags": updated_post.get("tags", []),
+            "created_at": updated_post["created_at"],
             "updated_at": updated_post["updated_at"],
             "last_activity_at": updated_post["last_activity_at"],
-            "metadata": updated_post["metadata"]
-        }
+            "view_count": updated_post.get("view_count", 0),
+            "metadata": {
+                "last_edited_by": updated_post["metadata"].get("last_edited_by"),
+                "last_edited_at": updated_post["metadata"].get("last_edited_at"),
+                "edit_history": updated_post["metadata"].get("edit_history", []),
+                "views": updated_post["metadata"].get("views", 0),
+                "trending_score": updated_post["metadata"].get("trending_score", 0)
+            }
+        })
 
         return jsonify({
             "success": True,
             "message": "Post updated successfully",
-            "data": response_data
+            "data": serialized_post
         })
 
     except Exception as e:
@@ -290,10 +299,13 @@ def list_forum_posts(forum_id):
             post_type=post_type
         )
 
+        # Serialize the posts data
+        serialized_posts = serialize_mongo_doc(posts)
+
         return jsonify({
             "success": True,
             "data": {
-                "posts": posts,
+                "posts": serialized_posts,
                 "total": total,
                 "page": page,
                 "per_page": per_page,

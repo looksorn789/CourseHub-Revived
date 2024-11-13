@@ -57,16 +57,19 @@ class PostService {
   static async updatePost(postId, updateData) {
     try {
       const response = await api.put(`/api/posts/${postId}`, {
-        title: updateData.title,
-        content: updateData.content,
-        type: updateData.type
+        title: updateData?.title || '',
+        content: updateData?.content || '',
+        type: updateData?.type || 'discussion',
+        tags: updateData.tags || []
       });
 
       return response.data;
     } catch (error) {
-      throw error;
+      console.error('Error updating post:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.error || 'Failed to update post');
     }
   }
+
 
   static async deletePost(postId) {
     try {
