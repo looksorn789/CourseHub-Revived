@@ -150,21 +150,21 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Post
                       </DropdownMenuItem>
-                      <DropdownMenuItem
+                      <div
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer w-full px-2 py-1.5"
                       >
                         <DeletePostConfirmation
                           onConfirm={handleDelete}
                           postTitle={post.title}
                           trigger={
-                            <div className="flex items-center w-full cursor-pointer">
+                            <div className="flex items-center w-full">
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Delete Post
+                              <span className="text-sm">Delete Post</span>
                             </div>
                           }
                         />
-                      </DropdownMenuItem>
+                      </div>
                       <DropdownMenuSeparator />
                     </>
                   )}
