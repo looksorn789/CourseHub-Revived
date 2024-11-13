@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { Plus, Check, ChevronDown, Hash } from 'lucide-react';
 import { Post } from '../posts/Post';
-import { CreatePostModal } from '../posts/CreatePostModal';
+import { PostModal } from '../posts/PostModal';
 import { FullPostModal } from '../posts/FullPostModal';
 import { ChannelSidebar } from './ChannelSidebar';
 import { forumService } from '../../services/forumService';
-import { postData } from '../posts/postData';
+import PostService from '../../services/postService';
+import { getUserById } from '../../services/profileService';
+import { getUserProfile } from '../../services/profileService';
+import { generateAvatarSvg } from '../../utils/avatarUtils';
 
 
 const LoadingState = () => (
@@ -27,6 +31,71 @@ const LoadingState = () => (
   </div>
 );
 
+const tempImage = 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&h=400&q=80';
+
+const transformPost = async (post, forumName = 'Unknown Channel') => {
+  const defaultAuthor = {
+    name: 'Anonymous',
+    image: tempImage,
+    username: 'anonymous',
+    channel: forumName,
+    id: post.user_id
+  };
+
+  const basePost = {
+    id: post._id,
+    userId: post.user_id,
+    title: post.title || 'Untitled Post',
+    content: post.content || '',
+    tags: post.tags || [],
+    timestamp: new Date(post.created_at || Date.now()),
+    likes: 0,
+    comments: [],
+    type: post.type || 'discussion',
+    metadata: post.metadata || {},
+    view_count: post.view_count || 0
+  };
+
+  try {
+    const { data: userData, error } = await getUserById(post.user_id);
+    
+    if (error || !userData) {
+      console.warn(`Could not fetch user data for post ${post._id}:`, error);
+      return {
+        ...basePost,
+        author: defaultAuthor
+      };
+    }
+
+    let avatarUrl = tempImage;
+    if (userData.profile?.avatar_config) {
+      const { style, seed, options } = userData.profile.avatar_config;
+      const svg = generateAvatarSvg(style, seed, options);
+      avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    }
+
+    const firstName = userData.profile?.first_name || '';
+    const lastName = userData.profile?.last_name || '';
+
+    return {
+      ...basePost,
+      author: {
+        name: userData.profile ? `${firstName} ${lastName}` : userData.username || 'Anonymous',
+        image: avatarUrl,
+        username: userData.username || 'anonymous',
+        channel: forumName,
+        id: post.user_id
+      }
+    };
+  } catch (error) {
+    console.error('Error transforming post:', error);
+    return {
+      ...basePost,
+      author: defaultAuthor
+    };
+  }
+};
+
 export function ChannelProfile() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -34,11 +103,24 @@ export function ChannelProfile() {
   const [isJoined, setIsJoined] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
-  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [channelPosts, setChannelPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUser, setCurrentUser] = useState({
+    name: "",
+    username: "",
+    avatarUrl: "",
+    initials: ""
+  });
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const transformForumData = (forumData) => {
     if (!forumData) return null;
@@ -62,6 +144,72 @@ export function ChannelProfile() {
     };
   };
 
+  const fetchPostsWithUserData = async (forumId, forumName, page = 1) => {
+    try {
+      const postsResponse = await PostService.getForumPosts(forumId, page);
+      
+      if (!postsResponse.data?.posts) {
+        throw new Error('Invalid posts response');
+      }
+
+      const transformedPosts = await Promise.all(
+        postsResponse.data.posts.map(post => transformPost(post, forumName))
+      );
+
+      return {
+        posts: transformedPosts,
+        total: postsResponse.data.total || 0,
+        page: postsResponse.data.page || 1,
+        total_pages: postsResponse.data.total_pages || 1,
+        per_page: postsResponse.data.per_page || 20
+      };
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      return {
+        posts: [],
+        total: 0,
+        page: 1,
+        total_pages: 1,
+        per_page: 20
+      };
+    }
+  };
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const { data, error } = await getUserProfile();
+        if (data && data.profile) {
+          const { first_name, last_name, avatar_config } = data.profile;
+          const fullName = `${first_name} ${last_name}`;
+          const username = data.username;
+          let avatarUrl = "";
+
+          if (avatar_config) {
+            const { style, seed, options } = avatar_config;
+            const svg = generateAvatarSvg(style, seed, options);
+            avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+          }
+
+          setCurrentUser({
+            name: fullName,
+            username: username,
+            avatarUrl: avatarUrl,
+            initials: `${first_name?.[0] || ''}${last_name?.[0] || ''}`,
+            id: data._id
+          });
+          setCurrentUserId(data._id);
+        } else if (error) {
+          console.error("Failed to fetch user data:", error);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 100);
@@ -84,10 +232,10 @@ export function ChannelProfile() {
 
         setChannelData(transformedData);
 
-        const relevantPosts = postData.filter(
-          post => post.author.channel.toLowerCase() === transformedData.name.toLowerCase()
-        );
-        setChannelPosts(relevantPosts);
+        const postsData = await fetchPostsWithUserData(transformedData._id, 1);
+        setChannelPosts(postsData.posts);
+        setTotalPages(Math.ceil(postsData.total / postsData.per_page));
+        setHasMore(postsData.page < postsData.total_pages);
 
         const isUserMember = transformedData.members.some(
           member => member.user_id === 'current-user-id'
@@ -110,24 +258,82 @@ export function ChannelProfile() {
     }
   }, [slug, navigate]);
 
-  const handleCreatePost = (newPost) => {
-    if (!channelData) return;
-    
-    setChannelPosts([
-      {
-        ...newPost,
-        id: Date.now(),
-        author: {
-          ...newPost.author,
-          channel: channelData.name,
-          channelSlug: slug
-        },
-        timestamp: new Date(),
-        likes: 0,
-        comments: []
-      },
-      ...channelPosts
-    ]);
+  const loadMorePosts = async () => {
+    if (loadingMore || !hasMore || !channelData) return;
+
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const postsData = await fetchPostsWithUserData(channelData._id, nextPage);
+      
+      setChannelPosts(prevPosts => [...prevPosts, ...postsData.posts]);
+      setCurrentPage(nextPage);
+      setHasMore(postsData.page < postsData.total_pages);
+    } catch (err) {
+      console.error('Error loading more posts:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleCreatePost = async (postData) => {
+    if (!channelData?._id) return;
+
+    try {
+      const response = await PostService.createPost(channelData._id, postData);
+      
+      if (response.data.success === false) {
+        throw new Error(response.data.details || 'Failed to create post');
+      }
+      const transformedPost = await transformPost(response.data.data, channelData.name);
+      setChannelPosts(prevPosts => [transformedPost, ...prevPosts]);
+      setIsPostModalOpen(false);
+    } catch (err) {
+      throw new Error(err.response?.data?.details || err.message || 'Failed to create post');
+    }
+  };
+
+  const handleEditPost = async (postId, updatedData) => {
+    try {
+      const response = await PostService.updatePost(postId, updatedData);
+      
+      if (!response.success) {
+        throw new Error(response.details || 'Failed to update post');
+      }
+
+      const transformedPost = await transformPost(response.data, channelData.name);
+      setChannelPosts(prevPosts =>
+        prevPosts.map(post =>
+          post.id === postId ? transformedPost : post
+        )
+      );
+
+      toast.success('Post updated successfully!');
+    } catch (err) {
+      console.error('Error updating post:', err);
+      toast.error(err.message || 'Failed to update post');
+      throw err;
+    }
+  };
+  
+  const handleDeletePost = async (postId) => {
+    try {      
+      if (!postId) {
+        throw new Error('Post ID is required for deletion');
+      }
+
+      const response = await PostService.deletePost(postId);
+      
+      if (response.success) {
+        setChannelPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+        toast.success('Post deleted successfully');
+      } else {
+        throw new Error(response.error || 'Failed to delete post');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete post');
+      throw err;
+    }
   };
 
   const handleJoinChannel = async () => {
@@ -212,21 +418,22 @@ export function ChannelProfile() {
         <div className="flex-grow max-w-3xl">
           <div className="flex items-center space-x-4 mb-6 bg-white rounded-full shadow-md p-2 border border-gray-200 hover:shadow-lg transition-shadow duration-300">
             <Avatar className="h-10 w-10">
-              <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Your profile" />
-              <AvatarFallback>You</AvatarFallback>
+              <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+              <AvatarFallback>{currentUser.initials || '?'}</AvatarFallback>
             </Avatar>
             <Input
               placeholder="Let's share what's going on your mind..."
               className="flex-grow bg-transparent border-none text-sm focus:ring-0 focus:outline-none"
-              onClick={() => setIsCreatePostModalOpen(true)}
+              onClick={() => setIsPostModalOpen(true)}
             />
             <Button
-              onClick={() => setIsCreatePostModalOpen(true)}
+              onClick={() => setIsPostModalOpen(true)}
               className="bg-green-600 text-white hover:bg-green-700 rounded-full px-6 py-2 font-semibold transition-colors duration-300"
             >
               Post
             </Button>
           </div>
+          
           <AnimatePresence>
             {channelPosts.map((post) => (
               <Post 
@@ -234,9 +441,24 @@ export function ChannelProfile() {
                 post={post} 
                 onClick={() => setSelectedPost(post)}
                 showChannelHash={false}
+                onEdit={handleEditPost}
+                onDelete={handleDeletePost}
+                currentUserId={currentUserId}
               />
             ))}
           </AnimatePresence>
+
+          {hasMore && (
+            <div className="text-center mt-4">
+              <Button
+                onClick={loadMorePosts}
+                disabled={loadingMore}
+                className="bg-green-50 text-green-600 hover:bg-green-100"
+              >
+                {loadingMore ? 'Loading...' : 'Load More Posts'}
+              </Button>
+            </div>
+          )}
         </div>
         <ChannelSidebar channelData={channelData} />
       </div>
@@ -251,10 +473,10 @@ export function ChannelProfile() {
         )}
       </AnimatePresence>
 
-      <CreatePostModal
-        isOpen={isCreatePostModalOpen}
-        onClose={() => setIsCreatePostModalOpen(false)}
-        onCreatePost={handleCreatePost}
+      <PostModal
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+        onSubmit={handleCreatePost}
       />
 
       <motion.div 

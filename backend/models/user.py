@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 import re
+from bson import ObjectId
 
 
 class UserModel:
@@ -134,7 +135,6 @@ class UserModel:
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow(),
                 "profile_completed": False,  # Initially false as profile isn't set up yet
-                "last_login": datetime.utcnow() if verified else None,
             }
 
             result = self.collection.insert_one(user_data)
@@ -350,7 +350,7 @@ class UserModel:
             return None, str(e)
 
     def get_user_profile(self, supabase_id):
-        """Get user profile with formatted response"""
+        """Get user profile"""
         try:
             user = self.collection.find_one({"supabase_id": str(supabase_id)})
             if not user:
@@ -362,12 +362,20 @@ class UserModel:
             return None, str(e)
 
     def find_by_email(self, email):
-        """Find user by email with serialization"""
+        """Find user by email with"""
         try:
             user = self.collection.find_one({"email": email})
             return self.serialize_user(user)
         except Exception as e:
             print(f"Error finding user by email: {e}")
+            return None
+        
+    def find_by_id(self, user_id):
+        """Find user by ID"""
+        try:
+            return self.collection.find_one({"_id": ObjectId(user_id)})
+        except Exception as e:
+            print(f"Error finding user by ID: {e}")
             return None
 
     def get_user_by_supabase_id(self, supabase_id):

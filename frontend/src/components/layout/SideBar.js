@@ -17,7 +17,7 @@ import {
   CollapsibleContent,
 } from "../ui/Collapsible";
 import { Separator } from "../ui/Separator";
-import CreateChannelModal from "../ui/CreateChannelModal";
+import { CreateChannelModal } from "../channel/CreateChannelModal";
 
 const channels = [
   { name: "Web Development", icon: "💻" },

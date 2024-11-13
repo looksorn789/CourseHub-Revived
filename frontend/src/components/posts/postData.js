@@ -8,8 +8,10 @@ export const postData = [
       slug: "machine-learning-study-group",
     },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
+    title: "Graph Algorithms Practice",
     content:
-      "I'm currently diving deep into graph algorithms, and it's fascinating how they're used in real-world applications like social networks and recommendation systems. Does anyone have recommendations for resources or exercises to practice these concepts?",
+      "I'm currently diving deep into graph algorithms, and it's fascinating how they're used in real-world applications like social networks and recommendation systems. Does anyone have recommendations for resources or exercises to practice these concepts?\nI'm currently diving deep into graph algorithms, and it's fascinating how they're used in real-world applications like social networks and recommendation systems. Does anyone have recommendations for resources or exercises to practice these concepts?",
+    tags: ["graph algorithms", "practice", "recommendations"],
     likes: 25,
     comments: [
       {

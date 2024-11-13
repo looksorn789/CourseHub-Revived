@@ -23,6 +23,24 @@ export const getUserProfile = async () => {
   }
 };
 
+export const getUserById = async (userId) => {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
+    const response = await api.get(`/api/profile/user/${userId}`);
+
+    return { data: response.data, error: null };
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return { 
+      data: null, 
+      error: error.response?.data?.error || 'Error fetching user profile' 
+    };
+  }
+};
+
 // Use PUT to fully save or replace the user profile
 export const saveUserProfile = async (profileData, email, username) => {
   try {
