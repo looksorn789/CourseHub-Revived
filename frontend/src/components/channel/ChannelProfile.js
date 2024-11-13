@@ -59,15 +59,14 @@ const transformPost = async (post, forumName = 'Unknown Channel') => {
   try {
     const { data: userData, error } = await getUserById(post.user_id);
     
-    // If no user data, return post with default author
     if (error || !userData) {
+      console.warn(`Could not fetch user data for post ${post._id}:`, error);
       return {
         ...basePost,
         author: defaultAuthor
       };
     }
 
-    // Generate avatar URL from avatar_config
     let avatarUrl = tempImage;
     if (userData.profile?.avatar_config) {
       const { style, seed, options } = userData.profile.avatar_config;
@@ -318,13 +317,22 @@ export function ChannelProfile() {
   };
   
   const handleDeletePost = async (postId) => {
-    try {
-        await PostService.deletePost(postId);
+    try {      
+      if (!postId) {
+        throw new Error('Post ID is required for deletion');
+      }
+
+      const response = await PostService.deletePost(postId);
+      
+      if (response.success) {
         setChannelPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
         toast.success('Post deleted successfully');
+      } else {
+        throw new Error(response.error || 'Failed to delete post');
+      }
     } catch (err) {
-        console.error('Error deleting post:', err);
-        toast.error(err.message || 'Failed to delete post');
+      toast.error(err.message || 'Failed to delete post');
+      throw err;
     }
   };
 
