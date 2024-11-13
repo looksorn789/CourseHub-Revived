@@ -494,3 +494,53 @@ def delete_account():
 
     except Exception as e:
         return jsonify({"message": "An error occurred", "details": str(e)}), 500
+
+@auth_bp.route("/delete-supabase-user", methods=["DELETE"])
+def delete_supabase_user():
+    try:
+        # Get the email from the request
+        data = request.get_json()
+        email = data.get("email")
+
+        if not email:
+            return jsonify({"message": "Email is required"}), 400
+
+        # Query Supabase for the user list
+        supabase_url = current_app.config["SUPABASE_URL"]
+        supabase_key = current_app.config["SUPABASE_KEY"]
+
+        headers = {
+            "apikey": supabase_key,
+            "Authorization": f"Bearer {supabase_key}",
+            "Content-Type": "application/json",
+        }
+
+        response = requests.get(
+            f"{supabase_url}/auth/v1/admin/users", headers=headers, timeout=10
+        )
+
+        if response.status_code != 200:
+            return jsonify({"message": "Failed to query Supabase", "details": response.text}), 500
+
+        # Find the user by email
+        users = response.json().get("users", [])
+        user = next((u for u in users if u["email"] == email), None)
+
+        if not user:
+            return jsonify({"message": f"No user found with email {email}"}), 404
+
+        # Get the user ID
+        user_id = user["id"]
+
+        # Send DELETE request to Supabase to delete the user
+        delete_response = requests.delete(
+            f"{supabase_url}/auth/v1/admin/users/{user_id}", headers=headers, timeout=10
+        )
+
+        if delete_response.status_code == 204:
+            return jsonify({"message": f"User with email {email} deleted successfully"}), 200
+        else:
+            return jsonify({"message": "Failed to delete user", "details": delete_response.text}), 500
+
+    except Exception as e:
+        return jsonify({"message": "An unexpected error occurred", "details": str(e)}), 500
