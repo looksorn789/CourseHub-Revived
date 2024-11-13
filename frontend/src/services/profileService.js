@@ -41,23 +41,6 @@ export const getUserById = async (userId) => {
   }
 };
 
-export const getOtherUserProfile = async (userId) => {
-  try {
-    const token = localStorage.getItem("token");
-    const url = userId ? `/api/profile/user/${userId}` : `/api/profile/user`;
-    const response = await api.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`, // Attach token to each request
-      },
-    });
-    return { data: response.data, error: null };
-  } catch (error) {
-    console.error("Error fetching user profile:", error);
-    return { data: null, error: error.response?.data?.error || error.message };
-  }
-};
-
-
 // Use PUT to fully save or replace the user profile
 export const saveUserProfile = async (profileData, email, username) => {
   try {
