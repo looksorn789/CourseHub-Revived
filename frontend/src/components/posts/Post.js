@@ -6,14 +6,17 @@ import {
   MessageCircle,
   Share2,
   MoreHorizontal,
-  Send,
   Bookmark,
   Hash,
+  Edit,
+  Trash2,
+  Flag,
+  UserX,
 } from "lucide-react";
+import { toast } from "react-toastify";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/Avatar";
-import { Card, CardContent, CardFooter, CardHeader } from "../ui/Card";
+import { Card, CardFooter, CardHeader } from "../ui/Card";
 import Button from "../ui/Button";
-import Input from "../ui/Input";
 import { motion } from "framer-motion";
 import Badge from "../ui/Badge";
 import {
@@ -21,15 +24,48 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "../ui/DropdownMenu";
+import { PostModal } from "./PostModal";
+import { DeletePostConfirmation } from "./DeletePostConfirmation";
 
-
-export function Post({ post, onClick, showChannelHash = true }) {
+export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, currentUserId }) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const isAuthor = currentUserId === post.author.id;
+
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    setIsEditMode(true);
+  };
+
+  const handleEditComplete = async (updatedData) => {
+    try {
+      await onEdit(post.id, updatedData);
+      setIsEditMode(false);
+    } catch (error) {
+      console.error('Error updating post:', error);
+      toast.error('Failed to update post');
+    }
+  };
+
+  const handleDelete = async () => {
+    try {      
+      if (!post.id) {
+        toast.error('Cannot delete post: Missing post ID');
+        return;
+      }
+
+      await onDelete(post.id);
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete post');
+    }
+  };
 
   const getChannelSlug = (channelName) => {
     return channelName
@@ -43,14 +79,6 @@ export function Post({ post, onClick, showChannelHash = true }) {
     const channelSlug = post.author.slug || 
                        post.author.channelSlug || 
                        getChannelSlug(post.author.channel);
-
-    console.log("Channel data:", {
-      authorSlug: post.author.slug,
-      channelSlug: post.author.channelSlug,
-      channelName: post.author.channel,
-      generatedSlug: getChannelSlug(post.author.channel),
-      finalSlug: channelSlug
-    });
 
     if (channelSlug) {
       navigate(`/channel/${channelSlug}`);
@@ -75,9 +103,10 @@ export function Post({ post, onClick, showChannelHash = true }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
+      className="w-full"
     >
       <Card 
-        className="mb-6 bg-gradient-to-br from-white to-green-50 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden border-none cursor-pointer"
+        className="mb-6 bg-gradient-to-br from-white via-green-50 to-blue-50 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden border-none cursor-pointer"
         onClick={onClick}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -104,37 +133,68 @@ export function Post({ post, onClick, showChannelHash = true }) {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`rounded-full transition-colors duration-200 ${
-                isSaved ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'
-              }`}
-              onClick={toggleSave}
-            >
-              <Bookmark className="h-5 w-5" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <MoreHorizontal className="h-5 w-5 text-gray-500" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem>Report</DropdownMenuItem>
-                <DropdownMenuItem>Block user</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-3">
-          <p className={`text-gray-700 ${!isExpanded ? 'line-clamp-3' : ''}`}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  {isAuthor && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={handleEdit}
+                        className="flex items-center text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Post
+                      </DropdownMenuItem>
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer w-full px-2 py-1.5"
+                      >
+                        <DeletePostConfirmation
+                          onConfirm={handleDelete}
+                          postTitle={post.title}
+                          trigger={
+                            <div className="flex items-center w-full">
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              <span className="text-sm">Delete Post</span>
+                            </div>
+                          }
+                        />
+                      </div>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+                  >
+                    <Flag className="h-4 w-4 mr-2" />
+                    Report
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center text-gray-600 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  >
+                    <UserX className="h-4 w-4 mr-2" />
+                    Block User
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </CardHeader>
+        <div className="px-6 py-2">
+          <h2 className="text-lg font-semibold text-gray-900 leading-tight mb-2 transition-colors duration-200 hover:text-green-600">
+            {post.title}
+          </h2>
+          <p className={`text-sm text-gray-700 ${!isExpanded ? 'line-clamp-3' : ''}`}>
             {post.content}
           </p>
           {post.content.length > 150 && (
             <Button
               variant="link"
-              className="p-0 h-auto text-green-600 hover:text-green-700"
+              className="p-0 h-auto text-sm text-green-600 hover:text-green-700"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsExpanded(!isExpanded);
@@ -146,58 +206,68 @@ export function Post({ post, onClick, showChannelHash = true }) {
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {post.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                <Badge key={index} variant="secondary" className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                   {tag}
                 </Badge>
               ))}
             </div>
           )}
-        </CardContent>
-        <CardFooter className="flex flex-col items-stretch pt-2">
-          <div className="flex justify-between items-center mb-3">
+        </div>
+        <CardFooter className="flex justify-between items-center pt-2 px-6 pb-4">
+          <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="sm"
-              className={`rounded-full transition-colors duration-200 ${
-                isLiked ? 'text-green-600 hover:text-green-700' : 'text-gray-600 hover:text-gray-800'
+              className={`p-0 h-auto transition-colors duration-200 hover:text-green-600 ${
+                isLiked ? 'text-green-600' : 'text-gray-600'
               }`}
               onClick={toggleLike}
             >
               <Heart className="mr-1 h-4 w-4" />
-              <span>{likeCount}</span>
+              <span className="text-xs">{likeCount}</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-full text-gray-600 hover:text-green-600"
+              className="p-0 h-auto text-gray-600 hover:text-green-600 transition-colors duration-200"
             >
               <MessageCircle className="mr-1 h-4 w-4" />
-              <span>{post.comments.length}</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-full text-gray-600 hover:text-green-600"
-            >
-              <Share2 className="h-4 w-4" />
+              <span className="text-xs">{post.comments.length}</span>
             </Button>
           </div>
           <div className="flex items-center space-x-2">
-            <Input
-              placeholder="Add a comment..."
-              className="flex-grow bg-white border border-gray-200 text-sm rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <Button 
-              size="icon" 
-              className="rounded-full bg-green-600 hover:bg-green-700 text-white"
-              onClick={(e) => e.stopPropagation()}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="p-0 h-auto text-gray-600 hover:text-green-600 transition-colors duration-200"
             >
-              <Send className="h-4 w-4" />
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`rounded-full transition-colors duration-200 hover:text-green-600 ${
+                isSaved ? 'text-green-600' : 'text-gray-600'
+              }`}
+              onClick={toggleSave}
+            >
+              <Bookmark className="h-4 w-4" />
+              <span className="sr-only">Save post</span>
             </Button>
           </div>
         </CardFooter>
       </Card>
+      <PostModal
+        isOpen={isEditMode}
+        onClose={() => setIsEditMode(false)}
+        onSubmit={handleEditComplete}
+        initialData={{
+          type: post.type,
+          title: post.title,
+          content: post.content,
+          tags: post.tags
+        }}
+      />
     </motion.div>
   );
 }

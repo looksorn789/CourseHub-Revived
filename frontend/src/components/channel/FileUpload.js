@@ -1,5 +1,5 @@
-import { Button } from "./Button";
-import  Label  from "./Label";
+import Button from "../ui/Button";
+import  Label  from "../ui/Label";
 import { Upload } from "lucide-react";
 
 function cn(...classes) {
