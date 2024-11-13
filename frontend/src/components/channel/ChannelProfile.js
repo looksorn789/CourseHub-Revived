@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { Plus, Check, ChevronDown, Hash } from 'lucide-react';
 import { Post } from '../posts/Post';
-import { CreatePostModal } from '../posts/CreatePostModal';
+import { PostModal } from '../posts/PostModal';
 import { FullPostModal } from '../posts/FullPostModal';
 import { ChannelSidebar } from './ChannelSidebar';
 import { forumService } from '../../services/forumService';
@@ -33,17 +34,17 @@ const LoadingState = () => (
 const tempImage = 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&h=400&q=80';
 
 const transformPost = async (post, forumName = 'Unknown Channel') => {
-  // Default author object
   const defaultAuthor = {
     name: 'Anonymous',
     image: tempImage,
     username: 'anonymous',
-    channel: forumName
+    channel: forumName,
+    id: post.user_id
   };
 
-  // Base post structure with defaults
   const basePost = {
     id: post._id,
+    userId: post.user_id,
     title: post.title || 'Untitled Post',
     content: post.content || '',
     tags: post.tags || [],
@@ -60,7 +61,6 @@ const transformPost = async (post, forumName = 'Unknown Channel') => {
     
     // If no user data, return post with default author
     if (error || !userData) {
-      console.warn(`Could not fetch user data for post ${post._id}:`, error);
       return {
         ...basePost,
         author: defaultAuthor
@@ -84,7 +84,8 @@ const transformPost = async (post, forumName = 'Unknown Channel') => {
         name: userData.profile ? `${firstName} ${lastName}` : userData.username || 'Anonymous',
         image: avatarUrl,
         username: userData.username || 'anonymous',
-        channel: forumName
+        channel: forumName,
+        id: post.user_id
       }
     };
   } catch (error) {
@@ -103,23 +104,24 @@ export function ChannelProfile() {
   const [isJoined, setIsJoined] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
-  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [channelPosts, setChannelPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [currentUser, setCurrentUser] = useState({
     name: "",
     username: "",
     avatarUrl: "",
     initials: ""
   });
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const transformForumData = (forumData) => {
     if (!forumData) return null;
@@ -194,8 +196,10 @@ export function ChannelProfile() {
             name: fullName,
             username: username,
             avatarUrl: avatarUrl,
-            initials: `${first_name?.[0] || ''}${last_name?.[0] || ''}`
+            initials: `${first_name?.[0] || ''}${last_name?.[0] || ''}`,
+            id: data._id
           });
+          setCurrentUserId(data._id);
         } else if (error) {
           console.error("Failed to fetch user data:", error);
         }
@@ -277,18 +281,39 @@ export function ChannelProfile() {
     if (!channelData?._id) return;
 
     try {
-      console.log('Creating post with data:', postData);
       const response = await PostService.createPost(channelData._id, postData);
       
       if (response.data.success === false) {
         throw new Error(response.data.details || 'Failed to create post');
       }
-      console.log('Post creation response:', response.data);
       const transformedPost = await transformPost(response.data.data, channelData.name);
       setChannelPosts(prevPosts => [transformedPost, ...prevPosts]);
-      setIsCreatePostModalOpen(false);
+      setIsPostModalOpen(false);
     } catch (err) {
       throw new Error(err.response?.data?.details || err.message || 'Failed to create post');
+    }
+  };
+
+  const handleEditPost = async (postId, updatedData) => {
+    try {
+      const response = await PostService.updatePost(postId, updatedData);
+      
+      if (!response.success) {
+        throw new Error(response.details || 'Failed to update post');
+      }
+
+      const transformedPost = await transformPost(response.data, channelData.name);
+      setChannelPosts(prevPosts =>
+        prevPosts.map(post =>
+          post.id === postId ? transformedPost : post
+        )
+      );
+
+      toast.success('Post updated successfully!');
+    } catch (err) {
+      console.error('Error updating post:', err);
+      toast.error(err.message || 'Failed to update post');
+      throw err;
     }
   };
 
@@ -380,10 +405,10 @@ export function ChannelProfile() {
             <Input
               placeholder="Let's share what's going on your mind..."
               className="flex-grow bg-transparent border-none text-sm focus:ring-0 focus:outline-none"
-              onClick={() => setIsCreatePostModalOpen(true)}
+              onClick={() => setIsPostModalOpen(true)}
             />
             <Button
-              onClick={() => setIsCreatePostModalOpen(true)}
+              onClick={() => setIsPostModalOpen(true)}
               className="bg-green-600 text-white hover:bg-green-700 rounded-full px-6 py-2 font-semibold transition-colors duration-300"
             >
               Post
@@ -397,6 +422,8 @@ export function ChannelProfile() {
                 post={post} 
                 onClick={() => setSelectedPost(post)}
                 showChannelHash={false}
+                onEdit={handleEditPost}
+                currentUserId={currentUserId}
               />
             ))}
           </AnimatePresence>
@@ -426,10 +453,10 @@ export function ChannelProfile() {
         )}
       </AnimatePresence>
 
-      <CreatePostModal
-        isOpen={isCreatePostModalOpen}
-        onClose={() => setIsCreatePostModalOpen(false)}
-        onCreatePost={handleCreatePost}
+      <PostModal
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+        onSubmit={handleCreatePost}
       />
 
       <motion.div 

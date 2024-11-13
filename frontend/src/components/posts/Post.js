@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -8,7 +8,11 @@ import {
   MoreHorizontal,
   Bookmark,
   Hash,
+  Edit,
+  Flag,
+  UserX,
 } from "lucide-react";
+import { toast } from "react-toastify";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/Avatar";
 import { Card, CardFooter, CardHeader } from "../ui/Card";
 import Button from "../ui/Button";
@@ -19,14 +23,34 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "../ui/DropdownMenu";
+import { PostModal } from "./PostModal";
 
-export function Post({ post, onClick, showChannelHash = true }) {
+export function Post({ post, onClick, showChannelHash = true, onEdit, currentUserId }) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const isAuthor = currentUserId === post.author.id;
+
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    setIsEditMode(true);
+  };
+
+  const handleEditComplete = async (updatedData) => {
+    try {
+      await onEdit(post.id, updatedData);
+      setIsEditMode(false);
+    } catch (error) {
+      console.error('Error updating post:', error);
+      toast.error('Failed to update post');
+    }
+  };
 
   const getChannelSlug = (channelName) => {
     return channelName
@@ -94,20 +118,41 @@ export function Post({ post, onClick, showChannelHash = true }) {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-5 w-5 text-gray-500" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem>Report</DropdownMenuItem>
-                <DropdownMenuItem>Block user</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </CardHeader>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  {isAuthor && (
+                    <>
+                      <DropdownMenuItem onClick={handleEdit}
+                        className="flex items-center text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Post
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Flag className="h-4 w-4 mr-2" />
+                    Report
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center text-gray-600 hover:text-gray-700"
+                  >
+                    <UserX className="h-4 w-4 mr-2" />
+                    Block User
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </CardHeader>
         <div className="px-6 py-2">
           <h2 className="text-lg font-semibold text-gray-900 leading-tight mb-2 transition-colors duration-200 hover:text-green-600">
             {post.title}
@@ -131,7 +176,7 @@ export function Post({ post, onClick, showChannelHash = true }) {
             <div className="flex flex-wrap gap-2 mt-2">
               {post.tags.map((tag, index) => (
                 <Badge key={index} variant="secondary" className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                  #{tag}
+                  {tag}
                 </Badge>
               ))}
             </div>
@@ -181,6 +226,17 @@ export function Post({ post, onClick, showChannelHash = true }) {
           </div>
         </CardFooter>
       </Card>
+      <PostModal
+        isOpen={isEditMode}
+        onClose={() => setIsEditMode(false)}
+        onSubmit={handleEditComplete}
+        initialData={{
+          type: post.type,
+          title: post.title,
+          content: post.content,
+          tags: post.tags
+        }}
+      />
     </motion.div>
   );
 }

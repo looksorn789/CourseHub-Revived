@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HelpCircle, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
@@ -29,6 +29,17 @@ const validateTitle = (title) => {
   return null;
 };
 
+const validateTitleInput = (value) => {
+  const error = validateTitle(value);
+  if (error) {
+    return 'border-red-300 focus:border-red-500 focus:ring-red-500';
+  }
+  if (value.length > 0) {
+    return 'border-green-300 focus:border-green-500 focus:ring-green-500';
+  }
+  return 'border-green-200 focus:border-green-500 focus:ring-green-500';
+};
+
 const validateContent = (content) => {
   if (content.length < 10) {
     return 'Content must be at least 10 characters';
@@ -39,14 +50,25 @@ const validateContent = (content) => {
   return null;
 };
 
-export function CreatePostModal({ isOpen, onClose, onCreatePost }) {
-  const [type, setType] = useState('');
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [tags, setTags] = useState([]);
+export function PostModal({ isOpen, onClose, onSubmit, initialData = null }) {
+  const [type, setType] = useState(initialData?.type || '');
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [content, setContent] = useState(initialData?.content || '');
+  const [tags, setTags] = useState(initialData?.tags || []);
   const [newTag, setNewTag] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setType(initialData?.type || '');
+      setTitle(initialData?.title || '');
+      setContent(initialData?.content || '');
+      setTags(initialData?.tags || []);
+      setNewTag('');
+      setError('');
+    }
+  }, [isOpen, initialData]);
 
   const handleSubmit = async () => {
     try {
@@ -88,10 +110,9 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost }) {
         content: content.trim(),
         tags: tags,
       };
-      console.log('postData:', postData);
 
-      await onCreatePost(postData);
-      toast.success('Post created successfully!', {
+      await onSubmit(postData);
+      toast.success(`Post ${initialData ? 'updated' : 'created'} successfully!`, {
         style: {
           background: '#10B981',
           color: '#FFFFFF',
@@ -101,11 +122,10 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost }) {
           secondary: '#10B981',
         },
       });
-      resetForm();
-      onClose();
+      handleClose();
     } catch (err) {
-      setError(err.message || 'Failed to create post');
-      toast.error(`Error: ${err.message || 'Failed to create post'}`, {
+      setError(err.message || `Failed to ${initialData ? 'update' : 'create'} post`);
+      toast.error(`Error: ${err.message || `Failed to ${initialData ? 'update' : 'create'} post`}`, {
         style: {
           background: '#EF4444',
           color: '#FFFFFF',
@@ -118,17 +138,6 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const validateTitleInput = (value) => {
-    const error = validateTitle(value);
-    if (error) {
-      return 'border-red-300 focus:border-red-500 focus:ring-red-500';
-    }
-    if (value.length > 0) {
-      return 'border-green-300 focus:border-green-500 focus:ring-green-500';
-    }
-    return 'border-green-200 focus:border-green-500 focus:ring-green-500';
   };
 
   const handleAddTag = () => {
@@ -171,7 +180,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost }) {
         )}
 
         <AnimatePresence mode="wait">
-          {!type ? (
+          {!initialData && !type ? (
             <motion.div
               key="type-selection"
               initial={{ opacity: 0, y: 20 }}
@@ -319,7 +328,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost }) {
         </AnimatePresence>
 
         <DialogFooter className="mt-6">
-          {type && (
+          {(type || initialData) && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -328,18 +337,20 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost }) {
             >
               <Button
                 variant="outline"
-                onClick={() => setType('')}
+                onClick={() => !initialData && setType('')}
                 className="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 transition-colors"
                 disabled={loading}
               >
-                Back
+                {initialData ? 'Cancel' : 'Back'}
               </Button>
               <Button
                 onClick={handleSubmit}
                 className="bg-green-600 text-white hover:bg-green-700 transition-colors"
                 disabled={loading || !title.trim() || !content.trim()}
               >
-                {loading ? 'Posting...' : `Post ${type === 'question' ? 'Question' : 'Discussion'}`}
+                {loading 
+                  ? (initialData ? 'Saving...' : 'Creating...') 
+                  : (initialData ? 'Save Changes' : 'Create Post')}
               </Button>
             </motion.div>
           )}

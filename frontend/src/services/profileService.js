@@ -30,7 +30,6 @@ export const getUserById = async (userId) => {
     }
     
     const response = await api.get(`/api/profile/user/${userId}`);
-    console.log("response:", response);
 
     return { data: response.data, error: null };
   } catch (error) {

@@ -88,6 +88,7 @@ def get_user_profile():
             )
 
         response_data = {
+            "_id": str(user_data["_id"]),
             "email": user_data.get("email"),
             "username": user_data.get("username"),
             "profile": user_data.get("profile", {}),
