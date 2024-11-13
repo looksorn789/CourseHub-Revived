@@ -316,6 +316,17 @@ export function ChannelProfile() {
       throw err;
     }
   };
+  
+  const handleDeletePost = async (postId) => {
+    try {
+        await PostService.deletePost(postId);
+        setChannelPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+        toast.success('Post deleted successfully');
+    } catch (err) {
+        console.error('Error deleting post:', err);
+        toast.error(err.message || 'Failed to delete post');
+    }
+  };
 
   const handleJoinChannel = async () => {
     if (!channelData?._id) return;
@@ -423,6 +434,7 @@ export function ChannelProfile() {
                 onClick={() => setSelectedPost(post)}
                 showChannelHash={false}
                 onEdit={handleEditPost}
+                onDelete={handleDeletePost}
                 currentUserId={currentUserId}
               />
             ))}

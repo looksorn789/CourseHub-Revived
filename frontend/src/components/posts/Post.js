@@ -9,6 +9,7 @@ import {
   Bookmark,
   Hash,
   Edit,
+  Trash2,
   Flag,
   UserX,
 } from "lucide-react";
@@ -27,7 +28,7 @@ import {
 } from "../ui/DropdownMenu";
 import { PostModal } from "./PostModal";
 
-export function Post({ post, onClick, showChannelHash = true, onEdit, currentUserId }) {
+export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, currentUserId }) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -49,6 +50,18 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, currentUse
     } catch (error) {
       console.error('Error updating post:', error);
       toast.error('Failed to update post');
+    }
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    try {
+        if (window.confirm('Are you sure you want to delete this post?')) {
+            await onDelete(post.id);
+            toast.success('Post deleted successfully');
+        }
+    } catch (error) {
+        toast.error(error.message || 'Failed to delete post');
     }
   };
 
@@ -129,13 +142,19 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, currentUse
                   {isAuthor && (
                     <>
                       <DropdownMenuItem onClick={handleEdit}
-                        className="flex items-center text-green-600 hover:text-green-700 hover:bg-green-50"
+                          className="flex items-center text-green-600 hover:text-green-700 hover:bg-green-50"
                       >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Post
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Post
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleDelete}
+                          className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Post
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                    </>
+                  </>
                   )}
                   <DropdownMenuItem
                     className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
