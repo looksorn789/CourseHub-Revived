@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
 } from "../ui/DropdownMenu";
 import { PostModal } from "./PostModal";
+import { DeletePostConfirmation } from "./DeletePostConfirmation";
 
 export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, currentUserId }) {
   const navigate = useNavigate();
@@ -53,15 +54,16 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
     }
   };
 
-  const handleDelete = async (e) => {
-    e.stopPropagation();
-    try {
-        if (window.confirm('Are you sure you want to delete this post?')) {
-            await onDelete(post.id);
-            toast.success('Post deleted successfully');
-        }
+  const handleDelete = async () => {
+    try {      
+      if (!post.id) {
+        toast.error('Cannot delete post: Missing post ID');
+        return;
+      }
+
+      await onDelete(post.id);
     } catch (error) {
-        toast.error(error.message || 'Failed to delete post');
+      toast.error(error.message || 'Failed to delete post');
     }
   };
 
@@ -141,29 +143,39 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
                 <DropdownMenuContent align="end" className="w-40">
                   {isAuthor && (
                     <>
-                      <DropdownMenuItem onClick={handleEdit}
-                          className="flex items-center text-green-600 hover:text-green-700 hover:bg-green-50"
+                      <DropdownMenuItem
+                        onClick={handleEdit}
+                        className="flex items-center text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer"
                       >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Post
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Post
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDelete}
-                          className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                      <DropdownMenuItem
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Post
+                        <DeletePostConfirmation
+                          onConfirm={handleDelete}
+                          postTitle={post.title}
+                          trigger={
+                            <div className="flex items-center w-full cursor-pointer">
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Post
+                            </div>
+                          }
+                        />
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                  </>
+                    </>
                   )}
                   <DropdownMenuItem
-                    className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
                   >
                     <Flag className="h-4 w-4 mr-2" />
                     Report
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="flex items-center text-gray-600 hover:text-gray-700"
+                    className="flex items-center text-gray-600 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
                   >
                     <UserX className="h-4 w-4 mr-2" />
                     Block User
