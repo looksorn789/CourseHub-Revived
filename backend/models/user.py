@@ -135,7 +135,6 @@ class UserModel:
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow(),
                 "profile_completed": False,  # Initially false as profile isn't set up yet
-                "last_login": datetime.utcnow() if verified else None,
             }
 
             result = self.collection.insert_one(user_data)
