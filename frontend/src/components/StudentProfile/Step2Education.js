@@ -53,11 +53,16 @@ function Step2Education({
         `${BASE_URL}?api_key=${API_KEY}&id=${schoolId}&fields=id,latest.programs.cip_4_digit.title&per_page=100`,
       );
       const data = await response.json();
-      const majorsSet = new Set(
-        data.results[0]["latest.programs.cip_4_digit"].map(
-          (program) => program.title,
-        ),
-      );
+
+      const programs = data?.results?.[0]?.["latest.programs.cip_4_digit"];
+
+      if (!programs) {
+        console.error("No programs data available for this school.");
+        setMajors([]);
+        return;
+      }
+
+      const majorsSet = new Set(programs.map((program) => program.title));
       setMajors(Array.from(majorsSet));
     } catch (error) {
       console.error("Error fetching majors:", error);

@@ -3,12 +3,14 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
-import Settings from "./pages/Settings";
-import Feed from "./pages/Feed";
-import StudentProfilePage from "./pages/StudentProfilePage";
+import Home from "./pages/Home";
+import StudentProfile from "./components/StudentProfile/StudentProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
+import Explore from "./pages/Explore";
+import Settings from "./pages/Settings";
+import ChannelPage from "./pages/ChannelPage";
 
 function App() {
   return (
@@ -20,12 +22,44 @@ function App() {
         <Route path="/settings" element={<PrivateRoute><Settings /> </PrivateRoute>}/>
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/student-profile" element={<PrivateRoute><StudentProfilePage /> </PrivateRoute>}/>
         <Route
-          path="/feed"
+          path="/home"
           element={
             <PrivateRoute>
-              <Feed />
+              <Home />
+            </PrivateRoute>
+          }
+        />
+         
+        <Route
+          path="/student-profile"
+          element={
+            <PrivateRoute>
+              <StudentProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <PrivateRoute>
+              <Settings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/explore"
+          element={
+            <PrivateRoute>
+              <Explore />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/channel/:slug"
+          element={
+            <PrivateRoute>
+              <ChannelPage />
             </PrivateRoute>
           }
         />

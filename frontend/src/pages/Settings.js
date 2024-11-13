@@ -1,217 +1,77 @@
 import React, { useState } from "react";
-import Input from "../components/ui/Input"; // Ensure this Input component exists
-import Header from "../components/layout/Header";
+import Header from ".././components/layout/Header";
+import SettingSidebar from "../components/Settings/SettingSidebar";
+import AccountSettings from ".././components/Settings/AccountSettings";
+import SecuritySettings from "../components/Settings/SecuritySettings.js";
+import Notification from ".././components/Settings/Notification";
+import DeleteAccountModal from ".././components/Settings/DeleteAccountModal";
+import { deleteAccount } from "../services/authService"; // Import deleteAccount function
+import { useNavigate } from "react-router-dom";
 
-const Settings = () => {
-    const [isPasswordOpen, setIsPasswordOpen] = useState(false);
-    const [isAccountOpen, setIsAccountOpen] = useState(false);
-    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-    const [newPassword, setNewPassword] = useState(""); // To store the new password
+function Settings() {
+  const [activeSection, setActiveSection] = useState("profile");
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const navigate = useNavigate(); // Use navigate to redirect after deletion
 
-    const toggleSection = (section) => {
-        switch (section) {
-            case "password":
-                setIsPasswordOpen(!isPasswordOpen);
-                break;
-            case "account":
-                setIsAccountOpen(!isAccountOpen);
-                break;
-            case "notification":
-                setIsNotificationOpen(!isNotificationOpen);
-                break;
-            default:
-                break;
-        }
-    };
+  const handleDeleteAccount = async () => {
+    try {
+      const email = prompt(
+        "Please enter your email address to confirm account deletion:"
+      );
+      if (!email) {
+        alert("Email is required to delete your account.");
+        return;
+      }
+  
+      await deleteAccount(email);
+      alert("Your account has been successfully deleted.");
+      navigate("/"); // Redirect to homepage
+    } catch (error) {
+      console.error("Failed to delete account:", error);
+      alert("Failed to delete account. Please try again later.");
+    } finally {
+      setDeleteModalOpen(false); // Close modal
+    }
+  };
+  
 
-    const handlePasswordSubmit = (e) => {
-        e.preventDefault();
-        // Handle password reset logic here
-        console.log("Password reset for:", newPassword);
-    };
+  return (
+    <div className="min-h-screen">
+      {/* Header */}
+      <Header />
 
-    const handleCancel = () => {
-        setNewPassword(""); // Clear the input field
-    };
+      {/* Main Layout */}
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto bg-gray-50 shadow-lg">
+          <SettingSidebar
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            onDeleteClick={() => setDeleteModalOpen(true)}
+          />
+        </div>
 
-    const handleLogOut = () => {
-        // Handle logout logic here
-        console.log("Logged out");
-    };
-
-    const styles = {
-        settingsContainer: {
-            width: "80%",
-            margin: "8rem auto 0 auto",
-            padding: "5rem 5rem",
-            backgroundColor: "#f2f5f7",
-            borderRadius: "8px",
-            position: "relative",
-        },
-        settingsHeading: {
-            textAlign: "center",
-            color: "#2d573f",
-            fontWeight: "bold",
-            fontStyle: "italic",
-            fontSize: "2rem",
-            fontFamily: "'Georgia', serif",
-            marginBottom: "2.5rem",
-            position: "relative",
-            top: "-2rem",
-            letterSpacing: "0.05rem",
-            textTransform: "capitalize",
-            borderBottom: "2px solid #7ca38e",
-            paddingBottom: "0.5rem",
-        },
-        settingItem: {
-            marginBottom: "2rem",
-        },
-        settingBtn: {
-            width: "100%",
-            padding: "1rem",
-            fontSize: "1rem",
-            backgroundColor: "#d9e4dc",
-            border: "1px solid #7ca38e",
-            color: "#2d573f",
-            cursor: "pointer",
-            textAlign: "left",
-            borderRadius: "5px",
-            transition: "background-color 0.3s ease",
-        },
-        settingContent: {
-            padding: "1rem",
-            marginTop: "0.5rem",
-            backgroundColor: "#f8f9fa",
-            borderLeft: "4px solid #7ca38e",
-            borderRadius: "5px",
-        },
-        passwordInput: {
-            width: "100%",
-            padding: "0.5rem",
-            margin: "0.5rem 0",
-            fontSize: "1rem",
-            borderRadius: "4px",
-            border: "1px solid #7ca38e",
-        },
-        buttonGroup: {
-            display: "flex",
-            justifyContent: "center",
-            gap: "2rem",
-            marginTop: "1.5rem",
-            width: "100%",
-        },
-        cancelBtn: {
-            backgroundColor: "#d9534f",
-            color: "white",
-            padding: "0.75rem 1.5rem",
-            fontSize: "1rem",
-            borderRadius: "5px",
-            border: "none",
-            cursor: "pointer",
-            width: "20%",
-            transition: "box-shadow 0.3s ease, transform 0.3s ease",
-        },
-        submitBtn: {
-            backgroundColor: "#7ca38e",
-            color: "white",
-            padding: "0.75rem 2rem",
-            fontSize: "1.1rem",
-            borderRadius: "5px",
-            border: "none",
-            cursor: "pointer",
-            width: "30%",
-            transition: "box-shadow 0.3s ease, transform 0.3s ease",
-        },
-    };
-
-    return (
-        <>
-            <Header />
-            <div style={styles.settingsContainer}>
-                <p style={styles.settingsHeading}>Settings</p>
-
-                <div style={styles.settingItem}>
-                    <button
-                        style={styles.settingBtn}
-                        onClick={() => toggleSection("password")}
-                    >
-                        Password
-                    </button>
-                    {isPasswordOpen && (
-                        <div style={styles.settingContent}>
-                            <form onSubmit={handlePasswordSubmit}>
-                                <Input
-                                    type="password"
-                                    id="new-password"
-                                    name="new-password"
-                                    placeholder="Enter new password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    style={styles.passwordInput}
-                                />
-                                <div style={styles.buttonGroup}>
-                                    <button
-                                        type="button"
-                                        style={styles.cancelBtn}
-                                        onClick={handleCancel}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button type="submit" style={styles.submitBtn}>
-                                        Reset Password
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    )}
-                </div>
-
-                <div style={styles.settingItem}>
-                    <button
-                        style={styles.settingBtn}
-                        onClick={() => toggleSection("account")}
-                    >
-                        Manage Your Account
-                    </button>
-                    {isAccountOpen && (
-                        <div style={styles.settingContent}>
-                            <div style={styles.buttonGroup}>
-                                <button
-                                    type="button"
-                                    style={styles.cancelBtn}
-                                    onClick={handleLogOut}
-                                >
-                                    Log Out
-                                </button>
-                                <button type="submit" style={styles.submitBtn}>
-                                    Delete Your Account
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div style={styles.settingItem}>
-                    <button
-                        style={styles.settingBtn}
-                        onClick={() => toggleSection("notification")}
-                    >
-                        Notification Preferences
-                    </button>
-                    {isNotificationOpen && (
-                        <div style={styles.settingContent}>
-                            <div style={styles.buttonGroup}>
-                                <Input type="checkbox" id="notification" />
-                                <label htmlFor="notification">
-                                    Notification for mentions?
-                                </label>
-                            </div>
-                        </div>
-                    )}
-                </div>
+        {/* Main Content */}
+        <main className="flex-1 min-h-[calc(100vh-4rem)]">
+          <div className="flex justify-center">
+            <div className="w-full max-w-3xl bg-white shadow-md rounded-lg p-6 mt-6">
+              {activeSection === "profile" && <AccountSettings />}
+              {activeSection === "security" && <SecuritySettings />}
+              {activeSection === "notification" && <Notification />}
             </div>
-        </>
-    );
-};
+          </div>
+        </main>
+      </div>
+
+      {/* Delete Account Modal */}
+      {isDeleteModalOpen && (
+        <DeleteAccountModal
+          onClose={() => setDeleteModalOpen(false)}
+          onConfirm={handleDeleteAccount}
+        />
+      )}
+    </div>
+  );
+}
 
 export default Settings;

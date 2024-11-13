@@ -424,6 +424,7 @@ disable=raw-checker-failed,
         E1121,     # Too many positional arguments
         R0914,     # Too many local variables
         R0911,     # Too many return statements
+        W1203,   # Use of the global statement
 
 
 [FORMAT]
