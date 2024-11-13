@@ -1,65 +1,57 @@
-import axios from "./api";
+import api from "./api";
 
 export const signup = async (userData) => {
   try {
-    const response = await axios.post("/auth/signup", userData);
+    const response = await api.post("/api/auth/signup", userData);
     return response.data;
   } catch (error) {
-    throw error.response ? error.response.data : { message: "Network Error" };
+    throw error;
   }
 };
 
 export const verifyEmailCode = async (email, code) => {
   try {
-    const response = await axios.post("/auth/verify-email", {
+    const response = await api.post("/api/auth/verify-email", {
       email,
       code,
     });
     return response.data;
   } catch (error) {
-    console.error(
-      "Error verifying email:",
-      error.response?.data || error.message,
-    );
-    const message = error.response?.data?.message || "An error occurred.";
-    throw new Error(message);
+    throw error;
   }
 };
 
 export const signin = async (email, password) => {
   try {
-    const response = await axios.post("/auth/signin", {
+    const response = await api.post("/api/auth/signin", {
       email,
       password,
     });
     return response.data;
   } catch (error) {
-    const message = error.response
-      ? error.response.data.message
-      : "Network Error";
-    throw new Error(message);
+    throw error;
   }
 };
 
 export const requestResetPassword = async (email) => {
   try {
-    const response = await axios.post("/auth/request-reset-password", {
+    const response = await api.post("/api/auth/request-reset-password", {
       email,
     });
     return response.data;
   } catch (error) {
-    throw error.response ? error.response.data : { message: "Network Error" };
+    throw error;
   }
 };
 
 export const resetPassword = async (token, password) => {
   try {
-    const response = await axios.post(`/auth/reset-password/${token}`, {
+    const response = await api.post(`/api/auth/reset-password/${token}`, {
       password,
     });
     return response.data;
   } catch (error) {
-    throw error.response ? error.response.data : { message: "Network Error" };
+    throw error;
   }
 };
 
