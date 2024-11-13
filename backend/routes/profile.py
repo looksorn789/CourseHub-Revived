@@ -66,7 +66,6 @@ def create_profile():
     except Exception as e:
         return handle_error(e, "Error creating profile")
 
-
 @profile_bp.route("/user", methods=["GET"])
 @jwt_required()
 def get_user_profile():
@@ -99,6 +98,28 @@ def get_user_profile():
     except Exception as e:
         return handle_error(e, "Error retrieving user profile")
 
+@profile_bp.route("/user/<string:user_id>", methods=["GET"])
+@jwt_required()
+def get_other_user_profile(user_id):
+    """Get another user's profile by their user ID"""
+    try:
+        user_model = UserModel(current_app.db, current_app.supabase)
+        user_data = user_model.get_user_by_supabase_id(user_id)
+
+        if not user_data:
+            return jsonify({"error": "User not found"}), 404
+
+        response_data = {
+            "email": user_data.get("email"),
+            "username": user_data.get("username"),
+            "profile": user_data.get("profile", {}),
+            "profileCompleted": user_data.get("profile_completed", False),
+        }
+
+        return jsonify(response_data), 200
+
+    except Exception as e:
+        return handle_error(e, "Error retrieving user profile")
 
 @profile_bp.route("/user", methods=["PUT", "PATCH"])
 @jwt_required()
