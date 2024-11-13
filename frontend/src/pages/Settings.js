@@ -15,22 +15,25 @@ function Settings() {
 
   const handleDeleteAccount = async () => {
     try {
-      const email = prompt("Please enter your email address to confirm deletion:");
+      const email = prompt(
+        "Please enter your email address to confirm account deletion:"
+      );
       if (!email) {
         alert("Email is required to delete your account.");
         return;
       }
-
+  
       await deleteAccount(email);
       alert("Your account has been successfully deleted.");
-      navigate("/"); // Redirect to homepage or logout page
+      navigate("/"); // Redirect to homepage
     } catch (error) {
       console.error("Failed to delete account:", error);
       alert("Failed to delete account. Please try again later.");
     } finally {
-      setDeleteModalOpen(false);
+      setDeleteModalOpen(false); // Close modal
     }
   };
+  
 
   return (
     <div className="min-h-screen">
