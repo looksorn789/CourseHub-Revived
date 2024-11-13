@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.user import UserModel
 
-profile_bp = Blueprint("profile_bp", __name__)
+profile_bp = Blueprint('profile_bp', __name__)
 
 
 def handle_error(e: Exception, message: str = "An error occurred"):
