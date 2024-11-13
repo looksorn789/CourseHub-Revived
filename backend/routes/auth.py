@@ -441,3 +441,61 @@ def reset_password(token):
         )
 
     return jsonify({"message": "Password reset successfully"}), 200
+
+@auth_bp.route("/delete_account", methods=["DELETE"])
+def delete_account():
+    try:
+        # Get the user email from the request
+        data = request.get_json()
+        email = data.get("email")
+
+        if not email:
+            return jsonify({"message": "Email is required"}), 400
+
+        # Find the user in MongoDB
+        user_model = UserModel(current_app.db, current_app.supabase)
+        user = user_model.find_by_email(email)
+
+        if not user:
+            return jsonify({"message": "User not found in MongoDB"}), 404
+
+        supabase_user_id = user.get("supabase_id")
+
+        # Delete user from MongoDB
+        result = user_model.collection.delete_one({"email": email})
+        if result.deleted_count == 0:
+            return jsonify({"message": "Failed to delete user from MongoDB"}), 500
+
+        # Delete user from Supabase
+        try:
+            supabase_url = current_app.config["SUPABASE_URL"]
+            supabase_key = current_app.config["SUPABASE_KEY"]
+
+            headers = {
+                "apikey": supabase_key,
+                "Authorization": f"Bearer {supabase_key}",
+                "Content-Type": "application/json",
+            }
+
+            response = requests.delete(
+                f"{supabase_url}/auth/v1/admin/users/{supabase_user_id}",
+                headers=headers,
+                timeout=10,
+            )
+
+            if response.status_code != 204:  # Supabase returns 204 on successful deletion
+                return jsonify({
+                    "message": "Failed to delete user from Supabase",
+                    "details": response.text
+                }), 500
+
+        except Exception as e:
+            return jsonify({
+                "message": "Error deleting user from Supabase",
+                "details": str(e)
+            }), 500
+
+        return jsonify({"message": "Account deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"message": "An error occurred", "details": str(e)}), 500
