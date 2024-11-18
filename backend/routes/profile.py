@@ -66,6 +66,7 @@ def create_profile():
     except Exception as e:
         return handle_error(e, "Error creating profile")
 
+
 @profile_bp.route("/user", methods=["GET"])
 @jwt_required()
 def get_user_profile():
@@ -87,6 +88,7 @@ def get_user_profile():
             )
 
         response_data = {
+            "_id": str(user_data["_id"]),
             "email": user_data.get("email"),
             "username": user_data.get("username"),
             "profile": user_data.get("profile", {}),
@@ -97,29 +99,49 @@ def get_user_profile():
 
     except Exception as e:
         return handle_error(e, "Error retrieving user profile")
-
-@profile_bp.route("/user/<string:user_id>", methods=["GET"])
+    
+@profile_bp.route("/user/<user_id>", methods=["GET"])
 @jwt_required()
-def get_other_user_profile(user_id):
-    """Get another user's profile by their user ID"""
+def get_user_by_id(user_id):
+    """Get user profile by ID"""
     try:
         user_model = UserModel(current_app.db, current_app.supabase)
-        user_data = user_model.get_user_by_supabase_id(user_id)
+        user_data = user_model.find_by_id(user_id)
 
         if not user_data:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({
+                "error": "User not found",
+                "details": "No user found with the provided ID"
+            }), 404
 
         response_data = {
+            "_id": str(user_data["_id"]),
             "email": user_data.get("email"),
             "username": user_data.get("username"),
-            "profile": user_data.get("profile", {}),
-            "profileCompleted": user_data.get("profile_completed", False),
+            "profile": {
+                "first_name": user_data.get("profile", {}).get("first_name", ""),
+                "last_name": user_data.get("profile", {}).get("last_name", ""),
+                "bio": user_data.get("profile", {}).get("bio", ""),
+                "school": user_data.get("profile", {}).get("school", ""),
+                "major": user_data.get("profile", {}).get("major", ""),
+                "graduation_date": user_data.get("profile", {}).get("graduation_date"),
+                "avatar_config": user_data.get("profile", {}).get("avatar_config", {
+                    "style": "adventurer",
+                    "seed": user_data.get("username", "anonymous"),
+                    "options": {}
+                }),
+                "interests": user_data.get("profile", {}).get("interests", []),
+                "awards": user_data.get("profile", {}).get("awards", []),
+                "clubs": user_data.get("profile", {}).get("clubs", []),
+                "certifications": user_data.get("profile", {}).get("certifications", []),
+            }
         }
 
         return jsonify(response_data), 200
 
     except Exception as e:
         return handle_error(e, "Error retrieving user profile")
+
 
 @profile_bp.route("/user", methods=["PUT", "PATCH"])
 @jwt_required()
