@@ -19,7 +19,7 @@ class PostType(Enum):
 
 class Post:
     # Validation patterns
-    TITLE_PATTERN = r"^[a-zA-Z0-9\s\-_.,!?()]{3,150}$"
+    TITLE_PATTERN = r"^[a-zA-Z0-9\s\-_.,!?'\"()]{3,150}$"
 
     # Field validation rules
     POST_FIELDS = {
@@ -43,6 +43,12 @@ class Post:
             "required": True,
             "allowed_values": [t.value for t in PostType],
             "error": f"Type must be one of: {', '.join(t.value for t in PostType)}",
+        },
+        "tags": {
+            "type": list,
+            "required": False,
+            "max_items": 5,
+            "error": "Maximum 5 tags allowed"
         },
         "forum_id": {
             "type": str,
@@ -98,6 +104,7 @@ class Post:
                             "title": data["title"].strip(),
                             "content": data["content"].strip(),
                             "type": data["type"],
+                            "tags": data.get("tags", [])[:5],
                             "created_at": current_time,
                             "updated_at": current_time,
                             "last_activity_at": current_time,
@@ -137,9 +144,7 @@ class Post:
                 current_app.logger.error(f"Error creating post: {str(e)}")
                 return None, f"Error creating post: {str(e)}"
 
-    def update_post(
-        self, post_id: str, data: Dict, editor_id: str
-    ) -> Tuple[bool, Optional[str]]:
+    def update_post(self, post_id: str, data: Dict, editor_id: str) -> Tuple[bool, Optional[str]]:
         """Update an existing post"""
         try:
             post = self.find_by_id(post_id)
@@ -153,20 +158,22 @@ class Post:
 
             current_time = datetime.utcnow()
 
+            # Store previous version in edit history
+            edit_history_entry = {
+                "editor_id": ObjectId(editor_id),
+                "edited_at": current_time,
+                "previous_title": post["title"],
+                "previous_content": post["content"],
+                "previous_type": post.get("type"),
+                "previous_tags": post.get("tags", [])
+            }
+
             # Prepare data
             update_data = {
                 "updated_at": current_time,
                 "last_activity_at": current_time,
                 "metadata.last_edited_by": ObjectId(editor_id),
                 "metadata.last_edited_at": current_time,
-            }
-
-            # Store previous version in edit history
-            edit_history_entry = {
-                "editor_id": ObjectId(editor_id),
-                "edited_at": current_time,
-                "previous_title": post["title"],
-                "previous_content": post["content"]
             }
 
             # Update fields
@@ -176,6 +183,8 @@ class Post:
                 update_data["content"] = data["content"].strip()
             if "type" in data:
                 update_data["type"] = data["type"]
+            if "tags" in data:
+                update_data["tags"] = data["tags"][:5]
 
             # Update the post
             result = self.collection.update_one(
@@ -186,7 +195,15 @@ class Post:
                 }
             )
 
-            return result.modified_count > 0, None
+            if result.modified_count == 0:
+                return False, "No changes made to the post"
+
+            # Fetch the updated post to ensure we have all the latest data
+            updated_post = self.collection.find_one({"_id": ObjectId(post_id)})
+            if not updated_post:
+                return False, "Failed to retrieve updated post"
+
+            return True, None
 
         except Exception as e:
             return False, f"Error updating post: {str(e)}"
@@ -201,6 +218,11 @@ class Post:
                 if not isinstance(data[field_name], rules["type"]):
                     errors.append(f"{field_name} must be of type {rules['type'].__name__}")
                     continue
+                
+                # List validations
+                if field_name == "tags":
+                    if len(data[field_name]) > rules["max_items"]:
+                        errors.append(rules["error"])
 
                 # String validations
                 if isinstance(data[field_name], str):
@@ -282,35 +304,27 @@ class Post:
             per_page: int = 20,
             post_type: Optional[str] = None
         ) -> Tuple[list, int]:
-            """Get paginated posts for a forum"""
-            try:
-                # Build query
-                query = {
-                    "forum_id": ObjectId(forum_id)
-                }
-                
-                if post_type:
-                    query["type"] = post_type
+        """Get paginated posts for a forum"""
+        try:
+            # Build query
+            query = {
+                "forum_id": ObjectId(forum_id)
+            }
+            
+            if post_type:
+                query["type"] = post_type
 
-                # Execute query
-                total = self.collection.count_documents(query)
-                posts = list(
-                    self.collection.find(query)
-                    .sort("last_activity_at", -1)
-                    .skip((page - 1) * per_page)
-                    .limit(per_page)
-                )
+            # Execute query
+            total = self.collection.count_documents(query)
+            posts = list(
+                self.collection.find(query)
+                .sort("last_activity_at", -1)
+                .skip((page - 1) * per_page)
+                .limit(per_page)
+            )
 
-                # Clean up ObjectId fields
-                for post in posts:
-                    post["_id"] = str(post["_id"])
-                    post["forum_id"] = str(post["forum_id"])
-                    post["user_id"] = str(post["user_id"])
-                    if post.get("metadata", {}).get("last_edited_by"):
-                        post["metadata"]["last_edited_by"] = str(post["metadata"]["last_edited_by"])
+            return posts, total
 
-                return posts, total
-
-            except Exception as e:
-                print(f"Error getting forum posts: {str(e)}")
-                return [], 0
+        except Exception as e:
+            current_app.logger.error(f"Error getting forum posts: {str(e)}")
+            return [], 0

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { PlusCircle, Check } from "lucide-react";
-import Button from "./Button";
-import Input from "./Input";
-import Label from "./Label";
-import Textarea from "./Textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./Select";
-import { Dialog, DialogContent } from "./Dialog";
+import Button from '../ui/Button';
+import Label from "../ui/Label";
+import Input from "../ui/Input";
+import Textarea from "../ui/Textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/Select";
+import { Dialog, DialogContent } from "../ui/Dialog";
 import { FileUpload } from "./FileUpload";
 import { CHANNEL_TAGS, CREATION_STEPS } from "./constants";
 
