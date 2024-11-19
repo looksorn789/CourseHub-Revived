@@ -162,7 +162,7 @@ def update_comment(comment_id):
 
         return jsonify({
             "success": True,
-            "message": "Post updated successfully",
+            "message": "Comment updated successfully",
             "data": serialized_comment
         })
     
