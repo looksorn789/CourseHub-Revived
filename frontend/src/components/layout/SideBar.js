@@ -172,7 +172,7 @@ function Sidebar() {
                       </div>
                       {/* Channel List */}
                       <div className="space-y-1">
-                        {channels.map((channel, index) => (
+                        {/* {channels.map((channel, index) => (
                           <Button
                             key={`${channel.name}-${index}`}
                             variant="ghost"
@@ -186,7 +186,7 @@ function Sidebar() {
                             <span className="mr-3 text-lg">{channel.icon}</span>
                             <span className="text-sm">{channel.name}</span>
                           </Button>
-                        ))}
+                        ))} */}
                       </div>
                     </div>
                   </div>
