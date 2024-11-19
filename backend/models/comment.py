@@ -6,7 +6,7 @@ from flask import current_app
 
 class CommentStatus(Enum):
     ACTIVE = "active"
-    DELECTED = "deleted"
+    DELETED = "deleted"
     HIDDEN = "hidden"
 
 class Comment:
@@ -42,9 +42,8 @@ class Comment:
                     
                     comment_data = {
                         "post_id": ObjectId(data["post_id"]),
-                        "author": data["author"],
+                        "user_id": ObjectId(data["user_id"]),
                         "content": data["content"],
-                        "parent_id": data["parent_id"] if data["parent_id"] else None,
                         "created_at": datetime.utcnow(),
                         "updated_at": datetime.utcnow(),
                         "likes": 0,
@@ -152,7 +151,7 @@ class Comment:
                     # Decrement post comment count in post collection
                     post_collection = self.collection.database.get_collection('posts')
                     post_update = post_collection.update_one(
-                        {"_id": comment["comment_id"]},
+                        {"_id": comment["post_id"]},
                         {
                             "$inc": {"comment_count": -1},
                             "$set": {"updated_at": datetime.utcnow()}
@@ -176,7 +175,7 @@ class Comment:
             if field_name in data:
                 # Type validation
                 if not isinstance(data[field_name], rules["type"]):
-                    errors.append(f"{field_name} must be of type {rules["type"].__name__}")
+                    errors.append(f"{field_name} must be of type {rules['type'].__name__}")
                 
                 # String validations
                 if isinstance(data[field_name], str):
