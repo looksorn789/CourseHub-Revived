@@ -54,3 +54,16 @@ export const resetPassword = async (token, password) => {
     throw error;
   }
 };
+
+export const deleteAccount = async (email) => {
+  try {
+    const response = await api.delete("/api/auth/delete_account", {
+      data: { email }, // Include email in the request payload
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Network Error" };
+  }
+};
+
+

@@ -132,7 +132,7 @@ function Header() {
     <header className="sticky top-0 z-10 bg-white border-b border-green-100">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/home" className="flex items-center space-x-2">
             <BookOpen className="h-8 w-8 text-green-600" />
             <h1 className="text-2xl font-bold text-green-600">CourseHub</h1>
           </Link>
@@ -183,12 +183,12 @@ function Header() {
                   variant="outline"
                   size="sm"
                   className="w-full mt-2"
-                  onClick={() => navigate("/profile")}
-                >
+                  >
                   View Profile
                 </Button>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer py-2 px-3 hover:bg-green-50 rounded-md transition-colors duration-200">
+                <DropdownMenuItem className="cursor-pointer py-2 px-3 hover:bg-green-50 rounded-md transition-colors duration-200"
+                onClick={() => navigate("/settings")}>
                   <User className="mr-2 h-4 w-4" />
                   Account
                 </DropdownMenuItem>
@@ -255,6 +255,7 @@ function Header() {
                   <Button
                     variant="ghost"
                     className="justify-start text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+                    onClick={() => navigate("/settings")}
                   >
                     <Settings className="mr-2 h-5 w-5" />
                     Settings
