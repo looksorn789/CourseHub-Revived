@@ -12,15 +12,15 @@ function SettingsSidebar({ activeSection, setActiveSection, onDeleteClick }) {
   return (
     <div className="w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 flex flex-col">
       <div className="p-4">
-        <h2 className="text-lg font-bold mb-4">Account Settings</h2>
+        <h2 className="text-lg font-bold mb-4 text-gray-800">Account Settings</h2>
         <ul className="space-y-2">
           {sections.map((section) => (
             <li key={section.id}>
               <Button
                 variant="ghost"
-                className={`w-full justify-start ${
+                className={`w-full justify-start transition-colors ${
                   activeSection === section.id
-                    ? "bg-blue-100 text-blue-800"
+                    ? "bg-green-100 text-green-800 font-semibold"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
                 onClick={() => setActiveSection(section.id)}
