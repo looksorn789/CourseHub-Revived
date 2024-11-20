@@ -16,7 +16,6 @@ function SecuritySettings() {
     setIsLoading(true);
 
     try {
-      // Request password reset email
       await requestResetPassword(email);
       setIsSubmitted(true);
     } catch (err) {

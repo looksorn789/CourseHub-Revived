@@ -24,7 +24,7 @@ function Settings() {
 
       await deleteAccount(email);
       alert("Your account has been successfully deleted.");
-      navigate("/"); // Redirect to homepage
+      navigate("/");
     } catch (error) {
       console.error("Failed to delete account:", error);
       alert("Failed to delete account. Please try again later.");

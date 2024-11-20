@@ -38,8 +38,8 @@ function UserProfile() {
     username: '',
   });
   const [newItem, setNewItem] = useState({ interests: '', awards: '', clubs: '', certifications: '' });
-  const [isLoading, setIsLoading] = useState(true); // Loading state
-  const [error, setError] = useState(null); // Error state
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [customAvatar, setCustomAvatar] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState(getAvailableStyles()[0]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -143,7 +143,7 @@ function UserProfile() {
 
   const handleChange = (field, value) => {
     if (field === 'graduationDate' && value instanceof Date) {
-      value = value.toISOString(); // Convert date to ISO string
+      value = value.toISOString();
     }
     setUserData((prev) => ({
       ...prev,
@@ -408,7 +408,7 @@ function UserProfile() {
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea
                   id="bio"
-                  value={userData.profile?.bio || ""} // Use optional chaining and fallback to an empty string
+                  value={userData.profile?.bio || ""}
                   onChange={(e) => handleChange('bio', e.target.value)}
                   disabled={!isEditing}
                   className="mt-1 border-green-200 focus:ring-green-500 focus:border-green-500"
@@ -428,7 +428,7 @@ function UserProfile() {
                   <Label htmlFor="school">School</Label>
                   <Input
                     id="school"
-                    value={userData.profile?.school || ""} // Safely access school with optional chaining
+                    value={userData.profile?.school || ""} 
                     onChange={(e) => handleChange('school', e.target.value)}
                     disabled={!isEditing}
                     className="mt-1 border-green-200 focus:ring-green-500 focus:border-green-500"
@@ -438,7 +438,7 @@ function UserProfile() {
                   <Label htmlFor="major">Major</Label>
                   <Input
                     id="major"
-                    value={userData.profile?.major || ""} // Optional chaining with fallback
+                    value={userData.profile?.major || ""}
                     onChange={(e) => handleChange('major', e.target.value)}
                     disabled={!isEditing}
                     className="mt-1 border-green-200 focus:ring-green-500 focus:border-green-500"
@@ -481,7 +481,7 @@ function UserProfile() {
                   <Label htmlFor="gpa">GPA</Label>
                   <Input
                     id="gpa"
-                    value={userData.profile?.gpa || ""} // Use optional chaining and default to empty string
+                    value={userData.profile?.gpa || ""}
                     onChange={(e) => handleChange('gpa', e.target.value)}
                     disabled={!isEditing}
                     className="mt-1 border-green-200 focus:ring-green-500 focus:border-green-500"
