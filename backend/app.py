@@ -9,7 +9,7 @@ from config import Config
 from routes.auth import auth_bp
 from routes.forum import forum_bp
 from routes.post import post_bp
-from routes.comment import comment_bp
+from routes.comments import comment_bp
 from routes.reply import reply_bp
 from routes.profile import profile_bp
 
