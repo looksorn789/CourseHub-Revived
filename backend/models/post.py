@@ -109,6 +109,7 @@ class Post:
                             "updated_at": current_time,
                             "last_activity_at": current_time,
                             "view_count": 0,
+                            "comment_count": 0,
                             "metadata": {
                                 "last_edited_by": None,
                                 "last_edited_at": None,
