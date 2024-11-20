@@ -183,7 +183,7 @@ function Header() {
                   variant="outline"
                   size="sm"
                   className="w-full mt-2"
-                  onClick={() => navigate("/settings")}>
+                  >
                   View Profile
                 </Button>
                 <DropdownMenuSeparator />
