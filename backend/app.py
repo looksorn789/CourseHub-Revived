@@ -11,7 +11,6 @@ from routes.forum import forum_bp
 from routes.post import post_bp
 from routes.comment import comment_bp
 from routes.reply import reply_bp
-
 from routes.profile import profile_bp
 
 logging.basicConfig(level=logging.INFO)

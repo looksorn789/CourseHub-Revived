@@ -88,7 +88,6 @@ def create_reply(comment_id):
             "message": "Reply created successfully",
             "data": response_data
         }), 201
-
     except Exception as e:
         current_app.logger.error(f"Error creating reply: {str(e)}")
         return jsonify({
@@ -253,7 +252,6 @@ def delete_reply(reply_id):
             "message": "Reply deleted successfully",
             "data": {"reply_id": reply_id}
         })
-
     except Exception as e:
         current_app.logger.error(f"Error deleting reply: {str(e)}")
         return jsonify({
