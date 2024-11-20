@@ -211,6 +211,7 @@ function Sidebar() {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-gray-700 hover:bg-gray-100"
+                onClick={() => navigate("/settings")}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
