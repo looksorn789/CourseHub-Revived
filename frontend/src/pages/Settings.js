@@ -41,12 +41,9 @@ function Settings() {
       setActiveSection={setActiveSection}
       onDeleteClick={() => setDeleteModalOpen(true)}
     >
-      <div className="bg-white shadow-md rounded-lg p-6">
         {activeSection === "profile" && <UserProfile />}
         {activeSection === "security" && <SecuritySettings />}
         {activeSection === "notification" && <Notification />}
-      </div>
-
       {/* Delete Account Modal */}
       {isDeleteModalOpen && (
         <DeleteAccountModal

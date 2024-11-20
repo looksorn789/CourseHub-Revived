@@ -12,7 +12,7 @@ export function SettingLayout({
   maxWidth = "3xl",
 }) {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
       <Header />
       <div className="flex">
         {/* Left Sidebar */}
