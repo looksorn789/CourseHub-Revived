@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Header from ".././components/layout/Header";
 import SettingSidebar from "../components/Settings/SettingSidebar";
-import AccountSettings from ".././components/Settings/AccountSettings";
+import UserProfile from "../components/Settings/UserProfile.js";
 import SecuritySettings from "../components/Settings/SecuritySettings.js";
 import Notification from ".././components/Settings/Notification";
 import DeleteAccountModal from ".././components/Settings/DeleteAccountModal";
@@ -55,7 +55,7 @@ function Settings() {
         <main className="flex-1 min-h-[calc(100vh-4rem)]">
           <div className="flex justify-center">
             <div className="w-full max-w-3xl bg-white shadow-md rounded-lg p-6 mt-6">
-              {activeSection === "profile" && <AccountSettings />}
+              {activeSection === "profile" && <UserProfile />}
               {activeSection === "security" && <SecuritySettings />}
               {activeSection === "notification" && <Notification />}
             </div>
