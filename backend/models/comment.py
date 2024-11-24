@@ -364,7 +364,7 @@ class Comment:
         errors = []
 
         for field_name, rules in self.COMMENT_FIELDS.items():
-            if field_name in data:
+            if field_name in data and data[field_name] is not None:
                 # Type validation
                 if not isinstance(data[field_name], rules["type"]):
                     errors.append(f"{field_name} must be of type {rules['type'].__name__}")
