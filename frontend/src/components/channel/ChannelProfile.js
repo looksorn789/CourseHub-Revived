@@ -469,6 +469,7 @@ export function ChannelProfile() {
             post={selectedPost}
             isOpen={!!selectedPost}
             onClose={() => setSelectedPost(null)}
+            currentUserId={currentUserId}
           />
         )}
       </AnimatePresence>
