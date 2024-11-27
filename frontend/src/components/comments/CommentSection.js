@@ -53,7 +53,6 @@ export function CommentSection({ postId, currentUserId }) {
         mentionedUser
       });
       
-      // Update the comments state to show the new reply
       setComments(prev => {
         return prev.map(comment => {
           if (comment.id === commentId) {

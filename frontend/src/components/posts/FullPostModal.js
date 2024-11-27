@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogTitle } from "../ui/Dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../ui/Dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import ScrollArea from "../ui/ScrollArea";
 import { Separator } from "../ui/Separator";
 import { formatDistanceToNow } from 'date-fns';
-import { X, Hash, MessageCircle, Share2, Send } from 'lucide-react';
+import { X, Hash, MessageCircle, Share2, Send, Heart } from 'lucide-react';
 import { ReactionPicker } from "./ReactionPicker";
 import CommentService from '../../services/commentService';
 import { Comment } from '../comments/Comment';
 import { toast } from 'react-toastify';
+import TextareaAutosize from 'react-textarea-autosize';
+
 
 export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
   const [comments, setComments] = useState([]);
@@ -136,104 +138,104 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] w-[95vw] h-[90vh] p-0 overflow-hidden rounded-2xl bg-gradient-to-br from-white via-green-50 to-blue-50 flex flex-col shadow-xl">
+      <DialogContent 
+        className="sm:max-w-[800px] w-[95vw] h-[95vh] p-0 overflow-hidden rounded-3xl bg-gradient-to-br from-white via-green-50 to-blue-50 flex flex-col shadow-xl"
+      >
+      <DialogTitle className="sr-only">Post Details</DialogTitle>
+      <DialogDescription className="sr-only">
+        Full view of post and comments
+      </DialogDescription>
         {/* Header */}
-        <div className="flex-shrink-0 sticky top-0 z-10 bg-white bg-opacity-90 backdrop-blur-sm border-b border-gray-200 p-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="p-0.5 rounded-full bg-gradient-to-r from-green-400 to-green-600">
-              <Avatar className="h-10 w-10 border-2 border-white">
-                <AvatarImage src={post.author.image} alt={post.author.name} />
-                <AvatarFallback>{post.author.name[0]}</AvatarFallback>
-              </Avatar>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">{post.author.name}</p>
-              <div className="flex items-center text-xs text-gray-500">
-                <Hash className="h-3 w-3 mr-1" />
-                <span>{post.author.channel}</span>
-                <span className="mx-1">•</span>
-                <span>
-                  {formatDistanceToNow(new Date(post.timestamp), { addSuffix: true })}
-                </span>
+        <div className="flex-shrink-0 sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 py-4 px-6">
+          <div className="flex justify-between items-center max-w-3xl mx-auto">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 rounded-full blur-sm opacity-50" />
+                <Avatar className="h-12 w-12 border-2 border-white relative">
+                  <AvatarImage src={post.author.image} />
+                  <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
+                    {post.author.name[0]}
+                  </AvatarFallback>
+                </Avatar>
               </div>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-full hover:bg-gray-200"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
-        </div>
-        <DialogTitle className="sr-only">{post.title}</DialogTitle>
-
-        {/* Content */}
-        <ScrollArea className="flex-grow overflow-auto">
-          <div className="px-6 py-8">
-            <div className="max-w-2xl mx-auto">
-              <h2 className="text-3xl font-bold text-gray-900 leading-tight mb-4">
-                {post.title}
-              </h2>
-              {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2 mb-6">
-                  {post.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full"
-                    >
-                      {tag}
-                    </span>
-                  ))}
+              <div>
+                <p className="font-semibold text-gray-900">{post.author.name}</p>
+                <div className="flex items-center text-sm text-gray-500 mt-0.5">
+                  <Hash className="h-4 w-4 mr-1 text-green-500" />
+                  <span className="font-medium">{post.author.channel}</span>
+                  <span className="mx-2">•</span>
+                  <time className="text-gray-400">
+                    {formatDistanceToNow(new Date(post.timestamp), { addSuffix: true })}
+                  </time>
                 </div>
-              )}
-              <div className="prose prose-green max-w-none mb-8">
-                <p className="text-gray-700 text-lg leading-relaxed">
-                  {post.content}
-                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="rounded-full hover:bg-gray-100"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        <ScrollArea className="flex-grow">
+          <div className="px-6 py-8">
+            <div className="max-w-3xl mx-auto space-y-6">
+              <div className="space-y-4">
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+                  {post.title}
+                </h1>
+                
+                {post.tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {post.tags.map((tag, index) => (
+                      <span
+                        key={`${tag}-${index}`}
+                        className="px-3 py-1 bg-gradient-to-r from-green-50 to-green-100 text-green-700 text-sm font-medium rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="prose prose-lg prose-green">
+                  <p className="text-gray-700 leading-relaxed">
+                    {post.content}
+                  </p>
+                </div>
               </div>
 
-              {/* Reactions */}
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-1">
-                    <ReactionPicker
-                      onReact={handleReact}
-                      currentReaction={currentReaction}
-                    />
-                    <span className="text-xs text-gray-500">{totalReactions}</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-600 hover:text-green-600 transition-colors duration-200"
-                  >
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    <span>{comments.length}</span>
+              <div className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-6">
+                  <Button variant="ghost" className="rounded-full hover:bg-gray-100">
+                    <Heart className="h-5 w-5 mr-2 text-green-600" />
+                    <span className="text-gray-600">{totalReactions}</span>
+                  </Button>
+                  <Button variant="ghost" className="rounded-full hover:bg-gray-100">
+                    <MessageCircle className="h-5 w-5 mr-2 text-green-600" />
+                    <span className="text-gray-600">{comments.length}</span>
                   </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-600 hover:text-green-600 transition-colors duration-200"
-                >
-                  <Share2 className="mr-2 h-4 w-4" />
+                <Button variant="ghost" className="rounded-full hover:bg-gray-100">
+                  <Share2 className="h-5 w-5 text-green-600" />
                 </Button>
               </div>
 
-              <Separator className="my-8" />   
-              {/* Comments Section */}
-              <div className="space-y-6">
-                <h3 className="font-semibold text-xl mb-6">Comments</h3>
+              <Separator className="my-8" />
+
+              <div className="space-y-8">
+                <h2 className="text-2xl font-semibold text-gray-900">Comments</h2>
                 
                 {loading ? (
-                  <div className="animate-pulse space-y-4">
-                    {[1, 2, 3].map((n) => (
-                      <div key={n} className="flex space-x-3">
+                  <div className="space-y-6">
+                    {Array.from({ length: 3 }, (_, index) => (
+                      <div key={`skeleton-${index}`} className="animate-pulse flex gap-4">
                         <div className="h-10 w-10 bg-gray-200 rounded-full" />
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-3">
                           <div className="h-4 bg-gray-200 rounded w-1/4" />
                           <div className="h-4 bg-gray-200 rounded w-3/4" />
                         </div>
@@ -241,10 +243,10 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                     ))}
                   </div>
                 ) : (
-                  <>
-                    {comments.map((comment) => (
+                   <div className="space-y-6">
+                    {comments.map((comment, index) => (
                       <Comment
-                        key={comment.id}
+                        key={comment.id || `comment-${index}`}
                         comment={comment}
                         currentUserId={currentUserId}
                         onReply={handleReply}
@@ -254,49 +256,57 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                     ))}
                     
                     {hasMore && (
-                      <div className="text-center mt-6">
-                        <Button
-                          variant="ghost"
-                          onClick={loadMoreComments}
-                          className="text-green-600 hover:text-green-700"
-                        >
-                          Load More Comments
-                        </Button>
-                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={loadMoreComments}
+                        className="w-full rounded-xl border-gray-200 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        Load More Comments
+                      </Button>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </ScrollArea>
-        <div className="flex-shrink-0 sticky bottom-0 bg-white bg-opacity-90 backdrop-blur-sm border-t border-gray-200 p-4">
-          <div className="flex items-center space-x-3 max-w-2xl mx-auto">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback>You</AvatarFallback>
+
+        <div className="flex-shrink-0 sticky bottom-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 py-4 px-6">
+          <div className="flex items-start gap-4 max-w-3xl mx-auto">
+            <Avatar className="h-10 w-10 mt-1">
+              <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
+                You
+              </AvatarFallback>
             </Avatar>
-            <div className="flex-grow relative">
-              <Input
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..."
-                className="w-full bg-gray-100 border-none text-sm rounded-full pr-12 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAddComment();
-                  }
-                }}
-              />
-              <Button
-                size="icon"
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 rounded-full bg-green-600 hover:bg-green-700 text-white transition-colors duration-200"
-                onClick={handleAddComment}
-                disabled={!newComment.trim()}
-              >
-                <Send className="h-4 w-4" />
-                <span className="sr-only">Send comment</span>
-              </Button>
+            <div className="flex-1">
+              <div className="relative bg-white rounded-2xl shadow-sm border border-gray-200 hover:border-green-300 transition-all duration-200">
+                <TextareaAutosize
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  minRows={1}
+                  maxRows={5}
+                  className="w-full py-3 px-4 text-gray-700 text-sm rounded-2xl resize-none focus:outline-none focus:ring-0 pr-12"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleAddComment();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  className={`absolute right-2 bottom-2 rounded-full w-8 h-8 p-0 transition-all duration-200 
+                    ${newComment.trim() 
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md' 
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    }`}
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim()}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
