@@ -33,16 +33,31 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
     try {
       const response = await CommentService.getComments(post.id, page);
       const newComments = response.data.comments;
-      
-      setComments(prev => page === 1 ? newComments : [...prev, ...newComments]);
+
+      // Fetch replies for each comment
+      const commentsWithReplies = await Promise.all(
+        newComments.map(async (comment) => {
+          const repliesResponse = await CommentService.getReplies(comment._id);
+          return {
+            ...comment,
+            replies: repliesResponse.data.replies || [],
+          };
+        })
+      );
+
+      setComments(prev =>
+        page === 1 ? commentsWithReplies : [...prev, ...commentsWithReplies]
+      );
       setHasMore(response.data.page < response.data.total_pages);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching comments:', error);
-      toast.error('Failed to load comments');
+      console.error('Error fetching comments or replies:', error);
+      toast.error('Failed to load comments or replies');
       setLoading(false);
     }
   };
+
+  
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -51,8 +66,8 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
       const response = await CommentService.createComment(post.id, {
         content: newComment
       });
-      
-      setComments(prev => [response.data.data, ...prev]);
+
+      setComments(prev => [response.data, ...prev]);
       setNewComment("");
       toast.success('Comment posted successfully');
     } catch (error) {
@@ -61,43 +76,20 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
     }
   };
 
-  const handleReply = async (commentId, content, mentionedUser) => {
-    try {
-      const response = await CommentService.createComment(post.id, {
-        content,
-        parentId: commentId,
-        mentionedUser
-      });
-      
-      setComments(prev => {
-        return prev.map(comment => {
-          if (comment.id === commentId) {
-            return {
-              ...comment,
-              replies: [...(comment.replies || []), response.data.data]
-            };
-          }
-          return comment;
-        });
-      });
-      
-      toast.success('Reply posted successfully');
-    } catch (error) {
-      console.error('Error posting reply:', error);
-      toast.error('Failed to post reply');
-    }
-  };
-
   const handleEditComment = async (commentId, content) => {
+    if (!commentId) {
+      console.error('Cannot edit comment: commentId is undefined');
+      return;
+    }
     try {
       const response = await CommentService.updateComment(commentId, content);
-      
-      setComments(prev => 
-        prev.map(comment => 
-          comment.id === commentId ? response.data.data : comment
+
+      setComments(prev =>
+        prev.map(comment =>
+          comment._id === commentId ? response.data : comment
         )
       );
-      
+
       toast.success('Comment updated successfully');
     } catch (error) {
       console.error('Error updating comment:', error);
@@ -106,16 +98,101 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
   };
 
   const handleDeleteComment = async (commentId) => {
+    if (!commentId) {
+      console.error('Cannot delete comment: commentId is undefined');
+      return;
+    }
     try {
       await CommentService.deleteComment(commentId);
-      
-      setComments(prev => prev.filter(comment => comment.id !== commentId));
+
+      setComments(prev => prev.filter(comment => comment._id !== commentId));
       toast.success('Comment deleted successfully');
     } catch (error) {
       console.error('Error deleting comment:', error);
       toast.error('Failed to delete comment');
     }
   };
+
+
+  const handleAddReply = async (commentId, content, mentionedUser) => {
+    try {
+      const response = await CommentService.createReply(commentId, {
+        content,
+        mentionedUser
+      });
+
+      setComments(prev => {
+        return prev.map(comment => {
+          if (comment._id === commentId) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), response.data]
+            };
+          }
+          return comment;
+        });
+      });
+
+      toast.success('Reply posted successfully');
+    } catch (error) {
+      console.error('Error posting reply:', error);
+      toast.error('Failed to post reply');
+    }
+  };
+
+  const handleEditReply = async (replyId, content) => {
+    try {
+      const response = await CommentService.updateReply(replyId, content);
+
+      setComments(prevComments =>
+        prevComments.map(comment => {
+          if (comment.replies && comment.replies.length > 0) {
+            const updatedReplies = comment.replies.map(reply => {
+              if (reply._id === replyId) {
+                return response.data;
+              }
+              return reply;
+            });
+            return {
+              ...comment,
+              replies: updatedReplies
+            };
+          }
+          return comment;
+        })
+      );
+
+      toast.success('Reply updated successfully');
+    } catch (error) {
+      console.error('Error updating reply:', error);
+      toast.error('Failed to update reply');
+    }
+  };
+
+  const handleDeleteReply = async (replyId) => {
+    try {
+      await CommentService.deleteReply(replyId);
+
+      setComments(prevComments =>
+        prevComments.map(comment => {
+          if (comment.replies && comment.replies.length > 0) {
+            const updatedReplies = comment.replies.filter(reply => reply._id !== replyId);
+            return {
+              ...comment,
+              replies: updatedReplies
+            };
+          }
+          return comment;
+        })
+      );
+
+      toast.success('Reply deleted successfully');
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+      toast.error('Failed to delete reply');
+    }
+  };
+
 
   const handleReact = (reactionName) => {
     setPostReactions((prev) => ({
@@ -246,12 +323,14 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                    <div className="space-y-6">
                     {comments.map((comment, index) => (
                       <Comment
-                        key={comment.id || `comment-${index}`}
+                        key={comment._id || `comment-${index}`}
                         comment={comment}
                         currentUserId={currentUserId}
-                        onReply={handleReply}
-                        onEdit={handleEditComment}
-                        onDelete={handleDeleteComment}
+                        onAddReply={handleAddReply}
+                        onEditComment={handleEditComment}
+                        onDeleteComment={handleDeleteComment}
+                        onEditReply={handleEditReply}
+                        onDeleteReply={handleDeleteReply}
                       />
                     ))}
                     
