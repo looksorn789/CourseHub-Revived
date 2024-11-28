@@ -4,9 +4,6 @@ from models.user import UserModel
 from models.comment import Comment
 from utils.helpers import serialize_mongo_doc
 from typing import Optional
-from bson import ObjectId
-from datetime import datetime
-import bleach
 
 comment_bp = Blueprint('comment_bp', __name__)
 
@@ -41,10 +38,8 @@ def get_comments(post_id):
 
         current_app.logger.debug(f"Found {len(comments)} comments")
 
-        # Get liked comments for authenticated user - now with proper auth check
         try:
             from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-            # Only try to get likes if there's a valid JWT
             if verify_jwt_in_request(optional=True):
                 supabase_user_id = get_jwt_identity()
                 if supabase_user_id:
@@ -66,7 +61,6 @@ def get_comments(post_id):
                                 reply["liked"] = reply["_id"] in liked_comments
         except Exception as e:
             current_app.logger.warning(f"Error processing likes: {str(e)}")
-            # Continue without likes if there's an error
 
         # Serialize the response
         serialized_comments = serialize_mongo_doc(comments)
@@ -130,7 +124,6 @@ def create_comment(post_id):
                 "details": error
             }), 400
 
-        # Ensure we have the full comment data with user info
         if comment:
             # Serialize the response
             serialized_comment = serialize_mongo_doc(comment)
@@ -187,15 +180,13 @@ def create_reply(comment_id):
 
         # Prepare reply data
         reply_data = {
-            "post_id": parent_comment["post_id"],  # Use parent comment's post_id
+            "post_id": parent_comment["post_id"], 
             "user_id": user_id,
             "content": data.get("content"),
-            "parent_id": comment_id  # Set the parent_id to the comment we're replying to
+            "parent_id": comment_id
         }
 
         current_app.logger.debug(f"Creating reply to comment: {comment_id}")
-        
-        # Create the reply using the same model
         created_reply, error = comment_model.create_comment(reply_data)
 
         if error:
