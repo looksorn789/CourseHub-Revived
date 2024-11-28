@@ -1,20 +1,24 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../ui/Dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "../ui/Dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import ScrollArea from "../ui/ScrollArea";
 import { Separator } from "../ui/Separator";
-import { formatDistanceToNow } from 'date-fns';
-import { X, Hash, MessageCircle, Share2, Send, Heart } from 'lucide-react';
+import { formatDistanceToNow } from "date-fns";
+import { X, Hash, MessageCircle, Share2, Send, Heart } from "lucide-react";
 import { ReactionPicker } from "./ReactionPicker";
-import CommentService from '../../services/commentService';
-import { Comment } from '../comments/Comment';
-import { toast } from 'react-toastify';
-import TextareaAutosize from 'react-textarea-autosize';
-import { generateAvatarSvg } from '../../utils/avatarUtils';
-import { getUserProfile } from '../../services/profileService';
-
+import CommentService from "../../services/commentService";
+import { Comment } from "../comments/Comment";
+import { toast } from "react-toastify";
+import TextareaAutosize from "react-textarea-autosize";
+import { generateAvatarSvg } from "../../utils/avatarUtils";
+import { getUserProfile } from "../../services/profileService";
 
 export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
   const [comments, setComments] = useState([]);
@@ -25,11 +29,11 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [currentUser, setCurrentUser] = useState({
-      name: "",
-      username: "",
-      avatarUrl: "",
-      initials: ""
-    });
+    name: "",
+    username: "",
+    avatarUrl: "",
+    initials: "",
+  });
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -51,18 +55,18 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
             name: fullName,
             username: username,
             avatarUrl: avatarUrl,
-            initials: `${first_name?.[0] || ''}${last_name?.[0] || ''}`,
-            id: data._id
+            initials: `${first_name?.[0] || ""}${last_name?.[0] || ""}`,
+            id: data._id,
           });
         }
       } catch (error) {
-        console.error('Error fetching current user:', error);
+        console.error("Error fetching current user:", error);
       }
     };
 
     fetchCurrentUser();
   }, []);
-  
+
   useEffect(() => {
     if (isOpen && post?.id) {
       fetchComments();
@@ -73,103 +77,104 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
     try {
       setLoading(true);
       const response = await CommentService.getComments(post.id, page);
-      console.log('Fetched comments from fetchComments:', response.data);
-      
+      console.log("Fetched comments from fetchComments:", response.data);
+
       const newComments = response.data.comments;
-      
-      setComments(prev =>
-        page === 1 ? newComments : [...prev, ...newComments]
+
+      setComments((prev) =>
+        page === 1 ? newComments : [...prev, ...newComments],
       );
       setHasMore(response.data.page < response.data.total_pages);
     } catch (error) {
-      console.error('Error fetching comments:', error);
-      toast.error('Failed to load comments');
+      console.error("Error fetching comments:", error);
+      toast.error("Failed to load comments");
     } finally {
       setLoading(false);
     }
   };
-
-  
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
 
     try {
       const response = await CommentService.createComment(post.id, {
-        content: newComment
+        content: newComment,
       });
 
-      console.log('New comment response:', response.data);
+      console.log("New comment response:", response.data);
 
-      setComments(prev => [response.data, ...prev]);
+      setComments((prev) => [response.data, ...prev]);
       setNewComment("");
-      toast.success('Comment posted successfully');
+      toast.success("Comment posted successfully");
     } catch (error) {
-      console.error('Error posting comment:', error);
-      toast.error('Failed to post comment');
+      console.error("Error posting comment:", error);
+      toast.error("Failed to post comment");
     }
   };
 
   const handleEditComment = async (commentId, content) => {
     if (!commentId) {
-      console.error('Cannot edit comment: commentId is undefined');
+      console.error("Cannot edit comment: commentId is undefined");
       return;
     }
     try {
       const response = await CommentService.updateComment(commentId, content);
 
-      setComments(prev =>
-        prev.map(comment =>
-          comment._id === commentId ? response.data : comment
-        )
+      setComments((prev) =>
+        prev.map((comment) =>
+          comment._id === commentId ? response.data : comment,
+        ),
       );
 
-      toast.success('Comment updated successfully');
+      toast.success("Comment updated successfully");
     } catch (error) {
-      console.error('Error updating comment:', error);
-      toast.error('Failed to update comment');
+      console.error("Error updating comment:", error);
+      toast.error("Failed to update comment");
     }
   };
 
   const handleDeleteComment = async (commentId) => {
     if (!commentId) {
-      console.error('Cannot delete comment: commentId is undefined');
+      console.error("Cannot delete comment: commentId is undefined");
       return;
     }
     try {
       await CommentService.deleteComment(commentId);
 
-      setComments(prev => prev.filter(comment => comment._id !== commentId));
-      toast.success('Comment deleted successfully');
+      setComments((prev) =>
+        prev.filter((comment) => comment._id !== commentId),
+      );
+      toast.success("Comment deleted successfully");
     } catch (error) {
-      console.error('Error deleting comment:', error);
-      toast.error('Failed to delete comment');
+      console.error("Error deleting comment:", error);
+      toast.error("Failed to delete comment");
     }
   };
-
 
   const handleAddReply = async (commentId, content, mentionedUser) => {
     try {
       const response = await CommentService.createReply(commentId, {
         content,
-        mentionedUser
+        mentionedUser,
       });
 
-      setComments(prev => prev.map(comment => {
-        if (comment._id === commentId) {
-          return {
-            ...comment,
-            replies: [...(comment.replies || []), response.data],
-            reply_count: (comment.reply_count || 0) + 1
-          };
-        }
-        return comment;
-      }));
+      setComments((prev) =>
+        prev.map((comment) => {
+          if (comment._id === commentId) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), response.data],
+              reply_count: (comment.reply_count || 0) + 1,
+            };
+          }
+          return comment;
+        }),
+      );
 
-      toast.success('Reply posted successfully');
+      toast.success("Reply posted successfully");
     } catch (error) {
-      console.error('Error posting reply:', error);
-      toast.error('Failed to post reply');
+      console.error("Error posting reply:", error);
+      toast.error("Failed to post reply");
     }
   };
 
@@ -177,10 +182,10 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
     try {
       const response = await CommentService.updateComment(replyId, content);
 
-      setComments(prevComments =>
-        prevComments.map(comment => {
+      setComments((prevComments) =>
+        prevComments.map((comment) => {
           if (comment.replies && comment.replies.length > 0) {
-            const updatedReplies = comment.replies.map(reply => {
+            const updatedReplies = comment.replies.map((reply) => {
               if (reply._id === replyId) {
                 return response.data;
               }
@@ -188,17 +193,17 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
             });
             return {
               ...comment,
-              replies: updatedReplies
+              replies: updatedReplies,
             };
           }
           return comment;
-        })
+        }),
       );
 
-      toast.success('Reply updated successfully');
+      toast.success("Reply updated successfully");
     } catch (error) {
-      console.error('Error updating reply:', error);
-      toast.error('Failed to update reply');
+      console.error("Error updating reply:", error);
+      toast.error("Failed to update reply");
     }
   };
 
@@ -206,26 +211,27 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
     try {
       await CommentService.deleteComment(replyId);
 
-      setComments(prevComments =>
-        prevComments.map(comment => {
+      setComments((prevComments) =>
+        prevComments.map((comment) => {
           if (comment.replies && comment.replies.length > 0) {
-            const updatedReplies = comment.replies.filter(reply => reply._id !== replyId);
+            const updatedReplies = comment.replies.filter(
+              (reply) => reply._id !== replyId,
+            );
             return {
               ...comment,
-              replies: updatedReplies
+              replies: updatedReplies,
             };
           }
           return comment;
-        })
+        }),
       );
 
-      toast.success('Reply deleted successfully');
+      toast.success("Reply deleted successfully");
     } catch (error) {
-      console.error('Error deleting reply:', error);
-      toast.error('Failed to delete reply');
+      console.error("Error deleting reply:", error);
+      toast.error("Failed to delete reply");
     }
   };
-
 
   const handleReact = (reactionName) => {
     setPostReactions((prev) => ({
@@ -236,11 +242,14 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
   };
 
   const loadMoreComments = () => {
-    setPage(prev => prev + 1);
+    setPage((prev) => prev + 1);
     fetchComments();
   };
 
-  const totalReactions = Object.values(postReactions).reduce((a, b) => a + b, 0);
+  const totalReactions = Object.values(postReactions).reduce(
+    (a, b) => a + b,
+    0,
+  );
 
   if (!post) {
     return null;
@@ -248,13 +257,11 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className="sm:max-w-[800px] w-[95vw] h-[95vh] p-0 overflow-hidden rounded-3xl bg-gradient-to-br from-white via-green-50 to-blue-50 flex flex-col shadow-xl"
-      >
-      <DialogTitle className="sr-only">Post Details</DialogTitle>
-      <DialogDescription className="sr-only">
-        Full view of post and comments
-      </DialogDescription>
+      <DialogContent className="sm:max-w-[800px] w-[95vw] h-[95vh] p-0 overflow-hidden rounded-3xl bg-gradient-to-br from-white via-green-50 to-blue-50 flex flex-col shadow-xl">
+        <DialogTitle className="sr-only">Post Details</DialogTitle>
+        <DialogDescription className="sr-only">
+          Full view of post and comments
+        </DialogDescription>
         {/* Header */}
         <div className="flex-shrink-0 sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 py-4 px-6">
           <div className="flex justify-between items-center max-w-3xl mx-auto">
@@ -269,13 +276,17 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                 </Avatar>
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{post.author.name}</p>
+                <p className="font-semibold text-gray-900">
+                  {post.author.name}
+                </p>
                 <div className="flex items-center text-sm text-gray-500 mt-0.5">
                   <Hash className="h-4 w-4 mr-1 text-green-500" />
                   <span className="font-medium">{post.author.channel}</span>
                   <span className="mx-2">•</span>
                   <time className="text-gray-400">
-                    {formatDistanceToNow(new Date(post.timestamp), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(post.timestamp), {
+                      addSuffix: true,
+                    })}
                   </time>
                 </div>
               </div>
@@ -298,7 +309,7 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                 <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
                   {post.title}
                 </h1>
-                
+
                 {post.tags?.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {post.tags.map((tag, index) => (
@@ -321,16 +332,25 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
 
               <div className="flex items-center justify-between py-4">
                 <div className="flex items-center gap-6">
-                  <Button variant="ghost" className="rounded-full hover:bg-gray-100">
+                  <Button
+                    variant="ghost"
+                    className="rounded-full hover:bg-gray-100"
+                  >
                     <Heart className="h-5 w-5 mr-2 text-green-600" />
                     <span className="text-gray-600">{totalReactions}</span>
                   </Button>
-                  <Button variant="ghost" className="rounded-full hover:bg-gray-100">
+                  <Button
+                    variant="ghost"
+                    className="rounded-full hover:bg-gray-100"
+                  >
                     <MessageCircle className="h-5 w-5 mr-2 text-green-600" />
                     <span className="text-gray-600">{comments.length}</span>
                   </Button>
                 </div>
-                <Button variant="ghost" className="rounded-full hover:bg-gray-100">
+                <Button
+                  variant="ghost"
+                  className="rounded-full hover:bg-gray-100"
+                >
                   <Share2 className="h-5 w-5 text-green-600" />
                 </Button>
               </div>
@@ -338,12 +358,17 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
               <Separator className="my-8" />
 
               <div className="space-y-8">
-                <h2 className="text-2xl font-semibold text-gray-900">Comments</h2>
-                
+                <h2 className="text-2xl font-semibold text-gray-900">
+                  Comments
+                </h2>
+
                 {loading ? (
                   <div className="space-y-6">
                     {Array.from({ length: 3 }, (_, index) => (
-                      <div key={`skeleton-${index}`} className="animate-pulse flex gap-4">
+                      <div
+                        key={`skeleton-${index}`}
+                        className="animate-pulse flex gap-4"
+                      >
                         <div className="h-10 w-10 bg-gray-200 rounded-full" />
                         <div className="flex-1 space-y-3">
                           <div className="h-4 bg-gray-200 rounded w-1/4" />
@@ -353,26 +378,28 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                     ))}
                   </div>
                 ) : (
-                   <div className="space-y-6">
-                      {comments.map((comment, index) => (
-                        comment && comment._id ? (
-                          <Comment
-                            key={comment._id}
-                            comment={comment}
-                            currentUserId={currentUserId}
-                            onAddReply={handleAddReply}
-                            onEditComment={handleEditComment}
-                            onDeleteComment={handleDeleteComment}
-                            onEditReply={handleEditReply}
-                            onDeleteReply={handleDeleteReply}
-                          />
-                        ) : (
-                          <div key={`comment-placeholder-${index}`}>
-                            <p className="text-gray-500 italic">Invalid comment data</p>
-                          </div>
-                        )
-                      ))}
-                    
+                  <div className="space-y-6">
+                    {comments.map((comment, index) =>
+                      comment && comment._id ? (
+                        <Comment
+                          key={comment._id}
+                          comment={comment}
+                          currentUserId={currentUserId}
+                          onAddReply={handleAddReply}
+                          onEditComment={handleEditComment}
+                          onDeleteComment={handleDeleteComment}
+                          onEditReply={handleEditReply}
+                          onDeleteReply={handleDeleteReply}
+                        />
+                      ) : (
+                        <div key={`comment-placeholder-${index}`}>
+                          <p className="text-gray-500 italic">
+                            Invalid comment data
+                          </p>
+                        </div>
+                      ),
+                    )}
+
                     {hasMore && (
                       <Button
                         variant="outline"
@@ -393,10 +420,13 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
           <div className="flex items-start gap-4 max-w-3xl mx-auto">
             <Avatar className="h-12 w-12 border-2 border-white relative">
               {currentUser.avatarUrl ? (
-                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+                <AvatarImage
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.name}
+                />
               ) : (
                 <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
-                  {currentUser.initials || currentUser.name?.[0] || '?'}
+                  {currentUser.initials || currentUser.name?.[0] || "?"}
                 </AvatarFallback>
               )}
             </Avatar>
@@ -410,7 +440,7 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                   maxRows={5}
                   className="w-full py-3 px-4 text-gray-700 text-sm rounded-2xl resize-none focus:outline-none focus:ring-0 pr-12"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleAddComment();
                     }
@@ -419,9 +449,10 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                 <Button
                   size="sm"
                   className={`absolute right-2 bottom-2 rounded-full w-8 h-8 p-0 transition-all duration-200 
-                    ${newComment.trim() 
-                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md' 
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    ${
+                      newComment.trim()
+                        ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
                     }`}
                   onClick={handleAddComment}
                   disabled={!newComment.trim()}
