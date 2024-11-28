@@ -315,23 +315,23 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                 ) : (
                    <div className="space-y-6">
                       {comments.map((comment, index) => (
-    comment && comment._id ? (
-      <Comment
-        key={comment._id}
-        comment={comment}
-        currentUserId={currentUserId}
-        onAddReply={handleAddReply}
-        onEditComment={handleEditComment}
-        onDeleteComment={handleDeleteComment}
-        onEditReply={handleEditReply}
-        onDeleteReply={handleDeleteReply}
-      />
-    ) : (
-      <div key={`comment-placeholder-${index}`}>
-        <p className="text-gray-500 italic">Invalid comment data</p>
-      </div>
-    )
-  ))}
+                        comment && comment._id ? (
+                          <Comment
+                            key={comment._id}
+                            comment={comment}
+                            currentUserId={currentUserId}
+                            onAddReply={handleAddReply}
+                            onEditComment={handleEditComment}
+                            onDeleteComment={handleDeleteComment}
+                            onEditReply={handleEditReply}
+                            onDeleteReply={handleDeleteReply}
+                          />
+                        ) : (
+                          <div key={`comment-placeholder-${index}`}>
+                            <p className="text-gray-500 italic">Invalid comment data</p>
+                          </div>
+                        )
+                      ))}
                     
                     {hasMore && (
                       <Button

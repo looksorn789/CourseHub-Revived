@@ -36,7 +36,7 @@ export function Comment({
   const [editContent, setEditContent] = useState(comment.content);
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState('');
-  const [showReplies, setShowReplies] = useState(true);
+  const [showReplies, setShowReplies] = useState(false);
 
   const isAuthor = currentUserId === comment.user_id;
   const maxDepth = 3;
@@ -118,11 +118,11 @@ export function Comment({
                     </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40 rounded-xl p-1">
-                    <DropdownMenuItem onClick={() => setIsEditing(true)} className="rounded-lg cursor-pointer">
+                    <DropdownMenuItem onClick={() => setIsEditing(true)} className="flex items-center text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer">
                         <Edit2 className="h-4 w-4 mr-2" />
                         Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDeleteClick} className="text-red-600 rounded-lg cursor-pointer">
+                    <DropdownMenuItem onClick={handleDeleteClick} className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer w-full px-2 py-1.5">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                     </DropdownMenuItem>
@@ -130,39 +130,49 @@ export function Comment({
                 </DropdownMenu>
                 )}
             </div>
-
+            
             {isEditing ? (
                 <div className="space-y-3">
-                <TextareaAutosize
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full rounded-2xl border-gray-200 bg-gray-50 p-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                    minRows={2}
-                />
-                <div className="flex gap-2">
+                    <div className="relative bg-white rounded-2xl shadow-sm border border-gray-200 transition-all duration-200 hover:border-green-200">
+                    <TextareaAutosize
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="w-full py-3 px-4 text-sm rounded-2xl resize-none focus:outline-none focus:ring-0 pr-12"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSubmitEdit();
+                            }
+                        }}
+                        minRows={2}
+                        maxRows={5}
+                    />
+                    </div>
+                    <div className="flex gap-2">
                     <Button
-                    size="sm"
-                    onClick={handleSubmitEdit}
-                    className="rounded-full bg-green-600 hover:bg-green-700 text-white"
+                        size="sm"
+                        onClick={handleSubmitEdit}
+                        className="rounded-full bg-green-600 hover:bg-green-700 text-white"
                     >
-                    Save
+                        Save
                     </Button>
                     <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
                         setIsEditing(false);
                         setEditContent(comment.content);
-                    }}
-                    className="rounded-full"
+                        }}
+                        className="rounded-full"
                     >
-                    Cancel
+                        Cancel
                     </Button>
+                    </div>
                 </div>
-                </div>
-            ) : (
+                ) : (
                 <p className="text-gray-700 leading-relaxed">{comment.content}</p>
-            )}
+                )}
+
 
             <div className="flex items-center gap-4 mt-3">
                 <Button
@@ -200,6 +210,12 @@ export function Comment({
                     onChange={(e) => setReplyContent(e.target.value)}
                     placeholder={`Reply to @${comment.user_info?.username}...`}
                     className="w-full py-3 px-4 text-sm rounded-2xl resize-none focus:outline-none focus:ring-0 pr-12"
+                    onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmitReply();
+                    }
+                  }}
                     minRows={1}
                     maxRows={5}
                     />
