@@ -327,7 +327,43 @@ def list_forum_posts(forum_id):
             "details": str(e)
         }), 500
     
+@post_bp.route("/", methods=["GET"])
+@post_bp.route("", methods=["GET"])
+def get_all_posts():
+   try:
+       page = int(request.args.get("page", 1))
+       per_page = min(int(request.args.get("per_page", 20)), 50)
+       post_type = request.args.get("type")
 
+       post_model = Post(current_app.db, current_app.supabase)
+       query = {}
+       if post_type:
+           query["type"] = post_type
+
+       total = post_model.collection.count_documents(query)
+       posts = list(
+           post_model.collection.find(query)
+           .sort("created_at", -1)
+           .skip((page - 1) * per_page)
+           .limit(per_page)
+       )
+
+       serialized_posts = serialize_mongo_doc(posts)
+
+       return jsonify({
+           "data": {
+               "posts": serialized_posts, 
+               "total": total,
+               "page": page,
+               "per_page": per_page,
+               "total_pages": (total + per_page - 1) // per_page
+           }
+       }), 200
+
+   except Exception as e:
+       return jsonify({"error": str(e)}), 500
+    
+    
 # Error handlers
 @post_bp.errorhandler(400)
 def handle_bad_request(e):

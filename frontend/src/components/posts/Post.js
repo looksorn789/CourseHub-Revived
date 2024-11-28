@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import {
   Heart,
@@ -28,16 +28,38 @@ import {
 } from "../ui/DropdownMenu";
 import { PostModal } from "./PostModal";
 import { DeletePostConfirmation } from "./DeletePostConfirmation";
+import { ReactionPicker } from "./ReactionPicker";
 
-export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, currentUserId }) {
+export function Post({
+  post,
+  onClick,
+  showChannelHash = true,
+  onEdit,
+  onDelete,
+  currentUserId,
+}) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [postReactions, setPostReactions] = useState(post.reactions || {});
+  const [currentReaction, setCurrentReaction] = useState(null);
   const isAuthor = currentUserId === post.author.id;
 
+  const handleReact = (reactionName) => {
+    setPostReactions((prev) => ({
+      ...prev,
+      [reactionName]: (prev[reactionName] || 0) + 1,
+    }));
+    setCurrentReaction(reactionName);
+  };
+
+  const totalReactions = Object.values(postReactions).reduce(
+    (a, b) => a + b,
+    0,
+  );
 
   const handleEdit = (e) => {
     e.stopPropagation();
@@ -49,36 +71,37 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
       await onEdit(post.id, updatedData);
       setIsEditMode(false);
     } catch (error) {
-      console.error('Error updating post:', error);
-      toast.error('Failed to update post');
+      console.error("Error updating post:", error);
+      toast.error("Failed to update post");
     }
   };
 
   const handleDelete = async () => {
-    try {      
+    try {
       if (!post.id) {
-        toast.error('Cannot delete post: Missing post ID');
+        toast.error("Cannot delete post: Missing post ID");
         return;
       }
 
       await onDelete(post.id);
     } catch (error) {
-      toast.error(error.message || 'Failed to delete post');
+      toast.error(error.message || "Failed to delete post");
     }
   };
 
   const getChannelSlug = (channelName) => {
     return channelName
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
   };
 
   const handleChannelClick = (e) => {
     e.stopPropagation();
-    const channelSlug = post.author.slug || 
-                       post.author.channelSlug || 
-                       getChannelSlug(post.author.channel);
+    const channelSlug =
+      post.author.slug ||
+      post.author.channelSlug ||
+      getChannelSlug(post.author.channel);
 
     if (channelSlug) {
       navigate(`/channel/${channelSlug}`);
@@ -105,7 +128,7 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
       transition={{ duration: 0.5 }}
       className="w-full"
     >
-      <Card 
+      <Card
         className="mb-6 bg-gradient-to-br from-white via-green-50 to-blue-50 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden border-none cursor-pointer"
         onClick={onClick}
       >
@@ -118,7 +141,9 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
               </Avatar>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">{post.author.name}</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {post.author.name}
+              </p>
               <div className="flex items-center text-xs text-gray-500">
                 {showChannelHash && <Hash className="h-3 w-3 mr-1" />}
                 <button
@@ -128,67 +153,74 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
                   {post.author.channel}
                 </button>
                 <span className="mx-1">•</span>
-                <span>{formatDistanceToNow(post.timestamp, { addSuffix: true })}</span>
+                <span>
+                  {formatDistanceToNow(new Date(post.timestamp), {
+                    addSuffix: true,
+                  })}
+                </span>
               </div>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-5 w-5 text-gray-500" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  {isAuthor && (
-                    <>
-                      <DropdownMenuItem
-                        onClick={handleEdit}
-                        className="flex items-center text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer"
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Post
-                      </DropdownMenuItem>
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer w-full px-2 py-1.5"
-                      >
-                        <DeletePostConfirmation
-                          onConfirm={handleDelete}
-                          postTitle={post.title}
-                          trigger={
-                            <div className="flex items-center w-full">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              <span className="text-sm">Delete Post</span>
-                            </div>
-                          }
-                        />
-                      </div>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem
-                    className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 mr-2" />
-                    Report
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="flex items-center text-gray-600 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
-                  >
-                    <UserX className="h-4 w-4 mr-2" />
-                    Block User
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </CardHeader>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                {isAuthor && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={handleEdit}
+                      className="flex items-center text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Post
+                    </DropdownMenuItem>
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer w-full px-2 py-1.5"
+                    >
+                      <DeletePostConfirmation
+                        onConfirm={handleDelete}
+                        postTitle={post.title}
+                        trigger={
+                          <div className="flex items-center w-full">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            <span className="text-sm">Delete Post</span>
+                          </div>
+                        }
+                      />
+                    </div>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer">
+                  <Flag className="h-4 w-4 mr-2" />
+                  Report
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center text-gray-600 hover:text-gray-700 hover:bg-gray-100 cursor-pointer">
+                  <UserX className="h-4 w-4 mr-2" />
+                  Block User
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
         <div className="px-6 py-2">
           <h2 className="text-lg font-semibold text-gray-900 leading-tight mb-2 transition-colors duration-200 hover:text-green-600">
             {post.title}
           </h2>
-          <p className={`text-sm text-gray-700 ${!isExpanded ? 'line-clamp-3' : ''}`}>
+          <p
+            className={`text-sm text-gray-700 ${!isExpanded ? "line-clamp-3" : ""}`}
+          >
             {post.content}
           </p>
           {post.content.length > 150 && (
@@ -200,13 +232,17 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
                 setIsExpanded(!isExpanded);
               }}
             >
-              {isExpanded ? 'See less' : 'See more'}
+              {isExpanded ? "See less" : "See more"}
             </Button>
           )}
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {post.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full"
+                >
                   {tag}
                 </Badge>
               ))}
@@ -215,21 +251,21 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
         </div>
         <CardFooter className="flex justify-between items-center pt-2 px-6 pb-4">
           <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`p-0 h-auto transition-colors duration-200 hover:text-green-600 ${
-                isLiked ? 'text-green-600' : 'text-gray-600'
-              }`}
-              onClick={toggleLike}
-            >
-              <Heart className="mr-1 h-4 w-4" />
-              <span className="text-xs">{likeCount}</span>
-            </Button>
+            <div className="flex items-center space-x-1">
+              <ReactionPicker
+                onReact={handleReact}
+                currentReaction={currentReaction}
+              />
+              <span className="text-xs text-gray-500">{totalReactions}</span>
+            </div>
             <Button
               variant="ghost"
               size="sm"
               className="p-0 h-auto text-gray-600 hover:text-green-600 transition-colors duration-200"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick && onClick();
+              }}
             >
               <MessageCircle className="mr-1 h-4 w-4" />
               <span className="text-xs">{post.comments.length}</span>
@@ -239,7 +275,8 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-auto text-gray-600 hover:text-green-600 transition-colors duration-200"
+              className="text-gray-600 hover:text-green-600 transition-colors duration-200"
+              onClick={(e) => e.stopPropagation()}
             >
               <Share2 className="h-4 w-4" />
             </Button>
@@ -247,7 +284,7 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
               variant="ghost"
               size="icon"
               className={`rounded-full transition-colors duration-200 hover:text-green-600 ${
-                isSaved ? 'text-green-600' : 'text-gray-600'
+                isSaved ? "text-green-600" : "text-gray-600"
               }`}
               onClick={toggleSave}
             >
@@ -265,7 +302,7 @@ export function Post({ post, onClick, showChannelHash = true, onEdit, onDelete, 
           type: post.type,
           title: post.title,
           content: post.content,
-          tags: post.tags
+          tags: post.tags,
         }}
       />
     </motion.div>

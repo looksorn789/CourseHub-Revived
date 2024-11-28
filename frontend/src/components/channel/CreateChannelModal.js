@@ -5,7 +5,7 @@ import Label from "../ui/Label";
 import Input from "../ui/Input";
 import Textarea from "../ui/Textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/Select";
-import { Dialog, DialogContent } from "../ui/Dialog";
+import { Dialog, DialogContent, DialogTitle } from "../ui/Dialog";
 import { FileUpload } from "./FileUpload";
 import { CHANNEL_TAGS, CREATION_STEPS } from "./constants";
 
@@ -140,14 +140,12 @@ export function CreateChannelModal() {
         <span className="text-sm font-medium">Create Channel</span>
       </Button>
       <DialogContent className="sm:max-w-[500px] bg-white">
-        <div>
-          <h2 className="text-2xl font-bold text-green-600">
-            Create New Channel
-          </h2>
-          <p className="text-gray-500">
-            Follow the steps to create your new channel
-          </p>
-        </div>
+        <DialogTitle className="text-2xl font-bold text-green-600">
+          Create New Channel
+        </DialogTitle>
+        <p className="text-gray-500">
+          Follow the steps to create your new channel
+        </p>
         <div className="mb-8">
           <div className="flex justify-between items-center">
             {CREATION_STEPS.map((step, index) => (
@@ -174,7 +172,9 @@ export function CreateChannelModal() {
           <div className="mt-4 h-2 bg-gray-200 rounded-full">
             <div
               className="h-full bg-green-600 rounded-full transition-all duration-300 ease-in-out"
-              style={{ width: `${((currentStep + 1) / CREATION_STEPS.length) * 100}%` }}
+              style={{
+                width: `${((currentStep + 1) / CREATION_STEPS.length) * 100}%`,
+              }}
             />
           </div>
         </div>
@@ -199,6 +199,7 @@ export function CreateChannelModal() {
           </div>
         </form>
       </DialogContent>
+
     </Dialog>
   );
 }
