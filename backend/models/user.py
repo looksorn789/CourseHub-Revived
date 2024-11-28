@@ -386,3 +386,11 @@ class UserModel:
         except Exception as e:
             print(f"Error getting user by supabase_id: {e}")
             return None
+
+    def find_by_username(self, username: str):
+        """Find user by username"""
+        try:
+            return self.collection.find_one({"username": username})
+        except Exception as e:
+            print(f"Error finding user by username: {e}")
+            return None

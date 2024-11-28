@@ -141,6 +141,45 @@ def get_user_by_id(user_id):
 
     except Exception as e:
         return handle_error(e, "Error retrieving user profile")
+    
+@profile_bp.route("/user/username/<username>", methods=["GET"])
+def get_user_by_username(username):
+    """Get user profile by username"""
+    try:
+        user_model = UserModel(current_app.db, current_app.supabase)
+        user_data = user_model.find_by_username(username)
+
+        if not user_data:
+            return jsonify({
+                "error": "User not found",
+                "details": "No user found with the provided username"
+            }), 404
+
+        response_data = {
+            "_id": str(user_data["_id"]),
+            "username": user_data.get("username"),
+            "profile": {
+                "first_name": user_data.get("profile", {}).get("first_name", ""),
+                "last_name": user_data.get("profile", {}).get("last_name", ""),
+                "bio": user_data.get("profile", {}).get("bio", ""),
+                "school": user_data.get("profile", {}).get("school", ""),
+                "major": user_data.get("profile", {}).get("major", ""),
+                "avatar_config": user_data.get("profile", {}).get("avatar_config", {
+                    "style": "adventurer",
+                    "seed": user_data.get("username", "anonymous"),
+                    "options": {}
+                }),
+                "interests": user_data.get("profile", {}).get("interests", []),
+                "awards": user_data.get("profile", {}).get("awards", []),
+                "clubs": user_data.get("profile", {}).get("clubs", []),
+                "certifications": user_data.get("profile", {}).get("certifications", []),
+            }
+        }
+
+        return jsonify(response_data), 200
+
+    except Exception as e:
+        return handle_error(e, "Error retrieving user profile")
 
 
 @profile_bp.route("/user", methods=["PUT", "PATCH"])
