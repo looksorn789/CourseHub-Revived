@@ -19,6 +19,19 @@ class CommentService {
       const response = await api.get(`/api/comments/post/${postId}/comments`, {
         params: { page, per_page: perPage }
       });
+      console.log('Fetched comments from getComments:', response.data.comments);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async createReply(commentId, replyData) {
+    try {
+      const response = await api.post(`/api/comments/${commentId}/replies`, {
+        content: replyData.content,
+        mentioned_user: replyData.mentionedUser || null
+      });
       return response.data;
     } catch (error) {
       throw error;
@@ -27,7 +40,7 @@ class CommentService {
 
   static async updateComment(commentId, content) {
     try {
-      const response = await api.patch(`/api/comments/comments/${commentId}`, {
+      const response = await api.patch(`/api/comments/${commentId}`, {
         content
       });
       return response.data;
@@ -38,55 +51,22 @@ class CommentService {
 
   static async deleteComment(commentId) {
     try {
-      const response = await api.delete(`/api/comments/comments/${commentId}`);
+      const response = await api.delete(`/api/comments/${commentId}`);
       return response.data;
     } catch (error) {
       throw error;
     }
   }
 
-   static async createReply(commentId, replyData) {
+  static async toggleLike(commentId) {
     try {
-      const response = await api.post(`/api/replies/comments/${commentId}/replies`, {
-        content: replyData.content,
-        mentioned_user: replyData.mentionedUser || null
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static async updateReply(replyId, content) {
-    try {
-      const response = await api.patch(`/api/replies/replies/${replyId}`, {
-        content
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static async deleteReply(replyId) {
-    try {
-      const response = await api.delete(`/api/replies/replies/${replyId}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static async getReplies(commentId, page = 1, perPage = 20) {
-    try {
-      const response = await api.get(`/api/replies/comments/${commentId}/replies`, {
-        params: { page, per_page: perPage }
-      });
+      const response = await api.post(`/api/comments/${commentId}/like`);
       return response.data;
     } catch (error) {
       throw error;
     }
   }
 }
+
 
 export default CommentService;

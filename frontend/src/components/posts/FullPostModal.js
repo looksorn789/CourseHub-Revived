@@ -31,28 +31,20 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
 
   const fetchComments = async () => {
     try {
+      setLoading(true);
       const response = await CommentService.getComments(post.id, page);
+      console.log('Fetched comments from fetchComments:', response.data);
+      
       const newComments = response.data.comments;
-
-      // Fetch replies for each comment
-      const commentsWithReplies = await Promise.all(
-        newComments.map(async (comment) => {
-          const repliesResponse = await CommentService.getReplies(comment._id);
-          return {
-            ...comment,
-            replies: repliesResponse.data.replies || [],
-          };
-        })
-      );
-
+      
       setComments(prev =>
-        page === 1 ? commentsWithReplies : [...prev, ...commentsWithReplies]
+        page === 1 ? newComments : [...prev, ...newComments]
       );
       setHasMore(response.data.page < response.data.total_pages);
-      setLoading(false);
     } catch (error) {
-      console.error('Error fetching comments or replies:', error);
-      toast.error('Failed to load comments or replies');
+      console.error('Error fetching comments:', error);
+      toast.error('Failed to load comments');
+    } finally {
       setLoading(false);
     }
   };
@@ -66,6 +58,8 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
       const response = await CommentService.createComment(post.id, {
         content: newComment
       });
+
+      console.log('New comment response:', response.data);
 
       setComments(prev => [response.data, ...prev]);
       setNewComment("");
@@ -121,17 +115,16 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
         mentionedUser
       });
 
-      setComments(prev => {
-        return prev.map(comment => {
-          if (comment._id === commentId) {
-            return {
-              ...comment,
-              replies: [...(comment.replies || []), response.data]
-            };
-          }
-          return comment;
-        });
-      });
+      setComments(prev => prev.map(comment => {
+        if (comment._id === commentId) {
+          return {
+            ...comment,
+            replies: [...(comment.replies || []), response.data],
+            reply_count: (comment.reply_count || 0) + 1
+          };
+        }
+        return comment;
+      }));
 
       toast.success('Reply posted successfully');
     } catch (error) {
@@ -142,7 +135,7 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
 
   const handleEditReply = async (replyId, content) => {
     try {
-      const response = await CommentService.updateReply(replyId, content);
+      const response = await CommentService.updateComment(replyId, content);
 
       setComments(prevComments =>
         prevComments.map(comment => {
@@ -171,7 +164,7 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
 
   const handleDeleteReply = async (replyId) => {
     try {
-      await CommentService.deleteReply(replyId);
+      await CommentService.deleteComment(replyId);
 
       setComments(prevComments =>
         prevComments.map(comment => {
@@ -321,18 +314,24 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                   </div>
                 ) : (
                    <div className="space-y-6">
-                    {comments.map((comment, index) => (
-                      <Comment
-                        key={comment._id || `comment-${index}`}
-                        comment={comment}
-                        currentUserId={currentUserId}
-                        onAddReply={handleAddReply}
-                        onEditComment={handleEditComment}
-                        onDeleteComment={handleDeleteComment}
-                        onEditReply={handleEditReply}
-                        onDeleteReply={handleDeleteReply}
-                      />
-                    ))}
+                      {comments.map((comment, index) => (
+    comment && comment._id ? (
+      <Comment
+        key={comment._id}
+        comment={comment}
+        currentUserId={currentUserId}
+        onAddReply={handleAddReply}
+        onEditComment={handleEditComment}
+        onDeleteComment={handleDeleteComment}
+        onEditReply={handleEditReply}
+        onDeleteReply={handleDeleteReply}
+      />
+    ) : (
+      <div key={`comment-placeholder-${index}`}>
+        <p className="text-gray-500 italic">Invalid comment data</p>
+      </div>
+    )
+  ))}
                     
                     {hasMore && (
                       <Button

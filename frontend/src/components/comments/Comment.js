@@ -90,180 +90,180 @@ export function Comment({
     return null;
   };
 
-return (
-  <div className={`${depth > 0 ? `ml-${Math.min(depth * 8, 24)}` : ''} mb-8`}>
-    <div className="flex items-start gap-4">
-      <Avatar className="h-10 w-10 rounded-full border-2 border-white ring-2 ring-gray-100">
-        <AvatarImage src={getAvatarUrl(comment.user_info)} />
-        <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
-          {(comment.user_info?.username || 'U')[0].toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+  return (
+    <div className={`${depth > 0 ? `ml-${Math.min(depth * 8, 24)}` : ''} mb-8`}>
+        <div className="flex items-start gap-4">
+        <Avatar className="h-10 w-10 rounded-full border-2 border-white ring-2 ring-gray-100">
+            <AvatarImage src={getAvatarUrl(comment.user_info)} />
+            <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
+            {(comment.user_info?.username || 'U')[0].toUpperCase()}
+            </AvatarFallback>
+        </Avatar>
 
-      <div className="flex-1 space-y-3">
-        <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <span className="font-semibold text-gray-900">{comment.user_info?.username}</span>
-              <span className="text-xs text-gray-400 font-medium">
-                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-              </span>
+        <div className="flex-1 space-y-3">
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                <span className="font-semibold text-gray-900">{comment.user_info?.username}</span>
+                <span className="text-xs text-gray-400 font-medium">
+                    {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                </span>
+                </div>
+
+                {isAuthor && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-gray-100">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40 rounded-xl p-1">
+                    <DropdownMenuItem onClick={() => setIsEditing(true)} className="rounded-lg cursor-pointer">
+                        <Edit2 className="h-4 w-4 mr-2" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDeleteClick} className="text-red-600 rounded-lg cursor-pointer">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                    </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                )}
             </div>
 
-            {isAuthor && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-gray-100">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40 rounded-xl p-1">
-                  <DropdownMenuItem onClick={() => setIsEditing(true)} className="rounded-lg cursor-pointer">
-                    <Edit2 className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDeleteClick} className="text-red-600 rounded-lg cursor-pointer">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-
-          {isEditing ? (
-            <div className="space-y-3">
-              <TextareaAutosize
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="w-full rounded-2xl border-gray-200 bg-gray-50 p-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                minRows={2}
-              />
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleSubmitEdit}
-                  className="rounded-full bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditContent(comment.content);
-                  }}
-                  className="rounded-full"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-700 leading-relaxed">{comment.content}</p>
-          )}
-
-          <div className="flex items-center gap-4 mt-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            >
-              <Heart className="h-4 w-4 mr-1.5" />
-              <span className="text-sm">{comment.likes || 0}</span>
-            </Button>
-
-            {depth < maxDepth && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsReplying(!isReplying)}
-                className="rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              >
-                <Reply className="h-4 w-4 mr-1.5" />
-                <span className="text-sm">Reply</span>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {isReplying && (
-          <div className="flex items-start gap-4 pl-2">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white">You</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="relative bg-white rounded-2xl shadow-sm border border-gray-200 transition-all duration-200 hover:border-green-200">
+            {isEditing ? (
+                <div className="space-y-3">
                 <TextareaAutosize
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  placeholder={`Reply to @${comment.user_info?.username}...`}
-                  className="w-full py-3 px-4 text-sm rounded-2xl resize-none focus:outline-none focus:ring-0 pr-12"
-                  minRows={1}
-                  maxRows={5}
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full rounded-2xl border-gray-200 bg-gray-50 p-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                    minRows={2}
                 />
-                <Button
-                  size="sm"
-                  className={`absolute right-2 bottom-2 rounded-full w-8 h-8 p-0 transition-all duration-200
-                    ${replyContent.trim() ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-100 text-gray-400'}`}
-                  onClick={handleSubmitReply}
-                  disabled={!replyContent.trim()}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setIsReplying(false);
-                  setReplyContent('');
-                }}
-                className="mt-2 text-xs text-gray-500 hover:text-gray-700"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {comment.replies?.length > 0 && (
-          <div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowReplies(!showReplies)}
-              className="rounded-full text-gray-500 hover:text-gray-700"
-            >
-              {showReplies ? <ChevronUp className="h-3 w-3 mr-1.5" /> : <ChevronDown className="h-3 w-3 mr-1.5" />}
-              <span className="text-sm">
-                {showReplies ? 'Hide' : 'Show'} {comment.replies.length}{' '}
-                {comment.replies.length === 1 ? 'reply' : 'replies'}
-              </span>
-            </Button>
-
-            {showReplies && (
-              <div className="mt-4 space-y-4">
-                {comment.replies.map((reply) => (
-                  <Comment
-                    key={reply._id || reply.id}
-                    comment={reply}
-                    currentUserId={currentUserId}
-                    onAddReply={onAddReply}
-                    onEditComment={onEditComment}
-                    onDeleteComment={onDeleteComment}
-                    onEditReply={onEditReply}
-                    onDeleteReply={onDeleteReply}
-                    depth={depth + 1}
-                  />
-                ))}
-              </div>
+                <div className="flex gap-2">
+                    <Button
+                    size="sm"
+                    onClick={handleSubmitEdit}
+                    className="rounded-full bg-green-600 hover:bg-green-700 text-white"
+                    >
+                    Save
+                    </Button>
+                    <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                        setIsEditing(false);
+                        setEditContent(comment.content);
+                    }}
+                    className="rounded-full"
+                    >
+                    Cancel
+                    </Button>
+                </div>
+                </div>
+            ) : (
+                <p className="text-gray-700 leading-relaxed">{comment.content}</p>
             )}
-          </div>
-        )}
-      </div>
+
+            <div className="flex items-center gap-4 mt-3">
+                <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                <Heart className="h-4 w-4 mr-1.5" />
+                <span className="text-sm">{comment.likes || 0}</span>
+                </Button>
+
+                {depth < maxDepth && (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsReplying(!isReplying)}
+                    className="rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                    <Reply className="h-4 w-4 mr-1.5" />
+                    <span className="text-sm">Reply</span>
+                </Button>
+                )}
+            </div>
+            </div>
+
+            {isReplying && (
+            <div className="flex items-start gap-4 pl-2">
+                <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white">You</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                <div className="relative bg-white rounded-2xl shadow-sm border border-gray-200 transition-all duration-200 hover:border-green-200">
+                    <TextareaAutosize
+                    value={replyContent}
+                    onChange={(e) => setReplyContent(e.target.value)}
+                    placeholder={`Reply to @${comment.user_info?.username}...`}
+                    className="w-full py-3 px-4 text-sm rounded-2xl resize-none focus:outline-none focus:ring-0 pr-12"
+                    minRows={1}
+                    maxRows={5}
+                    />
+                    <Button
+                    size="sm"
+                    className={`absolute right-2 bottom-2 rounded-full w-8 h-8 p-0 transition-all duration-200
+                        ${replyContent.trim() ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-100 text-gray-400'}`}
+                    onClick={handleSubmitReply}
+                    disabled={!replyContent.trim()}
+                    >
+                    <Send className="h-4 w-4" />
+                    </Button>
+                </div>
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                    setIsReplying(false);
+                    setReplyContent('');
+                    }}
+                    className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+                >
+                    Cancel
+                </Button>
+                </div>
+            </div>
+            )}
+
+            {comment.replies?.length > 0 && (
+            <div>
+                <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReplies(!showReplies)}
+                className="rounded-full text-gray-500 hover:text-gray-700"
+                >
+                {showReplies ? <ChevronUp className="h-3 w-3 mr-1.5" /> : <ChevronDown className="h-3 w-3 mr-1.5" />}
+                <span className="text-sm">
+                    {showReplies ? 'Hide' : 'Show'} {comment.replies.length}{' '}
+                    {comment.replies.length === 1 ? 'reply' : 'replies'}
+                </span>
+                </Button>
+
+                {showReplies && (
+                <div className="mt-4 space-y-4">
+                    {comment.replies.map((reply) => (
+                    <Comment
+                        key={reply._id || reply.id}
+                        comment={reply}
+                        currentUserId={currentUserId}
+                        onAddReply={onAddReply}
+                        onEditComment={onEditComment}
+                        onDeleteComment={onDeleteComment}
+                        onEditReply={onEditReply}
+                        onDeleteReply={onDeleteReply}
+                        depth={depth + 1}
+                    />
+                    ))}
+                </div>
+                )}
+            </div>
+            )}
+        </div>
+        </div>
     </div>
-  </div>
-);
+    );
 }
