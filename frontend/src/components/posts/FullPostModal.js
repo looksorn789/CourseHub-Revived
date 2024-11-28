@@ -12,6 +12,8 @@ import CommentService from '../../services/commentService';
 import { Comment } from '../comments/Comment';
 import { toast } from 'react-toastify';
 import TextareaAutosize from 'react-textarea-autosize';
+import { generateAvatarSvg } from '../../utils/avatarUtils';
+import { getUserProfile } from '../../services/profileService';
 
 
 export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
@@ -22,7 +24,45 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [currentUser, setCurrentUser] = useState({
+      name: "",
+      username: "",
+      avatarUrl: "",
+      initials: ""
+    });
 
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const { data, error } = await getUserProfile();
+        if (data && data.profile) {
+          const { first_name, last_name, avatar_config } = data.profile;
+          const fullName = `${first_name} ${last_name}`;
+          const username = data.username;
+          let avatarUrl = "";
+
+          if (avatar_config) {
+            const { style, seed, options } = avatar_config;
+            const svg = generateAvatarSvg(style, seed, options);
+            avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+          }
+
+          setCurrentUser({
+            name: fullName,
+            username: username,
+            avatarUrl: avatarUrl,
+            initials: `${first_name?.[0] || ''}${last_name?.[0] || ''}`,
+            id: data._id
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+  
   useEffect(() => {
     if (isOpen && post?.id) {
       fetchComments();
@@ -351,10 +391,14 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
 
         <div className="flex-shrink-0 sticky bottom-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 py-4 px-6">
           <div className="flex items-start gap-4 max-w-3xl mx-auto">
-            <Avatar className="h-10 w-10 mt-1">
-              <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
-                You
-              </AvatarFallback>
+            <Avatar className="h-12 w-12 border-2 border-white relative">
+              {currentUser.avatarUrl ? (
+                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+              ) : (
+                <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
+                  {currentUser.initials || currentUser.name?.[0] || '?'}
+                </AvatarFallback>
+              )}
             </Avatar>
             <div className="flex-1">
               <div className="relative bg-white rounded-2xl shadow-sm border border-gray-200 hover:border-green-300 transition-all duration-200">

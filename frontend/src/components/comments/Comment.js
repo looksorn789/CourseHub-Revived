@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/Avatar';
 import TextareaAutosize from 'react-textarea-autosize';
 import Button from '../ui/Button';
@@ -20,6 +20,7 @@ import {
 } from '../ui/DropdownMenu';
 import { formatDistanceToNow } from 'date-fns';
 import { generateAvatarSvg } from '../../utils/avatarUtils';
+import { getUserProfile } from '../../services/profileService';
 
 export function Comment({ 
   comment, 
@@ -36,9 +37,46 @@ export function Comment({
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [showReplies, setShowReplies] = useState(false);
+  const [currentUser, setCurrentUser] = useState({
+    name: "",
+    username: "",
+    avatarUrl: "",
+    initials: ""
+  });
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const { data, error } = await getUserProfile();
+        if (data && data.profile) {
+          const { first_name, last_name, avatar_config } = data.profile;
+          const fullName = `${first_name} ${last_name}`;
+          const username = data.username;
+          let avatarUrl = "";
+
+          if (avatar_config) {
+            const { style, seed, options } = avatar_config;
+            const svg = generateAvatarSvg(style, seed, options);
+            avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+          }
+
+          setCurrentUser({
+            name: fullName,
+            username: username,
+            avatarUrl: avatarUrl,
+            initials: `${first_name?.[0] || ''}${last_name?.[0] || ''}`,
+            id: data._id
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   const isAuthor = currentUserId === comment.user_id;
-  const maxDepth = 1;
   const isReply = depth > 0;
 
   const handleSubmitEdit = async () => {
@@ -101,7 +139,7 @@ export function Comment({
         <Avatar className="h-10 w-10 rounded-full border-2 border-white ring-2 ring-gray-100">
           <AvatarImage src={getAvatarUrl(comment.user_info)} />
           <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
-            {(comment.user_info?.username || 'U')[0].toUpperCase()}
+            {(comment.user_info?.username)[0].toUpperCase()}
           </AvatarFallback>
         </Avatar>
 
@@ -203,7 +241,13 @@ export function Comment({
           {isReplying && (
             <div className="flex items-start gap-4 pl-2">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white">You</AvatarFallback>
+                {currentUser.avatarUrl ? (
+                    <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+                    ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
+                        {currentUser.initials || currentUser.name?.[0] || '?'}
+                    </AvatarFallback>
+                    )}
               </Avatar>
               <div className="flex-1">
                 <div className="relative bg-white rounded-2xl shadow-sm border border-gray-200 transition-all duration-200 hover:border-green-200">
