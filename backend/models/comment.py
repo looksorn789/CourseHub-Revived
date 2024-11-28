@@ -152,7 +152,6 @@ class Comment:
                 with session.start_transaction():
                     current_app.logger.debug("Starting transaction for comment creation")
                     
-                    # Prepare comment data
                     comment_data = self._prepare_comment_data(data)
                     current_app.logger.debug(f"Prepared comment data: {comment_data}")
 
@@ -193,7 +192,6 @@ class Comment:
                                 session=session
                             )
 
-                    # Get user info
                     current_app.logger.debug("Fetching user info")
                     users_collection = self.collection.database.get_collection('users')
                     user = users_collection.find_one(
@@ -241,7 +239,7 @@ class Comment:
     ) -> Tuple[List[Dict], int]:
         """Get paginated comments with their replies"""
         try:
-            # Build sort configuration
+            #  sort configuration
             sort_config = {
                 "recent": {"created_at": -1},
                 "likes": {"likes": -1},
@@ -255,7 +253,7 @@ class Comment:
                     "parent_id": None,
                     "status": CommentStatus.ACTIVE.value
                 }},
-                # Apply sorting
+                # sorting
                 {"$sort": sort_config},
                 # Pagination
                 {"$skip": (page - 1) * per_page},
@@ -302,7 +300,7 @@ class Comment:
                     "as": "user"
                 }},
                 {"$unwind": "$user"},
-                # Final shape
+                # Final structure
                 {"$project": {
                     "_id": 1,
                     "content": 1,
@@ -328,7 +326,7 @@ class Comment:
                 "status": CommentStatus.ACTIVE.value
             })
 
-            # Execute pipeline
+            # Execute aggregation pipeline
             comments = list(self.collection.aggregate(pipeline))
             
             # Convert ObjectIds to strings
@@ -363,7 +361,7 @@ class Comment:
                     if not comment:
                         return None, "Comment not found or unauthorized"
 
-                    # Log whether we're updating a comment or reply
+                    # Logging whether we're updating a comment or reply (for debugging)
                     comment_type = "reply" if comment.get("parent_id") else "comment"
                     current_app.logger.debug(f"Updating {comment_type} {comment_id}")
 
@@ -389,7 +387,6 @@ class Comment:
                     if not result:
                         return None, f"Failed to update {comment_type}"
 
-                    # Add user info to response
                     response_data = self._format_comment_response(result)
                     
                     return response_data, None
