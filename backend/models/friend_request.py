@@ -1,0 +1,131 @@
+from datetime import datetime
+from enum import Enum
+from typing import Dict, Optional, Tuple
+from bson import ObjectId
+from flask import current_app
+
+class RequestStatus(Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+
+class FriendRequest:
+    def __init__(self, db, supabase):
+        self.collection = db["friend_requests"]
+        self.supabase = supabase
+        self._setup_indexes()
+
+    def _setup_indexes(self):
+        """Set up indexes for faster queries"""
+        try:
+            indexes = [
+                ("sender_id", 1),
+                ("receiver_id", 1),
+                ("status", 1),
+                ("created_at", -1)
+            ]
+            
+            for index in indexes:
+                self.collection.create_index([index])
+
+        except Exception as e:
+            current_app.logger.error(f"Error setting up indexes: {str(e)}")
+
+    def create_request(self, sender_id: str, receiver_id: str) -> Tuple[bool, Optional[str]]:
+        """Send a friend request"""
+        try:
+            # Check if request already exists
+            existing_request = self.collection.find_one({
+                "$or": [
+                    {"sender_id": ObjectId(sender_id), "receiver_id": ObjectId(receiver_id)},
+                    {"sender_id": ObjectId(receiver_id), "receiver_id": ObjectId(sender_id)}
+                ]
+            })
+
+            if existing_request:
+                return False, "Friend request already exists"
+
+            request_data = {
+                "sender_id": ObjectId(sender_id),
+                "receiver_id": ObjectId(receiver_id),
+                "status": RequestStatus.PENDING.value,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+
+            result = self.collection.insert_one(request_data)
+            return bool(result.inserted_id), None
+
+        except Exception as e:
+            return False, str(e)
+
+    def get_pending_requests(self, user_id: str) -> list:
+        """Get pending friend requests for a user"""
+        try:
+            requests = list(self.collection.find({
+                "receiver_id": ObjectId(user_id),
+                "status": RequestStatus.PENDING.value
+            }).sort("created_at", -1))
+            
+            return requests
+        except Exception as e:
+            current_app.logger.error(f"Error getting pending requests: {str(e)}")
+            return []
+
+    def respond_to_request(self, request_id: str, response: bool) -> Tuple[bool, Optional[str]]:
+        """Accept or decline a friend request"""
+        try:
+            request = self.collection.find_one({"_id": ObjectId(request_id)})
+            if not request:
+                return False, "Request not found"
+
+            new_status = RequestStatus.ACCEPTED.value if response else RequestStatus.DECLINED.value
+
+            result = self.collection.update_one(
+                {"_id": ObjectId(request_id)},
+                {
+                    "$set": {
+                        "status": new_status,
+                        "updated_at": datetime.utcnow()
+                    }
+                }
+            )
+
+            return result.modified_count > 0, None
+
+        except Exception as e:
+            return False, str(e)
+        
+    def get_sent_requests(self, user_id: str) -> list:
+        """Get friend requests sent by a user"""
+        try:
+            requests = list(self.collection.find({
+                "sender_id": ObjectId(user_id),
+                "status": RequestStatus.PENDING.value
+            }).sort("created_at", -1))
+            
+            return requests
+        except Exception as e:
+            current_app.logger.error(f"Error getting sent requests: {str(e)}")
+            return []
+    
+    def cancel_request(self, request_id: str, sender_id: str) -> Tuple[bool, Optional[str]]:
+        """Cancel a friend request"""
+        try:
+            request = self.collection.find_one({
+                "_id": ObjectId(request_id),
+                "sender_id": ObjectId(sender_id),
+                "status": RequestStatus.PENDING.value
+            })
+
+            if not request:
+                return False, "Request not found or cannot be cancelled"
+
+            result = self.collection.delete_one({
+                "_id": ObjectId(request_id)
+            })
+
+            return result.deleted_count > 0, None
+
+        except Exception as e:
+            return False, str(e)
