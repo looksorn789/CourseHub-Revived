@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom';
 import { searchUsers } from "../../services/profileService";
 import Button from "../ui/Button"
 import Input from "../ui/Input"
@@ -13,6 +14,7 @@ import { Users, Clock, Search, UserPlus, UserCheck, UserMinus, CheckCircle2, X }
 
 
 export default function Friends() {
+  const navigate = useNavigate();
   const [friends, setFriends] = useState([])
   const [pendingRequests, setPendingRequests] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -50,6 +52,10 @@ export default function Friends() {
     const timeoutId = setTimeout(fetchUsers, 300);
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
+
+  const handleProfileClick = (username) => {
+    navigate(`/profile/${username}`);
+  };
 
   const handleSendRequest = (user) => {
     setPendingRequests(prev => [...prev, user])
@@ -110,7 +116,10 @@ export default function Friends() {
                           transition={{ duration: 0.3 }}
                           className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm cursor-pointer"
                         >
-                          <div className="flex items-center gap-4">
+                          <div 
+                            className="flex items-center gap-4 cursor-pointer hover:opacity-75 transition-opacity"
+                            onClick={() => handleProfileClick(friend.username)}
+                          >
                             <Avatar className="h-12 w-12 border-2 border-green-100 rounded-full">
                               <AvatarImage src={friend.avatar} alt={friend.name} />
                               <AvatarFallback>{friend.name[0]}</AvatarFallback>
@@ -164,7 +173,10 @@ export default function Friends() {
                           transition={{ duration: 0.3 }}
                           className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm"
                         >
-                          <div className="flex items-center gap-4">
+                        <div 
+                            className="flex items-center gap-4 cursor-pointer hover:opacity-75 transition-opacity"
+                            onClick={() => handleProfileClick(request.username)}
+                        >
                             <Avatar className="h-12 w-12 border-2 border-yellow-100 rounded-full">
                               <AvatarImage src={request.avatar} alt={request.name} />
                               <AvatarFallback>{request.name[0]}</AvatarFallback>
@@ -274,7 +286,10 @@ export default function Friends() {
                             transition={{ duration: 0.3 }}
                             className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm"
                           >
-                            <div className="flex items-center gap-4">
+                            <div 
+                                className="flex items-center gap-4 cursor-pointer hover:opacity-75 transition-opacity"
+                                onClick={() => handleProfileClick(user.username)}
+                            >
                               <Avatar className="h-12 w-12 border-2 border-gray-200 rounded-full">
                                 <AvatarImage src={user.avatar} alt={user.name} />
                                 <AvatarFallback>{user.name[0]}</AvatarFallback>
