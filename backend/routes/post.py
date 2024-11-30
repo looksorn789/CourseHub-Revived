@@ -3,23 +3,10 @@ from typing import Optional
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.user import UserModel
 from models.post import Post, PostType
-from utils.helpers import serialize_mongo_doc
+from utils.helpers import serialize_mongo_doc, get_user_id
 import bleach
 
 post_bp = Blueprint("post_bp", __name__)
-
-def get_user_id(supabase_user_id: str) -> Optional[str]:
-    """Get MongoDB user ID from Supabase ID"""
-    try:
-        user_model = UserModel(current_app.db, current_app.supabase)
-        user = user_model.get_user_by_supabase_id(supabase_user_id)
-        if user and "_id" in user:
-            return str(user["_id"])
-        return None
-    except Exception as e:
-        current_app.logger.error(f"Error getting user ID: {str(e)}")
-        return None
-
 
 @post_bp.route("/forum/<forum_id>", methods=["POST"])
 @jwt_required()
