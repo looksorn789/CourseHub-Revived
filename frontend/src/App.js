@@ -12,6 +12,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import Explore from "./pages/Explore";
 import Settings from "./pages/Settings";
 import ChannelPage from "./pages/ChannelPage";
+import FriendsPage from "./pages/FriendsPage";
 
 function App() {
   return (
@@ -61,6 +62,14 @@ function App() {
           element={
             <PrivateRoute>
               <Explore />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/friends"
+          element={
+            <PrivateRoute>
+              <FriendsPage />
             </PrivateRoute>
           }
         />
