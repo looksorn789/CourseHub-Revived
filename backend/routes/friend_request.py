@@ -2,14 +2,9 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.friend_request import FriendRequest
 from models.user import UserModel
+from utils.helpers import get_user_id
 
 friend_request_bp = Blueprint('friend_request_bp', __name__)
-
-def get_user_id(supabase_user_id: str):
-    """Get user ID from Supabase user ID"""
-    user_model = UserModel(current_app.db, current_app.supabase)
-    user = user_model.get_user_by_supabase_id(supabase_user_id)
-    return str(user["_id"]) if user else None
 
 @friend_request_bp.route("/send", methods=["POST"])
 @jwt_required()
@@ -26,12 +21,15 @@ def send_request():
             return jsonify({"error": "Receiver ID is required"}), 400
 
         friend_request = FriendRequest(current_app.db, current_app.supabase)
-        success, error = friend_request.create_request(sender_id, receiver_id)
+        success, error, request_id = friend_request.create_request(sender_id, receiver_id)
 
         if error:
             return jsonify({"error": error}), 400
 
-        return jsonify({"message": "Friend request sent successfully"}), 201
+        return jsonify({
+            "message": "Friend request sent successfully",
+            "request_id": request_id
+        }), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -54,7 +54,8 @@ class FriendRequest:
             }
 
             result = self.collection.insert_one(request_data)
-            return bool(result.inserted_id), None
+            request_id = str(result.inserted_id) if result.inserted_id else None
+            return bool(result.inserted_id), None, request_id
 
         except Exception as e:
             return False, str(e)
@@ -127,5 +128,42 @@ class FriendRequest:
 
             return result.deleted_count > 0, None
 
+        except Exception as e:
+            return False, str(e)
+        
+    def get_friends(self, user_id: str) -> list:
+            """Get list of friends for a user"""
+            try:
+                accepted_requests = self.collection.find({
+                    "$or": [
+                        {"sender_id": ObjectId(user_id)},
+                        {"receiver_id": ObjectId(user_id)}
+                    ],
+                    "status": RequestStatus.ACCEPTED.value
+                })
+
+                friends = []
+                for req in accepted_requests:
+                    if str(req["sender_id"]) != user_id:
+                        friends.append(req["sender_id"])
+                    if str(req["receiver_id"]) != user_id:
+                        friends.append(req["receiver_id"])
+                return friends
+            except Exception as e:
+                current_app.logger.error(f"Error getting friends: {str(e)}")
+                return []
+
+    def unfriend(self, user_id: str, friend_id: str) -> Tuple[bool, Optional[str]]:
+        """Unfriend a user"""
+        try:
+            result = self.collection.delete_one({
+                "$or": [
+                    {"sender_id": ObjectId(user_id), "receiver_id": ObjectId(friend_id)},
+                    {"sender_id": ObjectId(friend_id), "receiver_id": ObjectId(user_id)}
+                ],
+                "status": RequestStatus.ACCEPTED.value
+            })
+
+            return result.deleted_count > 0, None
         except Exception as e:
             return False, str(e)
