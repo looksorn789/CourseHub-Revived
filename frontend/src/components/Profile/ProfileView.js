@@ -9,6 +9,7 @@ import ScrollArea from "../ui/ScrollArea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/Dialog"
 import Badge from "../ui/Badge"
 import { Separator } from "../ui/Separator"
+import ProfileSkeleton from "./ProfileSkeleton"
 import { School, GraduationCap, Award, MessageSquare, UserPlus, Users, Calendar as CalendarIcon, Send } from "lucide-react"
 
 export default function ProfileView() {
@@ -66,9 +67,9 @@ export default function ProfileView() {
     return new Date(dateString).getFullYear();
   };
 
-  if (isLoading) return <div>Loading...</div>
-  if (error) return <div>Error: {error}</div>
-  if (!userData) return <div>No user data found</div>
+  if (isLoading) return <ProfileSkeleton />;
+  if (error) return <div>Error: {error}</div>;
+  if (!userData) return <div>No user data found</div>;
 
   return (
     <div className="min-h-screen to-white py-12 px-4 sm:px-6 lg:px-8">
