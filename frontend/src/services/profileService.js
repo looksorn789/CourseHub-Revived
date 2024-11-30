@@ -75,7 +75,6 @@ export const saveUserProfile = async (profileData, email, username) => {
   }
 };
 
-// PATCH user profile with profile data from the frontend
 export const editUserProfile = async (profileData) => {
   try {
     const response = await api.patch("/api/profile/user", { profile: profileData });
@@ -88,3 +87,16 @@ export const editUserProfile = async (profileData) => {
     };
   }
 };
+
+  export const searchUsers = async (query) => {
+    try {
+      const response = await api.get(`/api/profile/users/search?q=${encodeURIComponent(query)}`);
+      return { data: response.data.data, error: null };
+    } catch (error) {
+      console.error("Error searching users:", error);
+      return { 
+        data: null, 
+        error: error.response?.data?.error || 'Error searching users' 
+      };
+    }
+  };
