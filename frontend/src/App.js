@@ -5,6 +5,7 @@ import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Home from "./pages/Home";
 import StudentProfile from "./components/Profile/StudentProfile";
+import ViewProfilePage from "./pages/ViewProfilePage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
@@ -36,6 +37,14 @@ function App() {
           element={
             <PrivateRoute>
               <StudentProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile/:username"
+          element={
+            <PrivateRoute>
+              <ViewProfilePage />
             </PrivateRoute>
           }
         />
