@@ -236,6 +236,40 @@ def update_user_profile():
     except Exception as e:
         return handle_error(e, "Error updating user profile")
 
+@profile_bp.route("/users/search", methods=["GET"])
+def search_users():
+    """Search users by name, username, school, or major"""
+    try:
+        query = request.args.get('q', '').strip()
+        if not query:
+            return jsonify({
+                "success": False,
+                "error": "Search query is required"
+            }), 400
+
+        user_model = UserModel(current_app.db, current_app.supabase)
+        results = user_model.search_users(query)
+
+        users = [{
+            "_id": str(user["_id"]),
+            "username": user.get("username"),
+            "profile": {
+                "first_name": user.get("profile", {}).get("first_name"),
+                "last_name": user.get("profile", {}).get("last_name"),
+                "school": user.get("profile", {}).get("school"),
+                "major": user.get("profile", {}).get("major"),
+                "bio": user.get("profile", {}).get("bio"),
+                "avatar_config": user.get("profile", {}).get("avatar_config"),
+            }
+        } for user in results]
+
+        return jsonify({
+            "success": True,
+            "data": users
+        })
+
+    except Exception as e:
+        return handle_error(e, "Error searching users")
 
 # Error handlers
 @profile_bp.errorhandler(400)
