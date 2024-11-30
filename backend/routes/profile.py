@@ -164,6 +164,7 @@ def get_user_by_username(username):
                 "bio": user_data.get("profile", {}).get("bio", ""),
                 "school": user_data.get("profile", {}).get("school", ""),
                 "major": user_data.get("profile", {}).get("major", ""),
+                "graduation_date": user_data.get("profile", {}).get("graduation_date"),
                 "avatar_config": user_data.get("profile", {}).get("avatar_config", {
                     "style": "adventurer",
                     "seed": user_data.get("username", "anonymous"),
