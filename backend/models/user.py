@@ -386,3 +386,40 @@ class UserModel:
         except Exception as e:
             print(f"Error getting user by supabase_id: {e}")
             return None
+
+    def find_by_username(self, username: str):
+        """Find user by username"""
+        try:
+            return self.collection.find_one({"username": username})
+        except Exception as e:
+            print(f"Error finding user by username: {e}")
+            return None
+        
+    def search_users(self, query: str, limit: int = 20):
+        """Search users by name, username, school, or major"""
+        try:
+            # text index if it doesn't exist
+            self.collection.create_index([
+                ("username", "text"),
+                ("profile.first_name", "text"),
+                ("profile.last_name", "text"),
+                ("profile.school", "text"),
+                ("profile.major", "text")
+            ])
+
+            # search query
+            search_query = {
+                "$or": [
+                    {"username": {"$regex": query, "$options": "i"}},
+                    {"profile.first_name": {"$regex": query, "$options": "i"}},
+                    {"profile.last_name": {"$regex": query, "$options": "i"}},
+                    {"profile.school": {"$regex": query, "$options": "i"}},
+                    {"profile.major": {"$regex": query, "$options": "i"}}
+                ]
+            }
+
+            return list(self.collection.find(search_query).limit(limit))
+
+        except Exception as e:
+            print(f"Error searching users: {e}")
+            return []

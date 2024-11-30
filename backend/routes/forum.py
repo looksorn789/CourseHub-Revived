@@ -6,7 +6,8 @@ from models.forum import Forum, ForumRole, ForumStatus, ForumVisibility, ForumCa
 from models.user import UserModel
 from typing import Optional, Dict, Tuple
 import bleach
-from bson import ObjectId
+from utils.helpers import get_user_id
+
 from bson.errors import InvalidId
 
 forum_bp = Blueprint("forum_bp", __name__)
@@ -27,18 +28,6 @@ VALID_TAGS = [
 def sanitize_input(data: str) -> str:
     """Sanitize user input to prevent XSS"""
     return bleach.clean(data)
-
-
-def get_user_id(user_token: str) -> Optional[str]:
-    """Helper to get user ID from token"""
-    try:
-        user_model = UserModel(current_app.db, current_app.supabase)
-        user = user_model.get_user_by_supabase_id(user_token)
-        return str(user["_id"]) if user else None
-    except Exception as e:
-        current_app.logger.error(f"Error getting user ID: {str(e)}")
-        return None
-
 
 def validate_forum_access(
     forum_id: str, user_id: str, required_role: Optional[str] = None

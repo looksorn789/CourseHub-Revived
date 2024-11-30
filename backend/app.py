@@ -11,6 +11,9 @@ from routes.forum import forum_bp
 from routes.post import post_bp
 from routes.comments import comment_bp
 from routes.profile import profile_bp
+from routes.friend_request import friend_request_bp
+from routes.friends import friends_bp
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -91,6 +94,8 @@ def create_app(config_class=Config):
     app.register_blueprint(profile_bp, url_prefix="/api/profile")
     app.register_blueprint(post_bp, url_prefix="/api/posts")
     app.register_blueprint(comment_bp, url_prefix='/api/comments')
+    app.register_blueprint(friend_request_bp, url_prefix='/api/friend-request')
+    app.register_blueprint(friends_bp, url_prefix='/api')
 
 
     @app.errorhandler(404)

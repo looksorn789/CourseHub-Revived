@@ -4,13 +4,15 @@ import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Home from "./pages/Home";
-import StudentProfile from "./components/StudentProfile/StudentProfile";
+import StudentProfile from "./components/Profile/StudentProfile";
+import ViewProfilePage from "./pages/ViewProfilePage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PrivateRoute from "./components/PrivateRoute";
 import Explore from "./pages/Explore";
 import Settings from "./pages/Settings";
 import ChannelPage from "./pages/ChannelPage";
+import FriendsPage from "./pages/FriendsPage";
 
 function App() {
   return (
@@ -40,6 +42,14 @@ function App() {
           }
         />
         <Route
+          path="/profile/:username"
+          element={
+            <PrivateRoute>
+              <ViewProfilePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/settings"
           element={
             <PrivateRoute>
@@ -52,6 +62,14 @@ function App() {
           element={
             <PrivateRoute>
               <Explore />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/friends"
+          element={
+            <PrivateRoute>
+              <FriendsPage />
             </PrivateRoute>
           }
         />

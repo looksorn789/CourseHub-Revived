@@ -2,20 +2,9 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.user import UserModel
 from models.comment import Comment
-from utils.helpers import serialize_mongo_doc
-from typing import Optional
+from utils.helpers import serialize_mongo_doc, get_user_id
 
 comment_bp = Blueprint('comment_bp', __name__)
-
-def get_user_id(supabase_user_id: str) -> Optional[str]:
-    """Get MongoDB user ID from Supabase ID"""
-    try:
-        user_model = UserModel(current_app.db, current_app.supabase)
-        user = user_model.get_user_by_supabase_id(supabase_user_id)
-        return str(user["_id"]) if user else None
-    except Exception as e:
-        current_app.logger.error(f"Error getting user ID: {str(e)}")
-        return None
 
 @comment_bp.route('/post/<post_id>/comments', methods=['GET'])
 def get_comments(post_id):
