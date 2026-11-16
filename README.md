@@ -38,7 +38,7 @@ CourseHub/                   # Root
 │   ├── routes/              # Route handlers for API/endpoints
 │   ├── utils/               # Utility functions
 │   ├── requirements.txt     # Python dependencies
-│   └── .env                 # Environment variables
+│   └── .env.example         # Env template (copy to .env)
 │
 ├── frontend/                # React frontend
 │   ├── public/              # Public assets (index.html, favicon, etc.)
@@ -51,7 +51,7 @@ CourseHub/                   # Root
 │   │   ├── App.js           # Main React app
 │   │   └── index.js         # React entry point
 │   ├── package.json         # Node.js dependencies
-│   └── .env                 # Environment variables
+│   └── .env.example         # Env template (copy to .env)
 │
 └── .gitignore               # Git ignore file
 
@@ -100,14 +100,10 @@ pip install -r requirements.txt
 
 ### 4. Configure Environment Variables:
 
-Create a `.env` file inside the `backend/` directory with the following content: **(I will give you one)**
+Copy the template and fill in the values (each one is documented in the file):
 
 ```bash
-FLASK_APP=run.py
-FLASK_ENV=development
-MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/<dbname>?retryWrites=true&w=majority
-SUPABASE_URL=https://your-supabase-instance.supabase.co
-SUPABASE_KEY=your-supabase-anon-key
+cp .env.example .env
 ```
 
 5. Run the Backend:
@@ -136,12 +132,10 @@ npm install
 
 ### 3. Configure Environment Variables:
 
-Create a `.env` file inside the `frontend/` directory with the following content: **(I will give you one)**
+Copy the template and fill in the values (each one is documented in the file):
 
 ```bash
-REACT_APP_SUPABASE_URL=https://your-supabase-instance.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your-supabase-anon-key
-REACT_APP_API_URL=http://localhost:5000  # Flask backend URL
+cp .env.example .env
 ```
 
 ### 4. Run the Frontend:
