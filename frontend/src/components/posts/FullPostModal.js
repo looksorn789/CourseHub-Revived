@@ -11,8 +11,8 @@ import Input from "../ui/Input";
 import ScrollArea from "../ui/ScrollArea";
 import { Separator } from "../ui/Separator";
 import { formatDistanceToNow } from "date-fns";
-import { X, Hash, MessageCircle, Share2, Send, Heart } from "lucide-react";
-import { ReactionPicker } from "./ReactionPicker";
+import { X, Hash, MessageCircle, Share2, Send } from "lucide-react";
+import ReactionBar from "./ReactionBar";
 import CommentService from "../../services/commentService";
 import { Comment } from "../comments/Comment";
 import { PostImageGrid } from "./PostImages";
@@ -42,8 +42,6 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
   };
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [postReactions, setPostReactions] = useState(post?.reactions || {});
-  const [currentReaction, setCurrentReaction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -252,27 +250,15 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
     }
   };
 
-  const handleReact = (reactionName) => {
-    setPostReactions((prev) => ({
-      ...prev,
-      [reactionName]: (prev[reactionName] || 0) + 1,
-    }));
-    setCurrentReaction(reactionName);
-  };
+
+  if (!post) {
+    return null;
+  }
 
   const loadMoreComments = () => {
     setPage((prev) => prev + 1);
     fetchComments();
   };
-
-  const totalReactions = Object.values(postReactions).reduce(
-    (a, b) => a + b,
-    0,
-  );
-
-  if (!post) {
-    return null;
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -362,13 +348,7 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
 
               <div className="flex items-center justify-between py-4">
                 <div className="flex items-center gap-6">
-                  <Button
-                    variant="ghost"
-                    className="rounded-full hover:bg-gray-100"
-                  >
-                    <Heart className="h-5 w-5 mr-2 text-green-600" />
-                    <span className="text-gray-600">{totalReactions}</span>
-                  </Button>
+                  <ReactionBar post={post} size="lg" />
                   <Button
                     variant="ghost"
                     className="rounded-full hover:bg-gray-100"

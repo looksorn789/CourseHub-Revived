@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import {
-  Heart,
   MessageCircle,
   Share2,
   MoreHorizontal,
@@ -31,7 +30,7 @@ import TagLink from "./TagLink";
 import ShareModal from "./ShareModal";
 import { PostModal } from "./PostModal";
 import { DeletePostConfirmation } from "./DeletePostConfirmation";
-import { ReactionPicker } from "./ReactionPicker";
+import ReactionBar from "./ReactionBar";
 
 export function Post({
   post,
@@ -43,13 +42,9 @@ export function Post({
 }) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes);
   const [isEditMode, setIsEditMode] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [postReactions, setPostReactions] = useState(post.reactions || {});
-  const [currentReaction, setCurrentReaction] = useState(null);
   const isAuthor = currentUserId === post.author.id;
   // Stable object so the edit dialog doesn't reset (and drop picked photos)
   // whenever this card re-renders.
@@ -64,18 +59,6 @@ export function Post({
     [post.type, post.title, post.content, post.tags, post.images],
   );
 
-  const handleReact = (reactionName) => {
-    setPostReactions((prev) => ({
-      ...prev,
-      [reactionName]: (prev[reactionName] || 0) + 1,
-    }));
-    setCurrentReaction(reactionName);
-  };
-
-  const totalReactions = Object.values(postReactions).reduce(
-    (a, b) => a + b,
-    0,
-  );
 
   const handleEdit = (e) => {
     e.stopPropagation();
@@ -119,11 +102,6 @@ export function Post({
     if (path) navigate(path);
   };
 
-  const toggleLike = (e) => {
-    e.stopPropagation();
-    setIsLiked(!isLiked);
-    setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
-  };
 
   const toggleSave = (e) => {
     e.stopPropagation();
@@ -270,13 +248,7 @@ export function Post({
         </div>
         <CardFooter className="flex justify-between items-center pt-2 px-6 pb-4">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1">
-              <ReactionPicker
-                onReact={handleReact}
-                currentReaction={currentReaction}
-              />
-              <span className="text-xs text-gray-500">{totalReactions}</span>
-            </div>
+            <ReactionBar post={post} />
             <Button
               variant="ghost"
               size="sm"

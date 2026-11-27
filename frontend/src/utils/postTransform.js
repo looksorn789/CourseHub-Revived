@@ -66,6 +66,8 @@ export async function transformPost(post, channelName, channelSlug) {
     metadata: post.metadata || {},
     view_count: post.view_count || 0,
     forumSlug: channelSlug || post.forum?.slug,
+    reactionCounts: post.reaction_counts || {},
+    myReaction: post.my_reaction || null,
     author: authorFrom(user, post, forumName),
   };
 }
