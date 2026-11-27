@@ -26,6 +26,15 @@ export const forumService = {
         throw error;
       }
     },
+    updateForum: async (forumId, updates) => {
+      try {
+        const response = await api.patch(`/api/forums/${forumId}`, updates);
+        notifyForumsChanged();
+        return { data: response.data.forum, error: null };
+      } catch (error) {
+        return { data: null, error: error.response?.data?.error || error.message };
+      }
+    },
     getMyForums: async () => {
       try {
         const response = await api.get("/api/forums/mine");

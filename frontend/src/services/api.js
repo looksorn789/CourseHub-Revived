@@ -49,11 +49,16 @@ api.interceptors.response.use(
 
     // Handle specific HTTP errors
     switch (error.response.status) {
-      case 400:
+      case 400: {
         console.error("Bad request:", error.response.data);
-        return Promise.reject(
-          new Error(error.response.data.error || "Invalid request"),
-        );
+        const d = error.response.data || {};
+        const message =
+          d.error ||
+          (Array.isArray(d.errors) ? d.errors.join(" ") : d.errors) ||
+          d.details ||
+          "Invalid request";
+        return Promise.reject(new Error(message));
+      }
 
       case 401:
         localStorage.removeItem("jwt_token");
@@ -65,7 +70,10 @@ api.interceptors.response.use(
       case 403:
         console.error("Permission denied:", error.response.data);
         return Promise.reject(
-          new Error("You do not have permission to perform this action."),
+          new Error(
+            error.response.data?.error ||
+              "You do not have permission to perform this action.",
+          ),
         );
 
       case 404:
