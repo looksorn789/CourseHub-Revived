@@ -10,6 +10,7 @@ import {
   Compass,
   Loader2,
   Pin,
+  Sparkles,
 } from "lucide-react";
 import Button from "../ui/Button";
 import { cn } from "../../lib/utils";
@@ -26,6 +27,7 @@ const navItems = [
   { name: "Home", icon: Home, path: "/home" },
   { name: "Explore", icon: TrendingUp, path: "/explore" },
   { name: "Friends", icon: Users, path: "/friends" },
+  { name: "CourseAI", icon: Sparkles, path: "/courseai" },
 ];
 
 /**
@@ -211,7 +213,8 @@ function Sidebar({ onNavigate, className }) {
           <li>
             <Button
               variant="ghost"
-              className="w-full justify-start text-gray-700 hover:bg-gray-100"
+              className={itemClass(location.pathname === "/help")}
+              onClick={() => go("/help")}
             >
               <HelpCircle className="mr-2 h-4 w-4" />
               Help Center
