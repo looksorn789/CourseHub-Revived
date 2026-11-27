@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional, Dict, Tuple
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
+from pymongo import WriteConcern
 from models.forum import Forum, ForumRole, ForumStatus, ForumVisibility, ForumCategory
 from models.user import UserModel
 import bleach
@@ -337,10 +338,10 @@ def get_forum(forum_identifier):
         if not forum:
             return jsonify({"error": "Forum not found"}), 404
 
-        # Increment view count
-        forum_model.collection.update_one(
-            {"_id": forum["_id"]}, {"$inc": {"metadata.views": 1}}
-        )
+        # Increment view count without waiting for the write (w=0).
+        forum_model.collection.with_options(
+            write_concern=WriteConcern(w=0)
+        ).update_one({"_id": forum["_id"]}, {"$inc": {"metadata.views": 1}})
         forum["_id"] = str(forum["_id"])
 
         # Tell the (optional) signed-in viewer how they relate to this forum,
@@ -348,10 +349,16 @@ def get_forum(forum_identifier):
         forum["viewer"] = _viewer_info(forum)
         forum.pop("members", None)
 
-        # Include member count and stats
-        stats = forum_model.get_forum_stats(str(forum["_id"]))
-        if stats:
-            forum["stats"] = stats
+        # Stats come from the document we already have (no second query).
+        metadata = forum.get("metadata") or {}
+        forum["stats"] = {
+            "member_count": forum.get("member_count", 0),
+            "post_count": forum.get("post_count", 0),
+            "views": metadata.get("views", 0) + 1,
+            "trending_score": metadata.get("trending_score", 0),
+            "last_active": forum.get("last_active"),
+            "creation_date": forum.get("created_at"),
+        }
 
         return jsonify(forum)
 

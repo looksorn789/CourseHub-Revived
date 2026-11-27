@@ -1,5 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
+from bson import ObjectId
+from bson.errors import InvalidId
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.post import Post, PostType
 from utils.helpers import serialize_mongo_doc, get_user_id
@@ -359,13 +361,11 @@ def list_forum_posts(forum_id):
                 "details": f"Type must be one of: {', '.join(t.value for t in PostType)}"
             }), 400
 
+        query = {"forum_id": ObjectId(forum_id)}
+        if post_type:
+            query["type"] = post_type
         post_model = Post(current_app.db, current_app.supabase)
-        posts, total = post_model.get_forum_posts(
-            forum_id,
-            page=page,
-            per_page=per_page,
-            post_type=post_type
-        )
+        posts, total = post_model.list_posts_with_authors(query, page=page, per_page=per_page)
 
         # Serialize the posts data
         serialized_posts = serialize_mongo_doc(posts)
@@ -381,6 +381,8 @@ def list_forum_posts(forum_id):
             }
         })
 
+    except InvalidId:
+        return jsonify({"success": False, "error": "Invalid forum id"}), 400
     except ValueError as e:
         return jsonify({
             "success": False,

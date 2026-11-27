@@ -305,6 +305,60 @@ class Post:
             current_app.logger.error(f"Error deleting post: {str(e)}")
             return False, f"Error deleting post: {str(e)}"
 
+    def list_posts_with_authors(
+        self,
+        query: Dict,
+        page: int = 1,
+        per_page: int = 20,
+        sort_field: str = "last_activity_at",
+        include_forum: bool = False,
+    ) -> Tuple[list, int]:
+        """One aggregate round trip for a page of posts, the total count, each
+        post's author (name/username/avatar) and optionally its forum.
+
+        Saves the separate count query and one author request per post.
+        """
+        page_stages = [
+            {"$skip": max(page - 1, 0) * per_page},
+            {"$limit": per_page},
+            {"$project": {"metadata.edit_history": 0}},
+            {"$lookup": {
+                "from": "users",
+                "localField": "user_id",
+                "foreignField": "_id",
+                "as": "author",
+                "pipeline": [{"$project": {
+                    "username": 1,
+                    "profile.first_name": 1,
+                    "profile.last_name": 1,
+                    "profile.avatar_config": 1,
+                }}],
+            }},
+            {"$set": {"author": {"$first": "$author"}}},
+        ]
+        if include_forum:
+            page_stages += [
+                {"$lookup": {
+                    "from": "forums",
+                    "localField": "forum_id",
+                    "foreignField": "_id",
+                    "as": "forum",
+                    "pipeline": [{"$project": {"name": 1, "slug": 1, "avatar_url": 1}}],
+                }},
+                {"$set": {"forum": {"$first": "$forum"}}},
+            ]
+        try:
+            result = next(self.collection.aggregate([
+                {"$match": query},
+                {"$sort": {sort_field: -1, "_id": -1}},
+                {"$facet": {"total": [{"$count": "n"}], "posts": page_stages}},
+            ]), {})
+            total = result.get("total", [{}])[0].get("n", 0) if result.get("total") else 0
+            return result.get("posts", []), total
+        except Exception as e:
+            current_app.logger.error(f"Error listing posts: {str(e)}")
+            return [], 0
+
     def get_forum_posts(
             self,
             forum_id: str,
