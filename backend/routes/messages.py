@@ -5,6 +5,9 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from models.chat import MAX_GROUP_SIZE, MAX_MESSAGE_LENGTH, Chat
+from models.forum import ForumVisibility
+from models.post import Post
+from routes.search import hidden_forum_ids
 from chat_socket import conversation_room, socketio, user_room
 from utils.helpers import get_user_id, serialize_mongo_doc
 
@@ -29,6 +32,45 @@ def _membership(conversation_id):
     if conv is None:
         return None
     return user_id, chat, conv
+
+
+def _shared_post_snapshot(post_id: str, sender_id: str, conv: dict):
+    """(snapshot, None) for a post the sender may share into this chat, else
+    (None, error). Posts in private channels can only be shared when every
+    participant is a member of that channel."""
+    try:
+        oid = ObjectId(post_id)
+    except InvalidId:
+        return None, "Post not found"
+    db = current_app.db
+    posts, _ = Post(db, current_app.supabase).list_posts_with_authors(
+        {"_id": oid, "forum_id": {"$nin": hidden_forum_ids(db, sender_id)}},
+        per_page=1,
+        include_forum=True,
+    )
+    if not posts:
+        return None, "Post not found"
+    post = posts[0]
+    forum = db["forums"].find_one(
+        {"_id": post["forum_id"]}, {"visibility": 1, "members.user_id": 1}
+    ) or {}
+    if forum.get("visibility") == ForumVisibility.PRIVATE.value:
+        members = {m.get("user_id") for m in forum.get("members", [])}
+        if not {str(p) for p in conv["participants"]} <= members:
+            return None, "This post is in a private channel that not everyone here can see"
+    author = post.get("author") or {}
+    profile = author.get("profile") or {}
+    return {
+        "post_id": oid,
+        "title": post.get("title", "")[:150],
+        "excerpt": (post.get("content") or "")[:160],
+        "image": (post.get("images") or [None])[0],
+        "forum": {"name": (post.get("forum") or {}).get("name"), "slug": (post.get("forum") or {}).get("slug")},
+        "author": {
+            "username": author.get("username"),
+            "name": f"{profile.get('first_name', '')} {profile.get('last_name', '')}".strip() or author.get("username"),
+        },
+    }, None
 
 
 @messages_bp.route("/conversations", methods=["GET"])
@@ -133,13 +175,19 @@ def send_message(conversation_id):
         if membership is None:
             return _not_found()
         user_id, chat, conv = membership
-        content = str((request.get_json(silent=True) or {}).get("content") or "").strip()
-        if not content:
+        data = request.get_json(silent=True) or {}
+        content = str(data.get("content") or "").strip()
+        shared_post = None
+        if data.get("shared_post_id"):
+            shared_post, error = _shared_post_snapshot(str(data["shared_post_id"]), user_id, conv)
+            if error:
+                return jsonify({"success": False, "error": error}), 400
+        if not content and not shared_post:
             return jsonify({"success": False, "error": "Message is empty"}), 400
         if len(content) > MAX_MESSAGE_LENGTH:
             return jsonify({"success": False, "error": f"Messages can be up to {MAX_MESSAGE_LENGTH} characters"}), 400
 
-        message = serialize_mongo_doc(chat.add_message(conv, user_id, content))
+        message = serialize_mongo_doc(chat.add_message(conv, user_id, content, shared_post))
         socketio.emit("message", message, to=conversation_room(conversation_id))
         for member in conv["participants"]:
             socketio.emit("conversation_updated", {"conversation_id": conversation_id}, to=user_room(member))

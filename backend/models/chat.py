@@ -147,7 +147,9 @@ class Chat:
                 d["content"] = ""
         return docs
 
-    def add_message(self, conversation: dict, sender_id: str, content: str) -> dict:
+    def add_message(
+        self, conversation: dict, sender_id: str, content: str, shared_post: Optional[dict] = None
+    ) -> dict:
         now = datetime.utcnow()
         doc = {
             "conversation_id": conversation["_id"],
@@ -156,13 +158,16 @@ class Chat:
             "created_at": now,
             "deleted": False,
         }
+        if shared_post:
+            doc["shared_post"] = shared_post
+        preview = content or (f"Shared a post: {shared_post['title']}" if shared_post else "")
         doc["_id"] = self.messages.insert_one(doc).inserted_id
         self.conversations.update_one(
             {"_id": conversation["_id"]},
             {"$set": {
                 "last_message": {
                     "_id": doc["_id"],
-                    "content": content[:200],
+                    "content": preview[:200],
                     "sender_id": doc["sender_id"],
                     "created_at": now,
                 },
