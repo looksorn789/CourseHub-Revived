@@ -9,6 +9,7 @@ import { applyPostImageChanges } from "./PostImages";
 import PostService from "../../services/postService";
 import { getUserProfile } from "../../services/profileService";
 import { transformPost } from "../../utils/postTransform";
+import { getCached, invalidateCached, setCached } from "../../utils/queryCache";
 
 const PER_PAGE = 20;
 export { PER_PAGE };
@@ -35,14 +36,23 @@ function FeedSkeleton() {
  * the author and "Load more". `loadPage(page)` returns the API's
  * { posts, page, total_pages }.
  */
-export default function PostStream({ loadPage: fetchPage, empty = null, header = null, onTotal }) {
-  const [posts, setPosts] = useState([]);
+export default function PostStream({ loadPage: fetchPage, empty = null, header = null, onTotal, cacheKey = null }) {
+  // With a cacheKey, start from the cached first page (instant), then refresh.
+  const storeKey = cacheKey ? `posts:${cacheKey}` : null;
+  const [cached] = useState(() => (storeKey ? getCached(storeKey) : undefined));
+  const [posts, setPosts] = useState(cached?.posts || []);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(Boolean(cached?.hasMore));
+  const [loading, setLoading] = useState(!cached);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}").user_id || null;
+    } catch {
+      return null;
+    }
+  });
   const [selectedPost, setSelectedPost] = useState(null);
   // ?post=<id> (shared links) opens that post once the list has loaded.
   const [searchParams, setSearchParams] = useSearchParams();
@@ -52,8 +62,24 @@ export default function PostStream({ loadPage: fetchPage, empty = null, header =
     const data = (await fetchPage(pageNumber)) || {};
     onTotal?.(data.total || 0);
     const transformed = await Promise.all((data.posts || []).map((p) => transformPost(p)));
-    return { posts: transformed, hasMore: (data.page || 1) < (data.total_pages || 1) };
+    return {
+      posts: transformed,
+      hasMore: (data.page || 1) < (data.total_pages || 1),
+      total: data.total || 0,
+    };
   }, [fetchPage, onTotal]);
+
+  useEffect(() => {
+    if (cached && onTotal) onTotal(cached.total ?? cached.posts.length);
+  }, [cached, onTotal]);
+
+  // Keep the cached first page in step with local edits/deletes.
+  const saveFirstPage = useCallback(
+    (nextPosts, nextHasMore, total) => {
+      if (storeKey) setCached(storeKey, { posts: nextPosts.slice(0, PER_PAGE), hasMore: nextHasMore, total });
+    },
+    [storeKey],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -66,13 +92,14 @@ export default function PostStream({ loadPage: fetchPage, empty = null, header =
         setPosts(result.posts);
         setHasMore(result.hasMore);
         setPage(1);
+        saveFirstPage(result.posts, result.hasMore, result.total);
       })
       .catch((err) => !cancelled && setError(err.message || "Couldn't load your feed."))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [loadPage]);
+  }, [loadPage, saveFirstPage]);
 
   useEffect(() => {
     if (!linkedPostId || loading) return undefined;
@@ -122,6 +149,7 @@ export default function PostStream({ loadPage: fetchPage, empty = null, header =
     const { images, errors } = await applyPostImageChanges(postId, updatedData.imageChanges);
     if (images) updated.images = images;
     errors.forEach((msg) => toast.error(`Photo change failed: ${msg}`));
+    invalidateCached("posts:", "channelposts:");
     setPosts((prev) =>
       prev.map((p) => (p.id === postId ? { ...p, ...updatedFields(updated), images: updated.images || p.images } : p)),
     );
@@ -130,7 +158,12 @@ export default function PostStream({ loadPage: fetchPage, empty = null, header =
   const handleDeletePost = async (postId) => {
     const response = await PostService.deletePost(postId);
     if (!response.success) throw new Error(response.error || "Failed to delete post");
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    setPosts((prev) => {
+      const next = prev.filter((p) => p.id !== postId);
+      saveFirstPage(next, hasMore);
+      return next;
+    });
+    invalidateCached("posts:", "channelposts:");
     toast.success("Post deleted");
   };
 

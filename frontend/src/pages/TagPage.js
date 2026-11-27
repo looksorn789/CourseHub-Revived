@@ -33,6 +33,7 @@ function TagPage() {
       {/* key: start fresh when the tag changes */}
       <PostStream
         key={tag}
+        cacheKey={`tag:${tag.toLowerCase()}`}
         loadPage={loadPage}
         onTotal={setTotal}
         header={header}

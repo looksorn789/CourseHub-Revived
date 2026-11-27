@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Loader2, Pin, TrendingUp, X } from "lucide-react";
 import { forumService, FORUMS_CHANGED_EVENT } from "../../services/forumService";
+import { fetchCached, getCached, orThrow } from "../../utils/queryCache";
 import Button from "../ui/Button";
 import { Card } from "../ui/Card";
 import PostService from "../../services/postService";
@@ -21,23 +22,29 @@ function ChannelIcon({ channel, className = "h-9 w-9" }) {
 
 function RightSidebar() {
   const navigate = useNavigate();
-  const [suggested, setSuggested] = useState(null);
-  const [pinned, setPinned] = useState(null);
+  // Start from the cache (instant), then refresh.
+  const [suggested, setSuggested] = useState(() => getCached("forums:suggested") ?? null);
+  const [pinned, setPinned] = useState(() => getCached("forums:pinned") ?? null);
   const [joining, setJoining] = useState(null);
-  const [tags, setTags] = useState(null);
+  const [tags, setTags] = useState(() => getCached("posts:tags:popular") ?? null);
 
   useEffect(() => {
-    PostService.getPopularTags(12).then(setTags).catch(() => setTags([]));
+    fetchCached("posts:tags:popular", () => PostService.getPopularTags(12))
+      .then(setTags)
+      .catch(() => setTags((t) => t ?? []));
   }, []);
 
   // Real data; refreshes when the user joins/leaves/pins/creates a channel.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const [s, p] = await Promise.all([forumService.getSuggestedForums(5), forumService.getPinnedForums()]);
+      const [s, p] = await Promise.allSettled([
+        fetchCached("forums:suggested", () => orThrow(forumService.getSuggestedForums(5))),
+        fetchCached("forums:pinned", () => orThrow(forumService.getPinnedForums())),
+      ]);
       if (!cancelled) {
-        setSuggested(s.data);
-        setPinned(p.data);
+        setSuggested((prev) => (s.status === "fulfilled" ? s.value : prev ?? []));
+        setPinned((prev) => (p.status === "fulfilled" ? p.value : prev ?? []));
       }
     };
     load();

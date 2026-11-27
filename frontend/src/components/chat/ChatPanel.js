@@ -6,6 +6,7 @@ import ChatService, { getChatSocket } from "../../services/chatService";
 import SearchService from "../../services/searchService";
 import { avatarDataUrl } from "../../utils/avatarUtils";
 import { useChat } from "../../context/ChatContext";
+import { getCached, setCached } from "../../utils/queryCache";
 
 export const myId = () => {
   try {
@@ -205,9 +206,21 @@ export function SharedPostCard({ post, mine, hasText }) {
 
 export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false, initialDraft = null }) {
   const me = myId();
-  const [messages, setMessages] = useState([]);
+  // Messages are cached per conversation (latest 60): reopening a chat shows
+  // them instantly while the newest load in the background.
+  const cacheKey = `chat:messages:${conversation._id}`;
+  const [messages, setMessagesState] = useState(() => getCached(cacheKey)?.messages || []);
+  const setMessages = useCallback(
+    (updater) =>
+      setMessagesState((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        setCached(cacheKey, { messages: next.slice(-60) });
+        return next;
+      }),
+    [cacheKey],
+  );
   const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !getCached(cacheKey));
   const [text, setText] = useState(initialDraft?.text || "");
   // Post attached to the next message (from "Share to chat"); removable.
   const [attachedPost, setAttachedPost] = useState(initialDraft?.post || null);
@@ -238,7 +251,7 @@ export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false, 
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    if (!getCached(`chat:messages:${cid}`)) setLoading(true);
     ChatService.listMessages(cid).then(({ data }) => {
       if (cancelled) return;
       setMessages(data?.messages || []);
@@ -277,7 +290,7 @@ export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false, 
       socket?.off("message_deleted", onDeleted);
       socket?.off("typing", onTyping);
     };
-  }, [cid, me, onRead]);
+  }, [cid, me, onRead, setMessages]);
 
   const loadEarlier = async () => {
     const { data } = await ChatService.listMessages(cid, messages[0]?._id);

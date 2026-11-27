@@ -1,9 +1,14 @@
 import api from "./api";
+import { invalidateCached } from "../utils/queryCache";
 
 // Fired after joining, leaving or creating a forum so the sidebar's
 // "My Channels" list can refresh itself.
 export const FORUMS_CHANGED_EVENT = "coursehub:forums-changed";
-const notifyForumsChanged = () => window.dispatchEvent(new Event(FORUMS_CHANGED_EVENT));
+const notifyForumsChanged = () => {
+  // Channel data changed (join/leave/pin/edit/create): drop cached copies.
+  invalidateCached("forums:", "channel:", "search:");
+  window.dispatchEvent(new Event(FORUMS_CHANGED_EVENT));
+};
 
 export const forumService = {
     getForumBySlug: async (slug) => {

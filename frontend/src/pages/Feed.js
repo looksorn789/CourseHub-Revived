@@ -32,5 +32,5 @@ export function Feed() {
     async (page) => (await PostService.getFeed(page, PER_PAGE)).data,
     [],
   );
-  return <PostStream loadPage={loadPage} empty={<EmptyFeed />} />;
+  return <PostStream cacheKey="feed" loadPage={loadPage} empty={<EmptyFeed />} />;
 }

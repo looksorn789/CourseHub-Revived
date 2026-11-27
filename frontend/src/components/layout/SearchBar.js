@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, Hash, Loader2, Search, Users } from "lucide-react";
 import SearchService from "../../services/searchService";
+import { fetchCached, getCached } from "../../utils/queryCache";
 import { avatarDataUrl } from "../../utils/avatarUtils";
 
 const fullName = (p) =>
@@ -52,7 +53,7 @@ export default function SearchBar({ onNavigate, className = "" }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState(null);
+  const [suggestions, setSuggestions] = useState(() => getCached("search:suggestions") ?? null);
   const [suggestError, setSuggestError] = useState(false);
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -69,7 +70,7 @@ export default function SearchBar({ onNavigate, className = "" }) {
     if (!open) return undefined;
     let cancelled = false;
     setSuggestError(false);
-    SearchService.suggestions()
+    fetchCached("search:suggestions", () => SearchService.suggestions())
       .then((data) => !cancelled && setSuggestions(data))
       .catch(() => !cancelled && setSuggestError(true));
     return () => {

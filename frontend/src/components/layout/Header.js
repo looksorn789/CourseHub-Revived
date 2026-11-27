@@ -29,6 +29,7 @@ import Sidebar from "./SideBar";
 import SearchBar from "./SearchBar";
 import { disconnectChatSocket } from "../../services/chatService";
 import { useChat } from "../../context/ChatContext";
+import { clearQueryCache } from "../../utils/queryCache";
 import { getUserProfile } from "../../services/profileService";
 import { generateAvatarSvg } from "../../utils/avatarUtils";
 
@@ -97,6 +98,7 @@ function Header() {
       localStorage.removeItem("jwt_token");
       localStorage.removeItem("user");
       disconnectChatSocket();
+      clearQueryCache(); // never show this account's data to the next user
       navigate("/signin");
     } catch (error) {
       console.error("Error signing out:", error);

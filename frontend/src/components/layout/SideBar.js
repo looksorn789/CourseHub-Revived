@@ -22,6 +22,7 @@ import {
 import { Separator } from "../ui/Separator";
 import { CreateChannelModal } from "../channel/CreateChannelModal";
 import { forumService, FORUMS_CHANGED_EVENT } from "../../services/forumService";
+import { fetchCached, getCached, orThrow } from "../../utils/queryCache";
 
 const navItems = [
   { name: "Home", icon: Home, path: "/home" },
@@ -38,21 +39,27 @@ function Sidebar({ onNavigate, className }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isChannelsOpen, setIsChannelsOpen] = useState(true);
-  const [myChannels, setMyChannels] = useState([]);
-  const [isLoadingChannels, setIsLoadingChannels] = useState(true);
-  const [pinnedChannels, setPinnedChannels] = useState([]);
+  // Start from the cache (instant), then refresh.
+  const [myChannels, setMyChannels] = useState(() => getCached("forums:mine") || []);
+  const [isLoadingChannels, setIsLoadingChannels] = useState(() => getCached("forums:mine") === undefined);
+  const [pinnedChannels, setPinnedChannels] = useState(() => getCached("forums:pinned") || []);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const [mine, pins] = await Promise.all([
-        forumService.getMyForums(),
-        forumService.getPinnedForums(),
-      ]);
-      if (!cancelled) {
-        setMyChannels(mine.data);
-        setPinnedChannels(pins.data);
-        setIsLoadingChannels(false);
+      try {
+        const [mine, pins] = await Promise.all([
+          fetchCached("forums:mine", () => orThrow(forumService.getMyForums())),
+          fetchCached("forums:pinned", () => orThrow(forumService.getPinnedForums())),
+        ]);
+        if (!cancelled) {
+          setMyChannels(mine);
+          setPinnedChannels(pins);
+        }
+      } catch {
+        // keep what we have (cached) on errors
+      } finally {
+        if (!cancelled) setIsLoadingChannels(false);
       }
     };
     load();

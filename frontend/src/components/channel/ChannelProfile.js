@@ -13,6 +13,7 @@ import { ChannelSidebar } from './ChannelSidebar';
 import { EditChannelModal } from './EditChannelModal';
 import { applyPostImageChanges } from '../posts/PostImages';
 import { transformPost } from '../../utils/postTransform';
+import { getCached, invalidateCached, setCached } from '../../utils/queryCache';
 import { DEFAULT_CHANNEL_BANNER, DEFAULT_CHANNEL_ICON } from './ChannelImagePicker';
 import { forumService } from '../../services/forumService';
 import PostService from '../../services/postService';
@@ -170,7 +171,21 @@ export function ChannelProfile() {
 
   useEffect(() => {
     const fetchChannelData = async () => {
-      setLoading(true);
+      // Show the cached channel and first page of posts instantly, then refresh.
+      const cachedChannel = getCached(`channel:${slug}`);
+      const cachedPosts = getCached(`channelposts:${slug}`);
+      if (cachedChannel) {
+        setChannelData(cachedChannel);
+        setIsJoined(cachedChannel.viewer?.is_member);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+      if (cachedPosts) {
+        setChannelPosts(cachedPosts.posts);
+        setHasMore(cachedPosts.hasMore);
+        setPostsLoading(false);
+      }
       try {
         const response = await forumService.getForumBySlug(slug);
         const transformedData = transformForumData(response);
@@ -180,16 +195,19 @@ export function ChannelProfile() {
         }
 
         setChannelData(transformedData);
+        setCached(`channel:${slug}`, transformedData);
         setIsJoined(transformedData.viewer.is_member);
         // Show the channel now; posts fill in below when they arrive.
         setLoading(false);
 
-        setPostsLoading(true);
+        if (!cachedPosts) setPostsLoading(true);
         const postsData = await fetchPostsWithUserData(transformedData._id, transformedData.name, 1, transformedData.slug);
         setChannelPosts(postsData.posts);
         setCurrentPage(1);
         setTotalPages(Math.ceil(postsData.total / postsData.per_page));
-        setHasMore(postsData.page < postsData.total_pages);
+        const more = postsData.page < postsData.total_pages;
+        setHasMore(more);
+        setCached(`channelposts:${slug}`, { posts: postsData.posts, hasMore: more });
         setPostsLoading(false);
 
       } catch (err) {
@@ -266,6 +284,7 @@ export function ChannelProfile() {
 
       const transformedPost = await transformPost(created, channelData.name, channelData.slug);
       setChannelPosts(prevPosts => [transformedPost, ...prevPosts]);
+      invalidateCached('posts:', 'channelposts:');
       setIsPostModalOpen(false);
     } catch (err) {
       throw new Error(err.response?.data?.details || err.message || 'Failed to create post');
@@ -286,6 +305,7 @@ export function ChannelProfile() {
       errors.forEach((msg) => toast.error(`Photo change failed: ${msg}`));
 
       const transformedPost = await transformPost(updated, channelData.name, channelData.slug);
+      invalidateCached('posts:', 'channelposts:');
       setChannelPosts(prevPosts =>
         prevPosts.map(post =>
           post.id === postId ? transformedPost : post
@@ -310,6 +330,7 @@ export function ChannelProfile() {
       
       if (response.success) {
         setChannelPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+        invalidateCached('posts:', 'channelposts:');
         toast.success('Post deleted successfully');
       } else {
         throw new Error(response.error || 'Failed to delete post');
