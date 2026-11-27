@@ -165,10 +165,19 @@ def list_forums():
             forum_model.collection.find(query).sort(*sort).skip(skip).limit(per_page)
         )
 
-        # Clean response data
+        # Per-forum flags for the signed-in viewer (if any); the member list
+        # itself is never returned.
+        try:
+            verify_jwt_in_request(optional=True)
+            identity = get_jwt_identity()
+        except Exception:  # invalid/expired token: treat as signed out
+            identity = None
+        viewer_id = get_user_id(identity) if identity else None
         for forum in forums:
+            members = forum.pop("members", None) or []
+            forum["is_member"] = bool(viewer_id) and any(m.get("user_id") == viewer_id for m in members)
+            forum["is_owner"] = bool(viewer_id) and str(forum.get("creator_id")) == viewer_id
             forum["_id"] = str(forum["_id"])
-            forum.pop("members", None)
 
         return jsonify(
             {
