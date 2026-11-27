@@ -2,6 +2,8 @@ import traceback
 from datetime import datetime
 from typing import Optional, Dict, Tuple
 from flask import Blueprint, request, jsonify, current_app
+from bson import ObjectId
+from bson.errors import InvalidId
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from pymongo import WriteConcern
 from models.forum import Forum, ForumRole, ForumStatus, ForumVisibility, ForumCategory
@@ -10,7 +12,6 @@ import bleach
 from utils.helpers import get_user_id
 from utils.storage import CHANNEL_IMAGE_BUCKET, read_image_upload, remove_images, upload_image
 
-from bson.errors import InvalidId
 
 forum_bp = Blueprint("forum_bp", __name__)
 
@@ -103,15 +104,21 @@ def validate_forum_data(data: Dict) -> Tuple[bool, Optional[str]]:
 
 def _viewer_info(forum: Dict) -> Dict:
     """Membership/permissions of the signed-in user for a forum, if any."""
-    viewer = {"is_member": False, "role": None, "is_owner": False, "can_edit": False}
+    viewer = {"is_member": False, "role": None, "is_owner": False, "can_edit": False, "is_pinned": False}
     try:
         verify_jwt_in_request(optional=True)
         identity = get_jwt_identity()
     except Exception:  # invalid/expired token: treat as signed out
         identity = None
-    user_id = get_user_id(identity) if identity else None
-    if not user_id:
+    user = (
+        current_app.db["users"].find_one({"supabase_id": str(identity)}, {"pinned_forums": 1})
+        if identity else None
+    )
+    if not user:
         return viewer
+    user_id = str(user["_id"])
+    # forum["_id"] may already be a string here; compare as strings.
+    viewer["is_pinned"] = str(forum.get("_id")) in {str(f) for f in user.get("pinned_forums") or []}
     member = next(
         (m for m in forum.get("members", []) if m.get("user_id") == user_id), None
     )
@@ -123,6 +130,122 @@ def _viewer_info(forum: Dict) -> Dict:
         can_edit=role == ForumRole.ADMIN.value,
     )
     return viewer
+
+
+MAX_PINNED = 10
+PIN_FORUM_FIELDS = {"name": 1, "slug": 1, "avatar_url": 1, "category": 1, "member_count": 1}
+
+
+def _visible_forum(forum_id: str, user_id: str) -> Optional[Dict]:
+    """Active forum the user may see (public, or private and a member)."""
+    try:
+        return current_app.db["forums"].find_one({
+            "_id": ObjectId(forum_id),
+            "status": ForumStatus.ACTIVE.value,
+            "$or": [{"visibility": {"$ne": ForumVisibility.PRIVATE.value}}, {"members.user_id": user_id}],
+        }, {"_id": 1})
+    except InvalidId:
+        return None
+
+
+@forum_bp.route("/pinned", methods=["GET"])
+@jwt_required()
+def list_pinned_forums():
+    """The user's pinned forums, most recently pinned first."""
+    try:
+        user = current_app.db["users"].find_one(
+            {"supabase_id": get_jwt_identity()}, {"pinned_forums": 1}
+        )
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        pinned = user.get("pinned_forums") or []
+        user_id = str(user["_id"])
+        found = {
+            f["_id"]: f for f in current_app.db["forums"].find(
+                {
+                    "_id": {"$in": pinned},
+                    "status": ForumStatus.ACTIVE.value,
+                    "$or": [{"visibility": {"$ne": ForumVisibility.PRIVATE.value}}, {"members.user_id": user_id}],
+                },
+                PIN_FORUM_FIELDS,
+            )
+        }
+        forums = [found[i] for i in pinned if i in found]  # keep pin order
+        for f in forums:
+            f["_id"] = str(f["_id"])
+        return jsonify({"forums": forums})
+    except Exception as e:
+        current_app.logger.error(f"Error listing pinned forums: {str(e)}")
+        return jsonify({"error": "Error retrieving pinned channels"}), 500
+
+
+@forum_bp.route("/<forum_id>/pin", methods=["PUT"])
+@jwt_required()
+def pin_forum(forum_id):
+    """Pin a forum to the top of the user's list (max MAX_PINNED)."""
+    try:
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"error": "User not found"}), 404
+        if not _visible_forum(forum_id, user_id):
+            return jsonify({"error": "Forum not found"}), 404
+        users = current_app.db["users"]
+        users.update_one({"_id": ObjectId(user_id)}, {"$pull": {"pinned_forums": ObjectId(forum_id)}})
+        users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$push": {"pinned_forums": {"$each": [ObjectId(forum_id)], "$position": 0, "$slice": MAX_PINNED}}},
+        )
+        return jsonify({"success": True, "is_pinned": True})
+    except Exception as e:
+        current_app.logger.error(f"Error pinning forum: {str(e)}")
+        return jsonify({"error": "Error pinning channel"}), 500
+
+
+@forum_bp.route("/<forum_id>/pin", methods=["DELETE"])
+@jwt_required()
+def unpin_forum(forum_id):
+    try:
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"error": "User not found"}), 404
+        current_app.db["users"].update_one(
+            {"_id": ObjectId(user_id)}, {"$pull": {"pinned_forums": ObjectId(forum_id)}}
+        )
+        return jsonify({"success": True, "is_pinned": False})
+    except InvalidId:
+        return jsonify({"error": "Forum not found"}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error unpinning forum: {str(e)}")
+        return jsonify({"error": "Error unpinning channel"}), 500
+
+
+@forum_bp.route("/suggestions", methods=["GET"])
+@jwt_required()
+def suggested_forums():
+    """Popular public forums the user hasn't joined."""
+    try:
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"error": "User not found"}), 404
+        limit = min(max(int(request.args.get("limit", 5)), 1), 20)
+        forums = list(
+            current_app.db["forums"].find(
+                {
+                    "status": ForumStatus.ACTIVE.value,
+                    "visibility": {"$ne": ForumVisibility.PRIVATE.value},
+                    "members.user_id": {"$ne": user_id},
+                },
+                PIN_FORUM_FIELDS,
+            ).sort([("member_count", -1), ("last_active", -1)]).limit(limit)
+        )
+        for f in forums:
+            f["_id"] = str(f["_id"])
+        return jsonify({"forums": forums})
+    except ValueError:
+        return jsonify({"error": "Invalid limit"}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error suggesting forums: {str(e)}")
+        return jsonify({"error": "Error retrieving suggestions"}), 500
 
 
 @forum_bp.route("/", methods=["GET"])

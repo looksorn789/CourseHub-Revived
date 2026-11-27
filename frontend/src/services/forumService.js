@@ -59,6 +59,34 @@ export const forumService = {
         return { data: null, error: error.response?.data?.error || error.message };
       }
     },
+    getPinnedForums: async () => {
+      try {
+        const response = await api.get("/api/forums/pinned");
+        return { data: response.data.forums || [], error: null };
+      } catch (error) {
+        return { data: [], error: error.response?.data?.error || error.message };
+      }
+    },
+    setPinned: async (forumId, pinned) => {
+      try {
+        const response = pinned
+          ? await api.put(`/api/forums/${forumId}/pin`)
+          : await api.delete(`/api/forums/${forumId}/pin`);
+        notifyForumsChanged();
+        return { data: response.data, error: null };
+      } catch (error) {
+        return { data: null, error: error.response?.data?.error || error.message };
+      }
+    },
+    // Popular public channels the user hasn't joined.
+    getSuggestedForums: async (limit = 5) => {
+      try {
+        const response = await api.get("/api/forums/suggestions", { params: { limit } });
+        return { data: response.data.forums || [], error: null };
+      } catch (error) {
+        return { data: [], error: error.response?.data?.error || error.message };
+      }
+    },
     getMyForums: async () => {
       try {
         const response = await api.get("/api/forums/mine");

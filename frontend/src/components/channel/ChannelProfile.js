@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { Plus, Check, ChevronDown, Hash, Pencil } from 'lucide-react';
+import { Plus, Check, ChevronDown, Hash, Pencil, Pin, PinOff } from 'lucide-react';
 import { Post } from '../posts/Post';
 import { PostModal } from '../posts/PostModal';
 import { FullPostModal } from '../posts/FullPostModal';
@@ -80,7 +80,7 @@ export function ChannelProfile() {
       creator_id: forumData.creator_id || '',
       slug: forumData.slug || '',
       // Signed-in viewer's relationship to the channel (computed by the API).
-      viewer: forumData.viewer || { is_member: false, role: null, is_owner: false, can_edit: false },
+      viewer: forumData.viewer || { is_member: false, role: null, is_owner: false, can_edit: false, is_pinned: false },
       tags: Array.isArray(forumData.tags) ? forumData.tags : [],
       rules: forumData.rules ? forumData.rules.split('\n').filter(rule => rule.trim()) : [],
       avatar_url: forumData.avatar_url || null,
@@ -346,6 +346,21 @@ export function ChannelProfile() {
     }
   };
 
+  const [pinBusy, setPinBusy] = useState(false);
+  const isPinned = Boolean(channelData?.viewer?.is_pinned);
+  const togglePin = async () => {
+    if (!channelData?._id) return;
+    setPinBusy(true);
+    const { error: pinError } = await forumService.setPinned(channelData._id, !isPinned);
+    setPinBusy(false);
+    if (pinError) {
+      toast.error(pinError);
+      return;
+    }
+    setChannelData((prev) => ({ ...prev, viewer: { ...prev.viewer, is_pinned: !isPinned } }));
+    toast.success(isPinned ? 'Unpinned from your dashboard' : 'Pinned to your dashboard');
+  };
+
   const handleJoinChannel = async () => {
     if (!channelData?._id) return;
 
@@ -403,12 +418,27 @@ export function ChannelProfile() {
         </motion.div>
       </div>
 
-      <div className="flex justify-end items-center gap-3 mt-14 sm:mt-20 mb-6 sm:mb-8">
+      <div className="flex flex-wrap justify-end items-center gap-2 sm:gap-3 mt-14 sm:mt-20 mb-6 sm:mb-8">
         {channelData.viewer.is_owner && (
           <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
             You own this channel
           </span>
         )}
+        <Button
+          type="button"
+          aria-pressed={isPinned}
+          disabled={pinBusy}
+          onClick={togglePin}
+          title={isPinned ? "Unpin from your dashboard" : "Pin to your dashboard"}
+          className={`px-4 py-2 rounded-full text-sm sm:text-base font-semibold flex items-center border transition-colors ${
+            isPinned
+              ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          {isPinned ? <PinOff className="w-4 h-4 mr-2" /> : <Pin className="w-4 h-4 mr-2" />}
+          <span>{isPinned ? 'Pinned' : 'Pin'}</span>
+        </Button>
         {channelData.viewer.can_edit ? (
           <Button
             className="px-5 sm:px-6 py-2 rounded-full text-base sm:text-lg font-semibold flex items-center bg-green-600 text-white hover:bg-green-700"

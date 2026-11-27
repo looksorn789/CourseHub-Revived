@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Compass,
   Loader2,
+  Pin,
 } from "lucide-react";
 import Button from "../ui/Button";
 import { cn } from "../../lib/utils";
@@ -37,13 +38,18 @@ function Sidebar({ onNavigate, className }) {
   const [isChannelsOpen, setIsChannelsOpen] = useState(true);
   const [myChannels, setMyChannels] = useState([]);
   const [isLoadingChannels, setIsLoadingChannels] = useState(true);
+  const [pinnedChannels, setPinnedChannels] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const { data } = await forumService.getMyForums();
+      const [mine, pins] = await Promise.all([
+        forumService.getMyForums(),
+        forumService.getPinnedForums(),
+      ]);
       if (!cancelled) {
-        setMyChannels(data);
+        setMyChannels(mine.data);
+        setPinnedChannels(pins.data);
         setIsLoadingChannels(false);
       }
     };
@@ -83,6 +89,36 @@ function Sidebar({ onNavigate, className }) {
             </li>
           ))}
         </ul>
+
+        {/* Pinned (also shown in the right sidebar on wide screens) */}
+        {pinnedChannels.length > 0 && (
+          <>
+            <Separator className="my-4" />
+            <p className="flex items-center px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <Pin className="mr-1.5 h-3.5 w-3.5" />
+              Pinned
+            </p>
+            <ul className="space-y-1">
+              {pinnedChannels.map((channel) => {
+                const path = `/channel/${channel.slug}`;
+                return (
+                  <li key={channel._id}>
+                    <Button
+                      variant="ghost"
+                      className={cn(itemClass(location.pathname === path), "h-9 px-4")}
+                      onClick={() => go(path)}
+                    >
+                      <span className="mr-3 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-amber-100 text-[10px] font-semibold text-amber-800">
+                        {channel.name?.[0]?.toUpperCase() || "#"}
+                      </span>
+                      <span className="truncate text-sm">{channel.name}</span>
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
 
         {/* My Channels */}
         <Separator className="my-4" />
