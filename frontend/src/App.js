@@ -1,5 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { Toaster } from "react-hot-toast";
 import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -17,6 +20,9 @@ import FriendsPage from "./pages/FriendsPage";
 function App() {
   return (
     <Router>
+      {/* The app uses both toast libraries; mount both so their messages show. */}
+      <ToastContainer position="bottom-right" autoClose={3000} newestOnTop />
+      <Toaster position="bottom-right" />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<SignUp />} />

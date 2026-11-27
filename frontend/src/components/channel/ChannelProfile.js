@@ -11,6 +11,7 @@ import { PostModal } from '../posts/PostModal';
 import { FullPostModal } from '../posts/FullPostModal';
 import { ChannelSidebar } from './ChannelSidebar';
 import { EditChannelModal } from './EditChannelModal';
+import { DEFAULT_CHANNEL_BANNER, DEFAULT_CHANNEL_ICON } from './ChannelImagePicker';
 import { forumService } from '../../services/forumService';
 import PostService from '../../services/postService';
 import { getUserById } from '../../services/profileService';
@@ -140,8 +141,10 @@ export function ChannelProfile() {
       viewer: forumData.viewer || { is_member: false, role: null, is_owner: false, can_edit: false },
       tags: Array.isArray(forumData.tags) ? forumData.tags : [],
       rules: forumData.rules ? forumData.rules.split('\n').filter(rule => rule.trim()) : [],
-      bannerImage: forumData.banner_url || 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&h=400&q=80',
-      profileImage: forumData.avatar_url || 'https://images.unsplash.com/photo-1527430253228-e93688616381?auto=format&fit=crop&w=200&h=200&q=80',
+      avatar_url: forumData.avatar_url || null,
+      banner_url: forumData.banner_url || null,
+      bannerImage: forumData.banner_url || DEFAULT_CHANNEL_BANNER,
+      profileImage: forumData.avatar_url || DEFAULT_CHANNEL_ICON,
       created_at: forumData.created_at || new Date().toISOString(),
       updated_at: forumData.updated_at || new Date().toISOString(),
       metadata: forumData.metadata || { views: 0, trending_score: 0 }
@@ -347,6 +350,14 @@ export function ChannelProfile() {
         ? updated.rules.split('\n').filter((rule) => rule.trim())
         : prev.rules,
       slug: updated.slug || prev.slug,
+      ...('avatar_url' in updated && {
+        avatar_url: updated.avatar_url,
+        profileImage: updated.avatar_url || DEFAULT_CHANNEL_ICON,
+      }),
+      ...('banner_url' in updated && {
+        banner_url: updated.banner_url,
+        bannerImage: updated.banner_url || DEFAULT_CHANNEL_BANNER,
+      }),
     }));
     toast.success('Channel updated');
     // Renaming changes the slug, so move to the channel's new address.

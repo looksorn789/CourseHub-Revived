@@ -35,6 +35,30 @@ export const forumService = {
         return { data: null, error: error.response?.data?.error || error.message };
       }
     },
+    // kind: "avatar" (channel icon) or "banner". Owner only (enforced by the API).
+    uploadForumImage: async (forumId, kind, file) => {
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        const response = await api.post(`/api/forums/${forumId}/images/${kind}`, form, {
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 60000,
+        });
+        notifyForumsChanged();
+        return { data: response.data, error: null };
+      } catch (error) {
+        return { data: null, error: error.response?.data?.error || error.message };
+      }
+    },
+    removeForumImage: async (forumId, kind) => {
+      try {
+        const response = await api.delete(`/api/forums/${forumId}/images/${kind}`);
+        notifyForumsChanged();
+        return { data: response.data, error: null };
+      } catch (error) {
+        return { data: null, error: error.response?.data?.error || error.message };
+      }
+    },
     getMyForums: async () => {
       try {
         const response = await api.get("/api/forums/mine");
