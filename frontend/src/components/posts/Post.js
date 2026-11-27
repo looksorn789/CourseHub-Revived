@@ -112,6 +112,7 @@ export function Post({
   const handleChannelClick = (e) => {
     e.stopPropagation();
     const channelSlug =
+      post.forumSlug ||
       post.author.slug ||
       post.author.channelSlug ||
       getChannelSlug(post.author.channel);
@@ -153,20 +154,20 @@ export function Post({
                 <AvatarFallback>{post.author.name[0]}</AvatarFallback>
               </Avatar>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-gray-900">
                 {post.author.name}
               </p>
-              <div className="flex items-center text-xs text-gray-500">
+              <div className="flex flex-wrap items-center text-xs text-gray-500">
                 {showChannelHash && <Hash className="h-3 w-3 mr-1" />}
                 <button
                   onClick={handleChannelClick}
-                  className="hover:text-green-600 transition-colors duration-200"
+                  className="max-w-[12rem] truncate text-left hover:text-green-600 transition-colors duration-200"
                 >
                   {post.author.channel}
                 </button>
                 <span className="mx-1">•</span>
-                <span>
+                <span className="whitespace-nowrap">
                   {formatDistanceToNow(new Date(post.timestamp), {
                     addSuffix: true,
                   })}
