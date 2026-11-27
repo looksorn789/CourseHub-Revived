@@ -69,6 +69,21 @@ def get_pending_requests():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@friend_request_bp.route("/pending/count", methods=["GET"])
+@jwt_required()
+def count_pending_requests():
+    """Number of requests waiting for an answer (for the Friends badge)."""
+    try:
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"error": "User not found"}), 404
+        count = FriendRequest(current_app.db, current_app.supabase).count_pending_requests(user_id)
+        return jsonify({"count": count})
+    except Exception as e:
+        current_app.logger.error(f"Error counting friend requests: {str(e)}")
+        return jsonify({"error": "Error counting friend requests"}), 500
+
+
 @friend_request_bp.route("/respond", methods=["POST"])
 @jwt_required()
 def respond_to_request():
