@@ -14,6 +14,7 @@ from routes.comments import comment_bp
 from routes.profile import profile_bp
 from routes.friend_request import friend_request_bp
 from routes.friends import friends_bp
+from routes.search import search_bp
 
 
 logging.basicConfig(level=logging.INFO)
@@ -112,6 +113,7 @@ def create_app(config_class=Config):
     app.register_blueprint(comment_bp, url_prefix='/api/comments')
     app.register_blueprint(friend_request_bp, url_prefix='/api/friend-request')
     app.register_blueprint(friends_bp, url_prefix='/api')
+    app.register_blueprint(search_bp, url_prefix='/api/search')
 
 
     @app.errorhandler(404)
