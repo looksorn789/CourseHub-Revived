@@ -30,4 +30,6 @@ class Config:
     AWS_REGION_NAME = os.getenv("AWS_REGION")
     EMAIL_FROM = os.getenv("EMAIL_FROM")
     FRONTEND_URL = os.getenv("FRONTEND_URL")
+    # Largest request body Flask accepts (channel banners are capped at 5 MB).
+    MAX_CONTENT_LENGTH = 8 * 1024 * 1024
     DEBUG = os.getenv("DEBUG", "False") == "True"
