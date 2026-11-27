@@ -31,20 +31,25 @@ export function Comment({
   onEditReply,
   onDeleteReply,
   depth = 0,
+  // Signed-in user's display info from the parent. When given, the comment
+  // doesn't fetch the profile itself (one request per comment before).
+  viewer = null,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [showReplies, setShowReplies] = useState(false);
-  const [currentUser, setCurrentUser] = useState({
+  const [fetchedUser, setCurrentUser] = useState({
     name: "",
     username: "",
     avatarUrl: "",
     initials: "",
   });
+  const currentUser = viewer || fetchedUser;
 
   useEffect(() => {
+    if (viewer) return;
     const fetchCurrentUser = async () => {
       try {
         const { data, error } = await getUserProfile();
@@ -74,7 +79,7 @@ export function Comment({
     };
 
     fetchCurrentUser();
-  }, []);
+  }, [viewer]);
 
   const isAuthor = currentUserId === comment.user_id;
   const isReply = depth > 0;
@@ -344,6 +349,7 @@ export function Comment({
                       onEditReply={onEditReply}
                       onDeleteReply={onDeleteReply}
                       depth={depth + 1}
+                      viewer={viewer}
                     />
                   ))}
                 </div>

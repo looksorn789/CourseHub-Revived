@@ -14,6 +14,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Label from '../ui/Label';
 import Textarea from '../ui/Textarea';
+import { PostImagePicker, imageChangesFor } from './PostImages';
 import Badge from '../ui/Badge';
 import { X } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/RadioGroup';
@@ -55,6 +56,7 @@ export function PostModal({ isOpen, onClose, onSubmit, initialData = null }) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [content, setContent] = useState(initialData?.content || '');
   const [tags, setTags] = useState(initialData?.tags || []);
+  const [imageChanges, setImageChanges] = useState(() => imageChangesFor(initialData?.images));
   const [newTag, setNewTag] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,6 +67,7 @@ export function PostModal({ isOpen, onClose, onSubmit, initialData = null }) {
       setTitle(initialData?.title || '');
       setContent(initialData?.content || '');
       setTags(initialData?.tags || []);
+      setImageChanges(imageChangesFor(initialData?.images));
       setNewTag('');
       setError('');
     }
@@ -109,6 +112,8 @@ export function PostModal({ isOpen, onClose, onSubmit, initialData = null }) {
         title: title.trim(),
         content: content.trim(),
         tags: tags,
+        // Applied by the parent after the post itself is saved.
+        imageChanges,
       };
 
       await onSubmit(postData);
@@ -156,6 +161,7 @@ export function PostModal({ isOpen, onClose, onSubmit, initialData = null }) {
     setTitle('');
     setContent('');
     setTags([]);
+    setImageChanges(imageChangesFor());
     setNewTag('');
     setError('');
   };
@@ -167,7 +173,7 @@ export function PostModal({ isOpen, onClose, onSubmit, initialData = null }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] p-6 rounded-2xl bg-white overflow-hidden border border-green-100">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-6 rounded-2xl bg-white border border-green-100">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900">Create a New Post</DialogTitle>
           <DialogDescription className="text-gray-600">
@@ -273,6 +279,16 @@ export function PostModal({ isOpen, onClose, onSubmit, initialData = null }) {
                   onChange={(e) => setContent(e.target.value)}
                   required
                 />
+              </motion.div>
+
+              <motion.div
+                key="post-photos"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+              >
+                <Label className="block text-sm font-medium text-gray-700 mb-2">Photos</Label>
+                <PostImagePicker value={imageChanges} onChange={setImageChanges} disabled={loading} />
               </motion.div>
 
               <motion.div

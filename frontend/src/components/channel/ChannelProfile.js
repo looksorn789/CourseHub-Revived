@@ -11,6 +11,7 @@ import { PostModal } from '../posts/PostModal';
 import { FullPostModal } from '../posts/FullPostModal';
 import { ChannelSidebar } from './ChannelSidebar';
 import { EditChannelModal } from './EditChannelModal';
+import { applyPostImageChanges } from '../posts/PostImages';
 import { DEFAULT_CHANNEL_BANNER, DEFAULT_CHANNEL_ICON } from './ChannelImagePicker';
 import { forumService } from '../../services/forumService';
 import PostService from '../../services/postService';
@@ -45,8 +46,10 @@ const transformPost = async (post, forumName = 'Unknown Channel') => {
   };
 
   const basePost = {
-    id: post._id,
+    // The create endpoint returns "id"; list/update return "_id".
+    id: post._id || post.id,
     userId: post.user_id,
+    images: post.images || [],
     title: post.title || 'Untitled Post',
     content: post.content || '',
     tags: post.tags || [],
@@ -289,7 +292,13 @@ export function ChannelProfile() {
       if (response.data.success === false) {
         throw new Error(response.data.details || 'Failed to create post');
       }
-      const transformedPost = await transformPost(response.data.data, channelData.name);
+      const created = response.data.data;
+      const createdId = created._id || created.id;
+      const { images, errors } = await applyPostImageChanges(createdId, postData.imageChanges);
+      if (images) created.images = images;
+      errors.forEach((msg) => toast.error(`Photo upload failed: ${msg}`));
+
+      const transformedPost = await transformPost(created, channelData.name);
       setChannelPosts(prevPosts => [transformedPost, ...prevPosts]);
       setIsPostModalOpen(false);
     } catch (err) {
@@ -305,7 +314,12 @@ export function ChannelProfile() {
         throw new Error(response.details || 'Failed to update post');
       }
 
-      const transformedPost = await transformPost(response.data, channelData.name);
+      const updated = response.data;
+      const { images, errors } = await applyPostImageChanges(postId, updatedData.imageChanges);
+      if (images) updated.images = images;
+      errors.forEach((msg) => toast.error(`Photo change failed: ${msg}`));
+
+      const transformedPost = await transformPost(updated, channelData.name);
       setChannelPosts(prevPosts =>
         prevPosts.map(post =>
           post.id === postId ? transformedPost : post

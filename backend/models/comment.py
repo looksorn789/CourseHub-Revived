@@ -12,6 +12,8 @@ class CommentStatus(Enum):
     HIDDEN = "hidden"
 
 class Comment:
+    _prepared_dbs = set()
+
     ALLOWED_HTML_TAGS = ["p", "br", "strong", "em", "u", "code", "pre", "blockquote"]
 
     FIELDS = {
@@ -42,7 +44,11 @@ class Comment:
     def __init__(self, db, supabase):
         self.collection = db["threads"]
         self.supabase = supabase
-        self._setup_indexes()
+        # Index setup is slow over the network and only needs to happen once
+        # per process; a model is constructed on every request.
+        if db.name not in Comment._prepared_dbs:
+            self._setup_indexes()
+            Comment._prepared_dbs.add(db.name)
 
     def _setup_indexes(self):
         """Set up optimized indexes for comment queries"""

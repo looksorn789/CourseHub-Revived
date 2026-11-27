@@ -31,6 +31,30 @@ class PostService {
     }
   }
 
+  // Photos: author only (enforced by the API). Return { data, error }.
+  static async uploadPostImage(postId, file) {
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const response = await api.post(`/api/posts/${postId}/images`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000,
+      });
+      return { data: response.data, error: null };
+    } catch (error) {
+      return { data: null, error: error.response?.data?.error || error.message };
+    }
+  }
+
+  static async removePostImage(postId, url) {
+    try {
+      const response = await api.delete(`/api/posts/${postId}/images`, { data: { url } });
+      return { data: response.data, error: null };
+    } catch (error) {
+      return { data: null, error: error.response?.data?.error || error.message };
+    }
+  }
+
   static async getPost(postId) {
     try {
       const response = await api.get(`/api/posts/${postId}`);

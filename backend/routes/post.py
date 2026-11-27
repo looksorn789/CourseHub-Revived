@@ -1,7 +1,9 @@
+from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.post import Post, PostType
 from utils.helpers import serialize_mongo_doc, get_user_id
+from utils.storage import POST_IMAGE_BUCKET, read_image_upload, remove_images, upload_image
 import bleach
 
 post_bp = Blueprint("post_bp", __name__)
@@ -66,6 +68,7 @@ def create_post(forum_id):
             "title": created_post["title"],
             "content": created_post["content"],
             "tags": post_data.get("tags", []),
+            "images": created_post.get("images", []),
             "type": created_post["type"],
             "created_at": created_post["created_at"],
             "updated_at": created_post["updated_at"],
@@ -176,6 +179,7 @@ def update_post(post_id):
             "content": updated_post["content"],
             "type": updated_post["type"],
             "tags": updated_post.get("tags", []),
+            "images": updated_post.get("images", []),
             "created_at": updated_post["created_at"],
             "updated_at": updated_post["updated_at"],
             "last_activity_at": updated_post["last_activity_at"],
@@ -237,6 +241,8 @@ def delete_post(post_id):
 
         # Delete post
         success, error = post_model.delete_post(post_id)
+        if success:
+            remove_images(POST_IMAGE_BUCKET, post.get("images", []))
 
         if not success:
             return jsonify({
@@ -258,6 +264,83 @@ def delete_post(post_id):
             "error": "Error deleting post",
             "details": str(e)
         }), 500
+
+
+MAX_POST_IMAGES = 4
+MAX_POST_IMAGE_BYTES = 5 * 1024 * 1024
+
+
+def _own_post_or_error(post_id):
+    """(post, None) if the signed-in user wrote the post, else (None, response)."""
+    user_id = get_user_id(get_jwt_identity())
+    if not user_id:
+        return None, (jsonify({"success": False, "error": "User not found"}), 404)
+    post = Post(current_app.db, current_app.supabase).find_by_id(post_id)
+    if not post:
+        return None, (jsonify({"success": False, "error": "Post not found"}), 404)
+    if str(post["user_id"]) != user_id:
+        return None, (jsonify({"success": False, "error": "Only the author can change this post's photos"}), 403)
+    return post, None
+
+
+@post_bp.route("/<post_id>/images", methods=["POST"])
+@jwt_required()
+def upload_post_image(post_id):
+    """Add a photo to a post (author only, up to MAX_POST_IMAGES)."""
+    try:
+        post, error_response = _own_post_or_error(post_id)
+        if error_response:
+            return error_response
+        if len(post.get("images", [])) >= MAX_POST_IMAGES:
+            return jsonify({"success": False, "error": f"A post can have up to {MAX_POST_IMAGES} photos"}), 400
+
+        image, error = read_image_upload(request.files.get("file"), MAX_POST_IMAGE_BYTES)
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        image_url = upload_image(POST_IMAGE_BUCKET, str(post["_id"]), "photo", image)
+
+        # Re-check the limit atomically in case of parallel uploads.
+        collection = Post(current_app.db, current_app.supabase).collection
+        result = collection.update_one(
+            {"_id": post["_id"], f"images.{MAX_POST_IMAGES - 1}": {"$exists": False}},
+            {"$push": {"images": image_url}, "$set": {"updated_at": datetime.utcnow()}},
+        )
+        if result.modified_count == 0:
+            remove_images(POST_IMAGE_BUCKET, [image_url])
+            return jsonify({"success": False, "error": f"A post can have up to {MAX_POST_IMAGES} photos"}), 400
+
+        images = collection.find_one({"_id": post["_id"]}, {"images": 1}).get("images", [])
+        return jsonify({"success": True, "image_url": image_url, "images": images}), 201
+
+    except Exception as e:
+        current_app.logger.error(f"Error uploading post image: {str(e)}")
+        return jsonify({"success": False, "error": "Error uploading photo"}), 500
+
+
+@post_bp.route("/<post_id>/images", methods=["DELETE"])
+@jwt_required()
+def delete_post_image(post_id):
+    """Remove one photo from a post by its URL (author only)."""
+    try:
+        post, error_response = _own_post_or_error(post_id)
+        if error_response:
+            return error_response
+        image_url = (request.get_json(silent=True) or {}).get("url")
+        if not image_url or image_url not in post.get("images", []):
+            return jsonify({"success": False, "error": "Photo not found on this post"}), 404
+
+        collection = Post(current_app.db, current_app.supabase).collection
+        collection.update_one(
+            {"_id": post["_id"]},
+            {"$pull": {"images": image_url}, "$set": {"updated_at": datetime.utcnow()}},
+        )
+        remove_images(POST_IMAGE_BUCKET, [image_url])
+        images = collection.find_one({"_id": post["_id"]}, {"images": 1}).get("images", [])
+        return jsonify({"success": True, "images": images})
+
+    except Exception as e:
+        current_app.logger.error(f"Error removing post image: {str(e)}")
+        return jsonify({"success": False, "error": "Error removing photo"}), 500
 
 
 @post_bp.route("/forum/<forum_id>", methods=["GET"])
