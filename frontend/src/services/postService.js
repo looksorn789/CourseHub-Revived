@@ -55,6 +55,12 @@ class PostService {
     }
   }
 
+  // Home feed: joined channels + friends + own posts, newest first.
+  static async getFeed(page = 1, perPage = 20) {
+    const response = await api.get('/api/posts/feed', { params: { page, per_page: perPage } });
+    return response.data;
+  }
+
   static async getPost(postId) {
     try {
       const response = await api.get(`/api/posts/${postId}`);
