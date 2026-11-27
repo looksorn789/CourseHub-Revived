@@ -12,7 +12,9 @@ def serialize_mongo_doc(doc):
     if isinstance(doc, ObjectId):
         return str(doc)
     if isinstance(doc, datetime):
-        return doc.isoformat()
+        # Stored times are naive UTC (datetime.utcnow()); mark them as UTC so
+        # browsers don't read them as local time.
+        return doc.isoformat() + ("Z" if doc.tzinfo is None else "")
     return doc
 
 def get_user_id(supabase_user_id: str):
