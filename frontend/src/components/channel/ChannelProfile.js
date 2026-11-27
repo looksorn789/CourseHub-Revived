@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar';
@@ -39,6 +39,9 @@ const LoadingState = () => (
 export function ChannelProfile() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  // ?post=<id> (e.g. from search) opens that post once the channel loads.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedPostId = searchParams.get('post');
   
   const [isJoined, setIsJoined] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -205,6 +208,28 @@ export function ChannelProfile() {
       fetchChannelData();
     }
   }, [slug, navigate]);
+
+  useEffect(() => {
+    if (!linkedPostId || loading || postsLoading || !channelData) return;
+    let cancelled = false;
+    const openLinkedPost = async () => {
+      let post = channelPosts.find((p) => p.id === linkedPostId);
+      if (!post) {
+        try {
+          const res = await PostService.getPost(linkedPostId);
+          if (res?.data) post = await transformPost(res.data, channelData.name);
+        } catch (err) {
+          toast.error('That post is no longer available.');
+        }
+      }
+      if (!cancelled && post) setSelectedPost(post);
+      if (!cancelled) setSearchParams({}, { replace: true });
+    };
+    openLinkedPost();
+    return () => {
+      cancelled = true;
+    };
+  }, [linkedPostId, loading, postsLoading, channelData, channelPosts, setSearchParams]);
 
   const loadMorePosts = async () => {
     if (loadingMore || !hasMore || !channelData) return;

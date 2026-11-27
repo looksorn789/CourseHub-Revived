@@ -7,6 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.post import Post, PostType
 from models.forum import ForumStatus, ForumVisibility
 from models.friend_request import RequestStatus
+from routes.search import hidden_forum_ids
 from utils.helpers import serialize_mongo_doc, get_user_id
 from utils.storage import POST_IMAGE_BUCKET, read_image_upload, remove_images, upload_image
 import bleach
@@ -95,6 +96,30 @@ def create_post(forum_id):
             "error": "Error creating post",
             "details": str(e)
         }), 500
+
+
+@post_bp.route("/<post_id>", methods=["GET"])
+@jwt_required()
+def get_post(post_id):
+    """One post with its author and forum (e.g. opened from search)."""
+    try:
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        hidden = hidden_forum_ids(current_app.db, user_id)
+        posts, _ = Post(current_app.db, current_app.supabase).list_posts_with_authors(
+            {"_id": ObjectId(post_id), "forum_id": {"$nin": hidden}},
+            per_page=1,
+            include_forum=True,
+        )
+        if not posts:
+            return jsonify({"success": False, "error": "Post not found"}), 404
+        return jsonify({"success": True, "data": serialize_mongo_doc(posts[0])})
+    except InvalidId:
+        return jsonify({"success": False, "error": "Post not found"}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error getting post: {str(e)}")
+        return jsonify({"success": False, "error": "Error retrieving post"}), 500
 
 
 @post_bp.route("/<post_id>", methods=["PUT", "PATCH"])
