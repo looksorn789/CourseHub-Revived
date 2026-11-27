@@ -90,9 +90,10 @@ function Sidebar({ onNavigate, className }) {
           ))}
         </ul>
 
-        {/* Pinned (also shown in the right sidebar on wide screens) */}
+        {/* Pinned: only where the right sidebar (which lists pins) is hidden,
+            i.e. below xl and in the phone menu. */}
         {pinnedChannels.length > 0 && (
-          <>
+          <div className="xl:hidden">
             <Separator className="my-4" />
             <p className="flex items-center px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
               <Pin className="mr-1.5 h-3.5 w-3.5" />
@@ -117,7 +118,7 @@ function Sidebar({ onNavigate, className }) {
                 );
               })}
             </ul>
-          </>
+          </div>
         )}
 
         {/* My Channels */}
