@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Label from "../ui/Label";
@@ -23,49 +23,72 @@ function Step2Education({
 }) {
   const [schools, setSchools] = useState([]);
   const [majors, setMajors] = useState([]);
-  const [schoolSearchTerm, setSchoolSearchTerm] = useState("");
-  const [majorSearchTerm, setMajorSearchTerm] = useState("");
+  // Start from the saved values so coming back to this step keeps them.
+  const [schoolSearchTerm, setSchoolSearchTerm] = useState(school || "");
+  const [majorSearchTerm, setMajorSearchTerm] = useState(major || "");
+  const [schoolId, setSchoolId] = useState(null);
   const [isLoadingSchools, setIsLoadingSchools] = useState(false);
+  const [isLoadingMajors, setIsLoadingMajors] = useState(false);
+  const [majorOpen, setMajorOpen] = useState(false);
+  const [activeMajor, setActiveMajor] = useState(0);
+  // Only the newest request may update the lists (typing fast can make
+  // older responses arrive last).
+  const schoolRequest = useRef(0);
+  const majorRequest = useRef(0);
 
   const fetchSchools = useCallback(async (search) => {
+    const requestId = ++schoolRequest.current;
     setIsLoadingSchools(true);
     try {
-      const response = await fetch(
-        `${BASE_URL}?api_key=${API_KEY}&school.name=${search}&fields=id,school.name&per_page=20`,
-      );
+      const params = new URLSearchParams({
+        api_key: API_KEY,
+        "school.name": search,
+        fields: "id,school.name",
+        per_page: "20",
+      });
+      const response = await fetch(`${BASE_URL}?${params}`);
       const data = await response.json();
+      if (requestId !== schoolRequest.current) return;
       setSchools(
-        data.results.map((school) => ({
-          id: school.id,
-          name: school["school.name"],
-        })),
+        (data.results || []).map((s) => ({ id: s.id, name: s["school.name"] })),
       );
     } catch (error) {
       console.error("Error fetching schools:", error);
     } finally {
-      setIsLoadingSchools(false);
+      if (requestId === schoolRequest.current) setIsLoadingSchools(false);
     }
   }, []);
 
-  const fetchMajors = useCallback(async (schoolId) => {
+  // Look up by id when we have it; otherwise (returning to this step) by
+  // exact school name.
+  const fetchMajors = useCallback(async (id, name) => {
+    const requestId = ++majorRequest.current;
+    setIsLoadingMajors(true);
     try {
-      const response = await fetch(
-        `${BASE_URL}?api_key=${API_KEY}&id=${schoolId}&fields=id,latest.programs.cip_4_digit.title&per_page=100`,
-      );
+      const params = new URLSearchParams({
+        api_key: API_KEY,
+        fields: "id,school.name,latest.programs.cip_4_digit.title",
+      });
+      if (id) params.set("id", id);
+      else params.set("school.name", name);
+      const response = await fetch(`${BASE_URL}?${params}`);
       const data = await response.json();
+      if (requestId !== majorRequest.current) return;
 
-      const programs = data?.results?.[0]?.["latest.programs.cip_4_digit"];
-
-      if (!programs) {
-        console.error("No programs data available for this school.");
-        setMajors([]);
-        return;
-      }
-
-      const majorsSet = new Set(programs.map((program) => program.title));
-      setMajors(Array.from(majorsSet));
+      const results = data?.results || [];
+      const match = id
+        ? results[0]
+        : results.find((r) => r["school.name"] === name) || results[0];
+      const programs = match?.["latest.programs.cip_4_digit"] || [];
+      const titles = programs
+        .map((p) => (p.title || "").trim().replace(/\.$/, ""))
+        .filter(Boolean);
+      setMajors([...new Set(titles)].sort((a, b) => a.localeCompare(b)));
     } catch (error) {
       console.error("Error fetching majors:", error);
+      if (requestId === majorRequest.current) setMajors([]);
+    } finally {
+      if (requestId === majorRequest.current) setIsLoadingMajors(false);
     }
   }, []);
 
@@ -75,30 +98,71 @@ function Step2Education({
         fetchSchools(schoolSearchTerm);
       }, 300);
       return () => clearTimeout(delayDebounceFn);
-    } else {
-      setSchools([]);
     }
+    schoolRequest.current++; // ignore any in-flight search
+    setSchools([]);
+    setIsLoadingSchools(false);
+    return undefined;
   }, [schoolSearchTerm, fetchSchools, school]);
 
+  // One place loads majors, whenever the chosen school changes.
   useEffect(() => {
     if (school) {
-      fetchMajors(school);
+      fetchMajors(schoolId, school);
     } else {
+      majorRequest.current++;
       setMajors([]);
+      setIsLoadingMajors(false);
     }
-  }, [school, fetchMajors]);
+  }, [school, schoolId, fetchMajors]);
 
-  const handleSchoolSelect = (schoolId, schoolName) => {
-    setSchool(schoolName);
-    setSchoolSearchTerm(schoolName);
-    fetchMajors(schoolId);
+  const handleSchoolSelect = (id, name) => {
+    setSchoolId(id);
+    setSchool(name);
+    setSchoolSearchTerm(name);
     setSchools([]);
+    // A new school means the old major may not exist there.
+    if (name !== school) {
+      setMajor("");
+      setMajorSearchTerm("");
+    }
   };
+
+  const query = majorSearchTerm.trim().toLowerCase();
+  const filteredMajors = query
+    ? majors.filter((m) => m.toLowerCase().includes(query))
+    : majors;
+  const exactMajor = majors.some((m) => m.toLowerCase() === query);
+  // Let people keep a major the school list doesn't have.
+  const majorOptions = [
+    ...filteredMajors,
+    ...(query && !exactMajor ? [{ custom: majorSearchTerm.trim() }] : []),
+  ];
 
   const handleMajorSelect = (selectedMajor) => {
     setMajor(selectedMajor);
     setMajorSearchTerm(selectedMajor);
-    setMajors([]);
+    setMajorOpen(false);
+  };
+
+  const handleMajorKeyDown = (e) => {
+    if (!majorOpen && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      setMajorOpen(true);
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveMajor((i) => Math.min(i + 1, majorOptions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveMajor((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter" && majorOpen && majorOptions[activeMajor]) {
+      e.preventDefault();
+      const opt = majorOptions[activeMajor];
+      handleMajorSelect(typeof opt === "string" ? opt : opt.custom);
+    } else if (e.key === "Escape") {
+      setMajorOpen(false);
+    }
   };
 
   return (
@@ -120,12 +184,15 @@ function Step2Education({
               <Input
                 type="text"
                 id="school"
+                autoComplete="off"
                 placeholder="Start typing to search for your school..."
                 value={schoolSearchTerm}
                 onChange={(e) => {
                   setSchoolSearchTerm(e.target.value);
                   setSchool("");
+                  setSchoolId(null);
                 }}
+                onBlur={() => setTimeout(() => setSchools([]), 150)}
                 className="w-full border-green-200 focus:ring-green-500 focus:border-green-500"
               />
               {isLoadingSchools && (
@@ -134,11 +201,12 @@ function Step2Education({
               {schools.length > 0 &&
                 schoolSearchTerm &&
                 schoolSearchTerm !== school && (
-                  <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                  <ul className="absolute z-20 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
                     {schools.map((schoolItem) => (
                       <li
                         key={schoolItem.id}
                         className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-green-50"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() =>
                           handleSchoolSelect(schoolItem.id, schoolItem.name)
                         }
@@ -164,35 +232,75 @@ function Step2Education({
                 <Input
                   type="text"
                   id="major"
-                  placeholder="Start typing to search for your major..."
+                  autoComplete="off"
+                  role="combobox"
+                  aria-expanded={majorOpen}
+                  aria-controls="major-options"
+                  placeholder={
+                    isLoadingMajors
+                      ? "Loading majors..."
+                      : "Start typing to search for your major..."
+                  }
                   value={majorSearchTerm}
                   onChange={(e) => {
                     setMajorSearchTerm(e.target.value);
                     setMajor("");
+                    setMajorOpen(true);
+                    setActiveMajor(0);
                   }}
+                  onFocus={() => {
+                    setMajorOpen(true);
+                    setActiveMajor(0);
+                  }}
+                  onBlur={() => setMajorOpen(false)}
+                  onKeyDown={handleMajorKeyDown}
                   className="w-full border-green-200 focus:ring-green-500 focus:border-green-500"
                 />
-                {majors.length > 0 &&
-                  majorSearchTerm &&
-                  majorSearchTerm !== major && (
-                    <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                      {majors
-                        .filter((m) =>
-                          m
-                            .toLowerCase()
-                            .includes(majorSearchTerm.toLowerCase()),
-                        )
-                        .map((m, index) => (
+                {isLoadingMajors && (
+                  <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+                {majorOpen &&
+                  !isLoadingMajors &&
+                  !(major && majorSearchTerm === major) && (
+                  <ul
+                    id="major-options"
+                    role="listbox"
+                    className="absolute z-20 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                  >
+                    {majorOptions.length === 0 ? (
+                      <li className="py-2 pl-3 pr-9 text-gray-500">
+                        {majors.length
+                          ? "Keep typing to search majors"
+                          : "No majors listed for this school. Type yours in."}
+                      </li>
+                    ) : (
+                      majorOptions.map((opt, index) => {
+                        const label = typeof opt === "string" ? opt : opt.custom;
+                        return (
                           <li
-                            key={index}
-                            className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-green-50"
-                            onClick={() => handleMajorSelect(m)}
+                            key={typeof opt === "string" ? opt : "__custom"}
+                            role="option"
+                            aria-selected={index === activeMajor}
+                            className={`cursor-pointer select-none relative py-2 pl-3 pr-9 ${
+                              index === activeMajor ? "bg-green-50" : ""
+                            } hover:bg-green-50`}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onMouseEnter={() => setActiveMajor(index)}
+                            onClick={() => handleMajorSelect(label)}
                           >
-                            {m}
+                            {typeof opt === "string" ? (
+                              label
+                            ) : (
+                              <span className="text-green-700">
+                                Use "{label}"
+                              </span>
+                            )}
                           </li>
-                        ))}
-                    </ul>
-                  )}
+                        );
+                      })
+                    )}
+                  </ul>
+                )}
               </div>
             </div>
           )}
