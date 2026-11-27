@@ -17,6 +17,8 @@ import Settings from "./pages/Settings";
 import ChannelPage from "./pages/ChannelPage";
 import FriendsPage from "./pages/FriendsPage";
 import TagPage from "./pages/TagPage";
+import HelpPage from "./pages/HelpPage";
+import CourseAIPage from "./pages/CourseAIPage";
 import MessagesPage from "./pages/MessagesPage";
 import { ChatProvider } from "./context/ChatContext";
 import ChatWidget from "./components/chat/ChatWidget";
@@ -92,6 +94,22 @@ function App() {
           element={
             <PrivateRoute>
               <MessagesPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/help"
+          element={
+            <PrivateRoute>
+              <HelpPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/courseai"
+          element={
+            <PrivateRoute>
+              <CourseAIPage />
             </PrivateRoute>
           }
         />
