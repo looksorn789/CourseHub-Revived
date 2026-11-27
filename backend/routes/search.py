@@ -113,6 +113,7 @@ def search():
                 per_page=limit,
                 sort_field="created_at",
                 include_forum=True,
+                viewer_id=user_id,
             )
             return posts
 

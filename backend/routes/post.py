@@ -3,15 +3,16 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask_jwt_extended import jwt_required, get_jwt_identity
+import bleach
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from models.post import Post, PostType
+from models.post_reaction import REACTION_TYPES, PostReactions
 from models.forum import ForumStatus, ForumVisibility
 from models.friend_request import RequestStatus
 from routes.search import hidden_forum_ids
 from utils.cache import popular_tags as popular_tags_cache
 from utils.helpers import serialize_mongo_doc, get_user_id
 from utils.storage import POST_IMAGE_BUCKET, read_image_upload, remove_images, upload_image
-import bleach
 
 post_bp = Blueprint("post_bp", __name__)
 
@@ -112,6 +113,7 @@ def get_post(post_id):
             {"_id": ObjectId(post_id), "forum_id": {"$nin": hidden}},
             per_page=1,
             include_forum=True,
+            viewer_id=user_id,
         )
         if not posts:
             return jsonify({"success": False, "error": "Post not found"}), 404
@@ -274,6 +276,7 @@ def delete_post(post_id):
         success, error = post_model.delete_post(post_id)
         if success:
             remove_images(POST_IMAGE_BUCKET, post.get("images", []))
+            PostReactions(current_app.db).delete_for_post(post["_id"])
 
         if not success:
             return jsonify({
@@ -312,6 +315,56 @@ def _own_post_or_error(post_id):
     if str(post["user_id"]) != user_id:
         return None, (jsonify({"success": False, "error": "Only the author can change this post's photos"}), 403)
     return post, None
+
+
+def _visible_post(post_id, user_id):
+    """The post if the user may see it (not in a hidden forum), else None."""
+    try:
+        oid = ObjectId(post_id)
+    except InvalidId:
+        return None
+    return current_app.db["posts"].find_one(
+        {"_id": oid, "forum_id": {"$nin": hidden_forum_ids(current_app.db, user_id)}},
+        {"_id": 1},
+    )
+
+
+@post_bp.route("/<post_id>/reaction", methods=["PUT"])
+@jwt_required()
+def react_to_post(post_id):
+    """Set or change your reaction (one per account per post)."""
+    try:
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        reaction = str((request.get_json(silent=True) or {}).get("type") or "")
+        if reaction not in REACTION_TYPES:
+            return jsonify({"success": False, "error": "Unknown reaction"}), 400
+        post = _visible_post(post_id, user_id)
+        if not post:
+            return jsonify({"success": False, "error": "Post not found"}), 404
+        counts, mine = PostReactions(current_app.db).react(post["_id"], ObjectId(user_id), reaction)
+        return jsonify({"success": True, "data": {"reaction_counts": counts, "my_reaction": mine}})
+    except Exception as e:
+        current_app.logger.error(f"Error reacting to post: {str(e)}")
+        return jsonify({"success": False, "error": "Error saving reaction"}), 500
+
+
+@post_bp.route("/<post_id>/reaction", methods=["DELETE"])
+@jwt_required()
+def remove_post_reaction(post_id):
+    try:
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        post = _visible_post(post_id, user_id)
+        if not post:
+            return jsonify({"success": False, "error": "Post not found"}), 404
+        counts, mine = PostReactions(current_app.db).remove(post["_id"], ObjectId(user_id))
+        return jsonify({"success": True, "data": {"reaction_counts": counts, "my_reaction": mine}})
+    except Exception as e:
+        current_app.logger.error(f"Error removing reaction: {str(e)}")
+        return jsonify({"success": False, "error": "Error removing reaction"}), 500
 
 
 @post_bp.route("/<post_id>/images", methods=["POST"])
@@ -393,7 +446,8 @@ def posts_by_tag(tag):
             "forum_id": {"$nin": hidden_forum_ids(current_app.db, user_id)},
         }
         posts, total = Post(current_app.db, current_app.supabase).list_posts_with_authors(
-            query, page=page, per_page=per_page, sort_field="created_at", include_forum=True
+            query, page=page, per_page=per_page, sort_field="created_at", include_forum=True,
+            viewer_id=user_id,
         )
         return jsonify({
             "success": True,
@@ -432,6 +486,7 @@ def posts_by_user(user_id):
             per_page=per_page,
             sort_field="created_at",
             include_forum=True,
+            viewer_id=viewer_id,
         )
         return jsonify({
             "success": True,
@@ -548,7 +603,8 @@ def get_feed():
         }
         post_model = Post(current_app.db, current_app.supabase)
         posts, total = post_model.list_posts_with_authors(
-            query, page=page, per_page=per_page, sort_field="created_at", include_forum=True
+            query, page=page, per_page=per_page, sort_field="created_at", include_forum=True,
+            viewer_id=user_id,
         )
 
         return jsonify({
@@ -586,11 +642,29 @@ def list_forum_posts(forum_id):
                 "details": f"Type must be one of: {', '.join(t.value for t in PostType)}"
             }), 400
 
+        # Optional sign-in: private channels only list posts for members.
+        try:
+            verify_jwt_in_request(optional=True)
+            identity = get_jwt_identity()
+        except Exception:  # invalid/expired token: treat as signed out
+            identity = None
+        viewer_id = get_user_id(identity) if identity else None
+        forum = current_app.db["forums"].find_one(
+            {"_id": ObjectId(forum_id)}, {"visibility": 1, "status": 1, "members.user_id": 1}
+        )
+        if not forum or forum.get("status") != ForumStatus.ACTIVE.value or (
+            forum.get("visibility") == ForumVisibility.PRIVATE.value
+            and not any(m.get("user_id") == viewer_id for m in forum.get("members", []))
+        ):
+            return jsonify({"success": False, "error": "Forum not found"}), 404
+
         query = {"forum_id": ObjectId(forum_id)}
         if post_type:
             query["type"] = post_type
         post_model = Post(current_app.db, current_app.supabase)
-        posts, total = post_model.list_posts_with_authors(query, page=page, per_page=per_page)
+        posts, total = post_model.list_posts_with_authors(
+            query, page=page, per_page=per_page, viewer_id=viewer_id
+        )
 
         # Serialize the posts data
         serialized_posts = serialize_mongo_doc(posts)

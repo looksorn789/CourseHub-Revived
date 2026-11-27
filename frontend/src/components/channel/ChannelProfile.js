@@ -304,7 +304,13 @@ export function ChannelProfile() {
       if (images) updated.images = images;
       errors.forEach((msg) => toast.error(`Photo change failed: ${msg}`));
 
-      const transformedPost = await transformPost(updated, channelData.name, channelData.slug);
+      const previous = channelPosts.find((p) => p.id === postId);
+      const transformedPost = {
+        ...(await transformPost(updated, channelData.name, channelData.slug)),
+        // The update response has no reactions; keep the ones we have.
+        reactionCounts: previous?.reactionCounts || {},
+        myReaction: previous?.myReaction || null,
+      };
       invalidateCached('posts:', 'channelposts:');
       setChannelPosts(prevPosts =>
         prevPosts.map(post =>

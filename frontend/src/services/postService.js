@@ -80,6 +80,17 @@ class PostService {
     return response.data.data.tags || [];
   }
 
+  // One reaction per account: set/change it, or remove it.
+  static async react(postId, type) {
+    const response = await api.put(`/api/posts/${postId}/reaction`, { type });
+    return response.data.data;
+  }
+
+  static async unreact(postId) {
+    const response = await api.delete(`/api/posts/${postId}/reaction`);
+    return response.data.data;
+  }
+
   static async getPost(postId) {
     try {
       const response = await api.get(`/api/posts/${postId}`);
