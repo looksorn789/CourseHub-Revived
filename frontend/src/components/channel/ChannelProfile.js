@@ -93,7 +93,7 @@ export function ChannelProfile() {
     };
   };
 
-  const fetchPostsWithUserData = async (forumId, forumName, page = 1) => {
+  const fetchPostsWithUserData = async (forumId, forumName, page = 1, forumSlug) => {
     try {
       const postsResponse = await PostService.getForumPosts(forumId, page);
       
@@ -102,7 +102,7 @@ export function ChannelProfile() {
       }
 
       const transformedPosts = await Promise.all(
-        postsResponse.data.posts.map(post => transformPost(post, forumName))
+        postsResponse.data.posts.map(post => transformPost(post, forumName, forumSlug))
       );
 
       return {
@@ -185,7 +185,7 @@ export function ChannelProfile() {
         setLoading(false);
 
         setPostsLoading(true);
-        const postsData = await fetchPostsWithUserData(transformedData._id, transformedData.name, 1);
+        const postsData = await fetchPostsWithUserData(transformedData._id, transformedData.name, 1, transformedData.slug);
         setChannelPosts(postsData.posts);
         setCurrentPage(1);
         setTotalPages(Math.ceil(postsData.total / postsData.per_page));
@@ -217,7 +217,7 @@ export function ChannelProfile() {
       if (!post) {
         try {
           const res = await PostService.getPost(linkedPostId);
-          if (res?.data) post = await transformPost(res.data, channelData.name);
+          if (res?.data) post = await transformPost(res.data, channelData.name, channelData.slug);
         } catch (err) {
           toast.error('That post is no longer available.');
         }
@@ -237,7 +237,7 @@ export function ChannelProfile() {
     setLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
-      const postsData = await fetchPostsWithUserData(channelData._id, channelData.name, nextPage);
+      const postsData = await fetchPostsWithUserData(channelData._id, channelData.name, nextPage, channelData.slug);
       
       setChannelPosts(prevPosts => [...prevPosts, ...postsData.posts]);
       setCurrentPage(nextPage);
@@ -264,7 +264,7 @@ export function ChannelProfile() {
       if (images) created.images = images;
       errors.forEach((msg) => toast.error(`Photo upload failed: ${msg}`));
 
-      const transformedPost = await transformPost(created, channelData.name);
+      const transformedPost = await transformPost(created, channelData.name, channelData.slug);
       setChannelPosts(prevPosts => [transformedPost, ...prevPosts]);
       setIsPostModalOpen(false);
     } catch (err) {
@@ -285,7 +285,7 @@ export function ChannelProfile() {
       if (images) updated.images = images;
       errors.forEach((msg) => toast.error(`Photo change failed: ${msg}`));
 
-      const transformedPost = await transformPost(updated, channelData.name);
+      const transformedPost = await transformPost(updated, channelData.name, channelData.slug);
       setChannelPosts(prevPosts =>
         prevPosts.map(post =>
           post.id === postId ? transformedPost : post

@@ -24,12 +24,23 @@ function authorFrom(user, post, channelName) {
   };
 }
 
+/** Link to a post's channel (prefers the real slug over one guessed from the name). */
+export function channelPathFor(post) {
+  const slug =
+    post.forumSlug ||
+    (post.author?.channel || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  return slug ? `/channel/${slug}` : null;
+}
+
 /**
  * API post -> shape used by <Post> / <FullPostModal>.
  * Uses the author (and forum) the API embeds in the post; only falls back to
  * fetching the author when it's missing (e.g. a freshly created post).
  */
-export async function transformPost(post, channelName) {
+export async function transformPost(post, channelName, channelSlug) {
   const forumName = channelName || post.forum?.name || "Unknown Channel";
   let user = post.author;
   if (!user && post.user_id) {
@@ -54,7 +65,7 @@ export async function transformPost(post, channelName) {
     type: post.type || "discussion",
     metadata: post.metadata || {},
     view_count: post.view_count || 0,
-    forumSlug: post.forum?.slug,
+    forumSlug: channelSlug || post.forum?.slug,
     author: authorFrom(user, post, forumName),
   };
 }
