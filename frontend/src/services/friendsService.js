@@ -1,4 +1,5 @@
 import api from './api';
+import { avatarDataUrl } from '../utils/avatarUtils';
 
 export const sendFriendRequest = async (receiverId) => {
   try {
@@ -21,9 +22,7 @@ export const getPendingRequests = async () => {
         id: req.sender.id,
         name: `${req.sender.profile.first_name} ${req.sender.profile.last_name}`,
         username: req.sender.username,
-        avatar: `https://api.dicebear.com/6.x/${
-          req.sender.profile.avatar_config?.style || 'adventurer'
-        }/svg?seed=${req.sender.profile.avatar_config?.seed || req.sender.username}`,
+        avatar: avatarDataUrl(req.sender.profile.avatar_config, req.sender.username),
         profile: req.sender.profile,
       },
       created_at: req.created_at,
@@ -46,9 +45,7 @@ export const getSentRequests = async () => {
         id: req.receiver.id,
         name: `${req.receiver.profile.first_name} ${req.receiver.profile.last_name}`,
         username: req.receiver.username,
-        avatar: `https://api.dicebear.com/6.x/${
-          req.receiver.profile.avatar_config?.style || 'adventurer'
-        }/svg?seed=${req.receiver.profile.avatar_config?.seed || req.receiver.username}`,
+        avatar: avatarDataUrl(req.receiver.profile.avatar_config, req.receiver.username),
         profile: req.receiver.profile,
       },
       created_at: req.created_at,
@@ -111,9 +108,7 @@ export const getFriends = async () => {
       id: friend._id,
       name: `${friend.profile.first_name} ${friend.profile.last_name}`,
       username: friend.username,
-      avatar: `https://api.dicebear.com/6.x/${
-        friend.profile.avatar_config?.style || 'adventurer'
-      }/svg?seed=${friend.profile.avatar_config?.seed || friend.username}`,
+      avatar: avatarDataUrl(friend.profile.avatar_config, friend.username),
       profile: friend.profile,
     }));
     return { data: transformedFriends, error: null };

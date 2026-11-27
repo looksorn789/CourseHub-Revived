@@ -1,20 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import Button from "../ui/Button";
 import { Check, Pencil, X, ImagePlus } from "lucide-react";
-import { User, Calendar as CalendarIcon, GraduationCap, Award, Users, BookOpen, Star, ChevronDown, Search } from "lucide-react";
+import { User, Calendar as CalendarIcon, GraduationCap, Award, Users, BookOpen, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar";
 import Input from "../ui/Input";
 import Label from "../ui/Label";
 import Textarea from "../ui/Textarea";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/Select";
-import ScrollArea from "../ui/ScrollArea";
 import { Popover, PopoverTrigger, PopoverContent } from "../ui/Popover";
 import Calendar from "../ui/Calendar";
 import { format } from "date-fns";
 import Accordion from "../ui/Accordion";
 import { cn } from "../../lib/utils";
-import { generateAvatarSvg, getAvailableStyles } from "../../utils/avatarUtils";
+import { avatarDataUrl, DEFAULT_AVATAR_STYLE } from "../../utils/avatarUtils";
+import AvatarPicker from "../Profile/AvatarPicker";
 import { getUserProfile, saveUserProfile } from "../../services/profileService";
 
 function UserProfile() {
@@ -40,10 +39,10 @@ function UserProfile() {
   const [newItem, setNewItem] = useState({ interests: '', awards: '', clubs: '', certifications: '' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [customAvatar, setCustomAvatar] = useState(null);
-  const [selectedStyle, setSelectedStyle] = useState(getAvailableStyles()[0]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [avatarPage, setAvatarPage] = useState(1);
+  // avatarConfig: what's picked right now; savedAvatar: what's in the database
+  // (restored on Cancel).
+  const [avatarConfig, setAvatarConfig] = useState(null);
+  const [savedAvatar, setSavedAvatar] = useState({ config: null, url: null });
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -71,10 +70,10 @@ function UserProfile() {
   
           if (data.profile.avatar_config) {
             const { style, seed } = data.profile.avatar_config;
-            setSelectedStyle(style);
-            setCustomAvatar({ seed });
-            const svg = generateAvatarSvg(style, seed);
-            normalizedData.profile.avatar = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+            const url = avatarDataUrl({ style, seed }, data.username);
+            normalizedData.profile.avatar = url;
+            setAvatarConfig({ style, seed });
+            setSavedAvatar({ config: { style, seed }, url });
           }
   
           setUserData(normalizedData);
@@ -92,7 +91,14 @@ function UserProfile() {
   }, []);
 
   const handleEdit = () => setIsEditing(true);
-  const handleCancel = () => setIsEditing(false);
+  const handleCancel = () => {
+    setAvatarConfig(savedAvatar.config);
+    setUserData((prev) => ({
+      ...prev,
+      profile: { ...prev.profile, avatar: savedAvatar.url },
+    }));
+    setIsEditing(false);
+  };
 
   const handleSave = async () => {
     try {
@@ -110,22 +116,25 @@ function UserProfile() {
         clubs: userData.profile.clubs,
         certifications: userData.profile.certifications,
         bio: userData.profile.bio,
-        avatar_config: {
-          style: selectedStyle,
-          seed: customAvatar?.seed || "default-seed",
+        avatar_config: avatarConfig || {
+          style: DEFAULT_AVATAR_STYLE,
+          seed: userData.username || "default-seed",
         },
       };
   
       const { success, error } = await saveUserProfile(updatedData, userData.profile.email, userData.username);
   
       if (success) {
-        const svg = generateAvatarSvg(selectedStyle, customAvatar?.seed || "default-seed");
+        const savedConfig = updatedData.avatar_config;
+        const savedUrl = avatarDataUrl(savedConfig, userData.username);
+        setAvatarConfig(savedConfig);
+        setSavedAvatar({ config: savedConfig, url: savedUrl });
         setUserData((prev) => ({
           ...prev,
           profile: {
             ...prev.profile,
             ...updatedData,
-            avatar: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`,
+            avatar: savedUrl,
           },
         }));
         setIsEditing(false);
@@ -182,34 +191,17 @@ function UserProfile() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCustomAvatar(file);
+        // Uploaded photos aren't stored yet; this only previews it.
         handleChange('avatar', reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleAvatarSelect = (seed) => {
-    const svg = generateAvatarSvg(selectedStyle, seed);
-    const avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-    setUserData((prev) => ({...prev, profile: {...prev.profile,avatar: avatarUrl},
-    }));
-    setCustomAvatar({ seed });
+  const handleAvatarSelect = ({ style, seed, url }) => {
+    setAvatarConfig({ style, seed });
+    setUserData((prev) => ({ ...prev, profile: { ...prev.profile, avatar: url } }));
   };
-  
-
-  const filteredStyles = getAvailableStyles().filter((style) =>
-    style.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const avatarsToDisplay = Array.from({ length: avatarPage * 15 }, (_, i) => {
-    const seed = `avatar-${i}`;
-    const svg = generateAvatarSvg(selectedStyle, seed);
-    const avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-    return { seed, avatarUrl };
-  });
-
-  const handleLoadMore = () => setAvatarPage((prevPage) => prevPage + 1);
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
@@ -243,7 +235,7 @@ function UserProfile() {
             <CardTitle>Personal Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center space-x-6">
+            <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
               <div className="flex-shrink-0">
                 <div className="relative group">
                 <Avatar className={cn(
@@ -281,76 +273,9 @@ function UserProfile() {
                 </div>
               </div>
               {isEditing && (
-                <div className="flex-grow">
+                <div className="w-full min-w-0 flex-grow">
                   <p className="text-sm text-gray-500 mb-4">Upload a photo or choose an avatar</p>
-                  <div className="mb-4">
-                    <Select onValueChange={setSelectedStyle} value={selectedStyle}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select avatar style" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <div className="flex items-center px-3 pb-2">
-                          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                          <Input
-                            placeholder="Search styles..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="h-8 w-full"
-                          />
-                        </div>
-                        {filteredStyles.map((style) => (
-                          <SelectItem key={style} value={style}>
-                            {style}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <ScrollArea className="h-48">
-                    <div className="grid grid-cols-5 gap-4">
-                      {avatarsToDisplay.map(({ seed, avatarUrl }) => {
-                        const isSelected = userData.profile.avatar === avatarUrl;
-
-                        return (
-                          <button
-                            key={seed}
-                            type="button"
-                            onClick={() => handleAvatarSelect(seed)}
-                            className={cn(
-                              "flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 ease-in-out transform hover:scale-110",
-                              isSelected
-                                ? "ring-2 ring-green-500 ring-offset-2"
-                                : "hover:ring-2 hover:ring-green-300 hover:ring-offset-2"
-                            )}
-                          >
-                            <Avatar className="w-12 h-12">
-                              <AvatarImage src={avatarUrl} alt={`${selectedStyle} avatar ${seed}`} />
-                              <AvatarFallback>AV</AvatarFallback>
-                            </Avatar>
-                            {isSelected && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-50 rounded-full">
-                                <Check className="w-6 h-6 text-white" />
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                  <div className="mt-4 flex justify-center">
-                    <Button
-                      type="button"
-                      onClick={handleLoadMore}
-                      variant="outline"
-                      className="group relative py-2 px-4 border border-green-400 text-green-600 rounded-full hover:bg-green-50 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50"
-                    >
-                      <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                        <ChevronDown className="h-5 w-5 text-green-500 group-hover:text-green-400 transition-colors duration-300 ease-in-out" />
-                      </span>
-                      <span className="pl-6">Load More Avatars</span>
-                    </Button>
-                  </div>
+                  <AvatarPicker value={avatarConfig} onSelect={handleAvatarSelect} />
                 </div>
               )}
             </div>

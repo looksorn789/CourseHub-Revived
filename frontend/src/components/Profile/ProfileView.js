@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { getUserByUsername } from "../../services/profileService";
+import { avatarDataUrl } from "../../utils/avatarUtils";
 import Button from "../ui/Button"
 import Textarea from "../ui/Textarea"
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar"
@@ -79,7 +80,7 @@ export default function ProfileView() {
             <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
               <Avatar className="w-32 h-32 border-4 border-green-500">
                 <AvatarImage 
-                  src={`https://api.dicebear.com/6.x/${userData.profile.avatar_config.style}/svg?seed=${userData.profile.avatar_config.seed}`} 
+                  src={avatarDataUrl(userData.profile.avatar_config, userData.username)} 
                   alt={`${userData.profile.first_name} ${userData.profile.last_name}`} 
                 />
                 <AvatarFallback>{userData.profile.first_name[0]}{userData.profile.last_name[0]}</AvatarFallback>
