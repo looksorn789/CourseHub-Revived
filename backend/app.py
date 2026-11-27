@@ -23,6 +23,34 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class _ClosedWebSocketFilter(logging.Filter):
+    """Hide the dev server's noise when a chat WebSocket closes.
+
+    With Flask's development server, every WebSocket that ends (page reload,
+    tab closed, sign-out) is logged as a failed
+    "GET /socket.io/?EIO=4&transport=websocket" (400/500, plus a
+    ConnectionError traceback in debug). The connection itself worked; real
+    handshake rejections (e.g. a bad origin) still show because they carry a
+    reason and happen before the upgrade. Production servers don't do this.
+    """
+
+    def filter(self, record):
+        if record.exc_info and record.exc_info[0] is ConnectionError:
+            return False
+        message = record.getMessage()
+        # Debug server logs the traceback as text ("Error on request: ...").
+        if "_websocket_wsgi" in message and "ConnectionError" in message:
+            return False
+        if "/socket.io/?EIO=4&transport=websocket HTTP/1.1" in message and (
+            '" 400 -' in message or '" 500 -' in message
+        ):
+            return False
+        return True
+
+
+logging.getLogger("werkzeug").addFilter(_ClosedWebSocketFilter())
+
+
 def setup_jwt(app):
     jwt = JWTManager(app)
 
@@ -149,5 +177,8 @@ if __name__ == "__main__":
         host="127.0.0.1",
         port=5000,
         debug=app.config["DEBUG"],
+        # JSON API: the interactive HTML debugger adds nothing and prints raw
+        # tracebacks for every closed chat socket; errors still get logged.
+        use_debugger=False,
         allow_unsafe_werkzeug=app.config["DEBUG"],  # dev server only
     )
