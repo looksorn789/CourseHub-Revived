@@ -16,12 +16,22 @@ import { ReactionPicker } from "./ReactionPicker";
 import CommentService from "../../services/commentService";
 import { Comment } from "../comments/Comment";
 import { PostImageGrid } from "./PostImages";
+import { channelPathFor } from "../../utils/postTransform";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import TextareaAutosize from "react-textarea-autosize";
 import { generateAvatarSvg } from "../../utils/avatarUtils";
 import { getUserProfile } from "../../services/profileService";
 
 export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  // Channel name -> the channel (just close if we're already there).
+  const openChannel = () => {
+    const path = channelPathFor(post);
+    onClose();
+    if (path && location.pathname !== path) navigate(path);
+  };
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [postReactions, setPostReactions] = useState(post?.reactions || {});
@@ -282,7 +292,13 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                 </p>
                 <div className="flex items-center text-sm text-gray-500 mt-0.5">
                   <Hash className="h-4 w-4 mr-1 text-green-500" />
-                  <span className="font-medium">{post.author.channel}</span>
+                  <button
+                    type="button"
+                    onClick={openChannel}
+                    className="font-medium hover:text-green-600 hover:underline underline-offset-2 transition-colors duration-200"
+                  >
+                    {post.author.channel}
+                  </button>
                   <span className="mx-2">•</span>
                   <time className="text-gray-400">
                     {formatDistanceToNow(new Date(post.timestamp), {

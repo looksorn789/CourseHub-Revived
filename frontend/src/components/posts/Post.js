@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
 } from "../ui/DropdownMenu";
 import { PostImageGrid } from "./PostImages";
+import { channelPathFor } from "../../utils/postTransform";
 import { PostModal } from "./PostModal";
 import { DeletePostConfirmation } from "./DeletePostConfirmation";
 import { ReactionPicker } from "./ReactionPicker";
@@ -102,26 +103,10 @@ export function Post({
     }
   };
 
-  const getChannelSlug = (channelName) => {
-    return channelName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  };
-
   const handleChannelClick = (e) => {
     e.stopPropagation();
-    const channelSlug =
-      post.forumSlug ||
-      post.author.slug ||
-      post.author.channelSlug ||
-      getChannelSlug(post.author.channel);
-
-    if (channelSlug) {
-      navigate(`/channel/${channelSlug}`);
-    } else {
-      console.error("No valid channel slug found:", post.author);
-    }
+    const path = channelPathFor(post);
+    if (path) navigate(path);
   };
 
   const toggleLike = (e) => {
