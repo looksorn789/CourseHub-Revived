@@ -10,6 +10,7 @@ from models.forum import Forum, ForumRole, ForumStatus, ForumVisibility, ForumCa
 from models.user import UserModel
 import bleach
 from utils.helpers import get_user_id
+from utils.cache import hidden_forums as hidden_forums_cache
 from utils.storage import CHANNEL_IMAGE_BUCKET, read_image_upload, remove_images, upload_image
 
 
@@ -347,6 +348,7 @@ def list_my_forums():
 @jwt_required()
 def create_forum():
     """Create a new forum with validation"""
+    hidden_forums_cache.clear()  # memberships/visibility may change
     try:
         current_app.logger.debug("Starting forum creation route...")
 
@@ -504,6 +506,7 @@ def get_forum(forum_identifier):
 @jwt_required()
 def update_forum(forum_id):  # pylint: disable=too-many-branches
     """Update forum details"""
+    hidden_forums_cache.clear()  # memberships/visibility may change
     try:
         # Get user
         user_id = get_user_id(get_jwt_identity())
@@ -699,6 +702,7 @@ def manage_membership(forum_id):
         if not success:
             return jsonify({"error": error}), 400
 
+        hidden_forums_cache.clear()  # private-channel visibility may change
         verb = "joined" if action == "join" else "left"
         return jsonify({"message": f"Successfully {verb} forum"})
 
@@ -741,6 +745,7 @@ def update_member_role(forum_id, member_id):
 @jwt_required()
 def delete_forum(forum_id):
     """Delete a forum (admin only)"""
+    hidden_forums_cache.clear()  # memberships/visibility may change
     try:
         user_id = get_user_id(get_jwt_identity())
         if not user_id:

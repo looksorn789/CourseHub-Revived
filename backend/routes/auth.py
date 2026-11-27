@@ -4,6 +4,7 @@ import string
 import datetime
 
 from flask import Blueprint, request, jsonify, current_app
+from utils.cache import user_ids as user_id_cache
 from flask_bcrypt import generate_password_hash
 import boto3
 from botocore.exceptions import ClientError
@@ -444,6 +445,7 @@ def reset_password(token):
 
 @auth_bp.route("/delete_account", methods=["DELETE"])
 def delete_account():
+    user_id_cache.clear()  # forget identity -> user id mappings
     try:
         # Get the user email from the request
         data = request.get_json()

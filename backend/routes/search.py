@@ -8,6 +8,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from models.forum import ForumStatus, ForumVisibility
 from models.post import Post
+from utils.cache import hidden_forums as hidden_forums_cache
 from utils.helpers import get_user_id, serialize_mongo_doc
 
 search_bp = Blueprint("search_bp", __name__)
@@ -26,8 +27,9 @@ FORUM_FIELDS = {"name": 1, "slug": 1, "category": 1, "member_count": 1, "avatar_
 
 def hidden_forum_ids(db, user_id):
     """Forums whose content the user can't see: inactive ones, and private
-    ones they aren't a member of."""
-    return [
+    ones they aren't a member of. Cached briefly; forum routes clear the
+    cache whenever memberships or visibility change."""
+    return hidden_forums_cache.get_or_set(user_id, lambda: [
         f["_id"]
         for f in db["forums"].find(
             {
@@ -38,7 +40,7 @@ def hidden_forum_ids(db, user_id):
             },
             {"_id": 1},
         )
-    ]
+    ])
 
 
 def _visible_forums_query(user_id):

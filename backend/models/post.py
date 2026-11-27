@@ -17,6 +17,11 @@ class PostType(Enum):
     QUESTION = "question"
 
 
+def tags_lower(tags) -> list:
+    """Normalized tags for exact, indexed, case-insensitive lookups."""
+    return [str(t).strip().lower() for t in tags or [] if str(t).strip()]
+
+
 class Post:
     _prepared_dbs = set()
 
@@ -88,6 +93,25 @@ class Post:
                 else:
                     self.collection.create_index(index)
 
+            # Compound indexes for the list views (channel, profile, feed,
+            # tag pages) so they read in order instead of scanning.
+            for keys in (
+                [("forum_id", 1), ("created_at", -1)],
+                [("forum_id", 1), ("last_activity_at", -1)],
+                [("user_id", 1), ("created_at", -1)],
+                [("tags_lower", 1), ("created_at", -1)],
+            ):
+                self.collection.create_index(keys)
+
+            # Backfill lower-cased tags for posts created before tags_lower.
+            self.collection.update_many(
+                {"tags_lower": {"$exists": False}},
+                [{"$set": {"tags_lower": {"$map": {
+                    "input": {"$ifNull": ["$tags", []]},
+                    "in": {"$toLower": {"$trim": {"input": "$$this"}}},
+                }}}}],
+            )
+
         except Exception as e:
             print(f"Error setting up indexes: {str(e)}")
 
@@ -111,6 +135,7 @@ class Post:
                         "content": data["content"].strip(),
                         "type": data["type"],
                         "tags": data.get("tags", [])[:5],
+                        "tags_lower": tags_lower(data.get("tags", [])[:5]),
                         "created_at": current_time,
                         "updated_at": current_time,
                         "last_activity_at": current_time,
@@ -193,6 +218,7 @@ class Post:
                 update_data["type"] = data["type"]
             if "tags" in data:
                 update_data["tags"] = data["tags"][:5]
+                update_data["tags_lower"] = tags_lower(data["tags"][:5])
 
             # Update the post
             result = self.collection.update_one(
