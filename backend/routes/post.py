@@ -1,9 +1,12 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
 from bson import ObjectId
 from bson.errors import InvalidId
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.post import Post, PostType
+from models.forum import ForumStatus, ForumVisibility
+from models.friend_request import RequestStatus
 from utils.helpers import serialize_mongo_doc, get_user_id
 from utils.storage import POST_IMAGE_BUCKET, read_image_upload, remove_images, upload_image
 import bleach
@@ -343,6 +346,89 @@ def delete_post_image(post_id):
     except Exception as e:
         current_app.logger.error(f"Error removing post image: {str(e)}")
         return jsonify({"success": False, "error": "Error removing photo"}), 500
+
+
+@post_bp.route("/feed", methods=["GET"])
+@jwt_required()
+def get_feed():
+    """Home feed: posts in forums the user joined, posts by their friends and
+    their own posts, newest first. Friends' posts in private forums the user
+    isn't a member of are left out."""
+    try:
+        page = max(int(request.args.get("page", 1)), 1)
+        per_page = min(max(int(request.args.get("per_page", 20)), 1), 50)
+
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"success": False, "error": "User not found"}), 404
+
+        db = current_app.db
+        uid = ObjectId(user_id)
+
+        def forum_access():
+            # One query: forums the user joined plus forums whose posts must
+            # stay hidden (inactive, or private and the user isn't a member).
+            joined, hidden = [], []
+            for f in db["forums"].find(
+                {"$or": [
+                    {"members.user_id": user_id},
+                    {"visibility": ForumVisibility.PRIVATE.value},
+                    {"status": {"$ne": ForumStatus.ACTIVE.value}},
+                ]},
+                {"status": 1, "is_member": {"$in": [user_id, {"$ifNull": ["$members.user_id", []]}]}},
+            ):
+                if f.get("status") != ForumStatus.ACTIVE.value:
+                    hidden.append(f["_id"])
+                elif f.get("is_member"):
+                    joined.append(f["_id"])
+                else:
+                    hidden.append(f["_id"])
+            return joined, hidden
+
+        def friend_ids():
+            ids = []
+            for req in db["friend_requests"].find(
+                {"$or": [{"sender_id": uid}, {"receiver_id": uid}], "status": RequestStatus.ACCEPTED.value},
+                {"sender_id": 1, "receiver_id": 1},
+            ):
+                ids.append(req["receiver_id"] if req["sender_id"] == uid else req["sender_id"])
+            return ids
+
+        # Independent lookups: run them at the same time.
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            access, friends_future = pool.submit(forum_access), pool.submit(friend_ids)
+            joined, hidden = access.result()
+            friends = friends_future.result()
+        people = [ObjectId(user_id), *friends]
+
+        query = {
+            "$and": [
+                {"$or": [{"forum_id": {"$in": joined}}, {"user_id": {"$in": people}}]},
+                {"forum_id": {"$nin": hidden}},
+            ]
+        }
+        post_model = Post(current_app.db, current_app.supabase)
+        posts, total = post_model.list_posts_with_authors(
+            query, page=page, per_page=per_page, sort_field="created_at", include_forum=True
+        )
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "posts": serialize_mongo_doc(posts),
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": (total + per_page - 1) // per_page,
+                "sources": {"forums": len(joined), "friends": len(friends)},
+            },
+        })
+
+    except ValueError:
+        return jsonify({"success": False, "error": "Invalid pagination parameters"}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error building feed: {str(e)}")
+        return jsonify({"success": False, "error": "Error loading your feed"}), 500
 
 
 @post_bp.route("/forum/<forum_id>", methods=["GET"])
