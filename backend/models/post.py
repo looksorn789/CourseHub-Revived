@@ -18,6 +18,8 @@ class PostType(Enum):
 
 
 class Post:
+    _prepared_dbs = set()
+
     # Validation patterns
     TITLE_PATTERN = r"^[a-zA-Z0-9\s\-_.,!?'\"()]{3,150}$"
 
@@ -60,7 +62,11 @@ class Post:
     def __init__(self, db, supabase):
         self.collection = db["posts"]
         self.supabase = supabase
-        self._setup_indexes()
+        # Index setup is slow over the network and only needs to happen once
+        # per process; a model is constructed on every request.
+        if db.name not in Post._prepared_dbs:
+            self._setup_indexes()
+            Post._prepared_dbs.add(db.name)
 
     def _setup_indexes(self):
         """Set up indexes for faster queries"""
@@ -110,6 +116,7 @@ class Post:
                         "last_activity_at": current_time,
                         "view_count": 0,
                         "comment_count": 0,
+                        "images": [],
                         "metadata": {
                             "last_edited_by": None,
                             "last_edited_at": None,

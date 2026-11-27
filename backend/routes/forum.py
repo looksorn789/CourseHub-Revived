@@ -1,14 +1,13 @@
 import traceback
-import uuid
 from datetime import datetime
 from typing import Optional, Dict, Tuple
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
-from storage3 import create_client as create_storage_client
 from models.forum import Forum, ForumRole, ForumStatus, ForumVisibility, ForumCategory
 from models.user import UserModel
 import bleach
 from utils.helpers import get_user_id
+from utils.storage import CHANNEL_IMAGE_BUCKET, read_image_upload, remove_images, upload_image
 
 from bson.errors import InvalidId
 
@@ -461,57 +460,11 @@ def update_forum(forum_id):  # pylint: disable=too-many-branches
 
 # --- Channel images (Supabase Storage) ---------------------------------------
 
-CHANNEL_IMAGE_BUCKET = "channel-images"
 # kind -> (forum field, max bytes)
 CHANNEL_IMAGE_KINDS = {
     "avatar": ("avatar_url", 2 * 1024 * 1024),
     "banner": ("banner_url", 5 * 1024 * 1024),
 }
-
-
-def _channel_image_storage():
-    """Storage client that always uses the service key.
-
-    current_app.supabase also signs users in, after which it may send storage
-    requests with that user's token instead, so it isn't used here.
-    """
-    url, key = current_app.config["SUPABASE_URL"], current_app.config["SUPABASE_KEY"]
-    client = create_storage_client(
-        f"{url}/storage/v1",
-        {"apikey": key, "Authorization": f"Bearer {key}"},
-        is_async=False,
-    )
-    return client.from_(CHANNEL_IMAGE_BUCKET)
-
-
-def _detect_image(data: bytes) -> Optional[Tuple[str, str]]:
-    """(mime type, extension) from the file's leading bytes, or None."""
-    if data.startswith(b"\x89PNG\r\n\x1a\n"):
-        return "image/png", "png"
-    if data.startswith(b"\xff\xd8\xff"):
-        return "image/jpeg", "jpg"
-    if data[:6] in (b"GIF87a", b"GIF89a"):
-        return "image/gif", "gif"
-    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
-        return "image/webp", "webp"
-    return None
-
-
-def _stored_image_path(image_url: Optional[str]) -> Optional[str]:
-    """Object path inside our bucket for a URL we created, else None."""
-    marker = f"/storage/v1/object/public/{CHANNEL_IMAGE_BUCKET}/"
-    if image_url and marker in image_url:
-        return image_url.split(marker, 1)[1].split("?", 1)[0]
-    return None
-
-
-def _remove_stored_image(storage, image_url: Optional[str]) -> None:
-    path = _stored_image_path(image_url)
-    if path:
-        try:
-            storage.remove([path])
-        except Exception as e:
-            current_app.logger.warning(f"Could not delete old channel image {path}: {e}")
 
 
 @forum_bp.route("/<forum_id>/images/<kind>", methods=["POST"])
@@ -531,28 +484,16 @@ def upload_forum_image(forum_id, kind):
             status = 404 if error == "Forum not found" else 403
             return jsonify({"success": False, "error": error}), status
 
-        upload = request.files.get("file")
-        if not upload:
-            return jsonify({"success": False, "error": "No file provided"}), 400
-        data = upload.read(max_bytes + 1)
-        if len(data) > max_bytes:
-            limit_mb = max_bytes // (1024 * 1024)
-            return jsonify({"success": False, "error": f"Image must be {limit_mb} MB or smaller"}), 400
-        detected = _detect_image(data)
-        if not detected:
-            return jsonify({"success": False, "error": "Use a PNG, JPEG, WebP or GIF image"}), 400
-        mime, ext = detected
-
-        storage = _channel_image_storage()
-        path = f"{forum_id}/{kind}-{uuid.uuid4().hex}.{ext}"
-        storage.upload(path, data, {"content-type": mime, "cache-control": "31536000"})
-        image_url = storage.get_public_url(path).rstrip("?")
+        image, error = read_image_upload(request.files.get("file"), max_bytes)
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        image_url = upload_image(CHANNEL_IMAGE_BUCKET, str(forum["_id"]), kind, image)
 
         Forum(current_app.db, current_app.supabase).collection.update_one(
             {"_id": forum["_id"]},
             {"$set": {field: image_url, "updated_at": datetime.utcnow()}},
         )
-        _remove_stored_image(storage, forum.get(field))
+        remove_images(CHANNEL_IMAGE_BUCKET, [forum.get(field)])
 
         return jsonify({"success": True, field: image_url})
 
@@ -582,7 +523,7 @@ def delete_forum_image(forum_id, kind):
             {"_id": forum["_id"]},
             {"$unset": {field: ""}, "$set": {"updated_at": datetime.utcnow()}},
         )
-        _remove_stored_image(_channel_image_storage(), forum.get(field))
+        remove_images(CHANNEL_IMAGE_BUCKET, [forum.get(field)])
         return jsonify({"success": True, field: None})
 
     except Exception as e:
