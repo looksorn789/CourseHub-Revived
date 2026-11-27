@@ -24,9 +24,10 @@ import ChatWidget from "./components/chat/ChatWidget";
 function App() {
   return (
     <Router>
-      {/* The app uses both toast libraries; mount both so their messages show. */}
-      <ToastContainer position="bottom-right" autoClose={3000} newestOnTop />
-      <Toaster position="bottom-right" />
+      {/* The app uses both toast libraries; mount both so their messages show.
+          Top center keeps them clear of the chat bubble/panel at the bottom right. */}
+      <ToastContainer position="top-center" autoClose={3000} newestOnTop />
+      <Toaster position="top-center" />
       <ChatProvider>
       {/* Floating chat bubble + small chat panel (shared chat state). */}
       <ChatWidget />

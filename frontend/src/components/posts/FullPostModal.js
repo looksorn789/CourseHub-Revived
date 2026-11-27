@@ -18,6 +18,7 @@ import { Comment } from "../comments/Comment";
 import { PostImageGrid } from "./PostImages";
 import { channelPathFor } from "../../utils/postTransform";
 import TagLink from "./TagLink";
+import ShareModal from "./ShareModal";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import TextareaAutosize from "react-textarea-autosize";
@@ -27,6 +28,7 @@ import { getUserProfile } from "../../services/profileService";
 export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [shareOpen, setShareOpen] = useState(false);
   // Channel name -> the channel (just close if we're already there).
   const openAuthor = () => {
     if (!post.author.username || post.author.username === "anonymous") return;
@@ -377,10 +379,13 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                 </div>
                 <Button
                   variant="ghost"
+                  aria-label="Share post"
                   className="rounded-full hover:bg-gray-100"
+                  onClick={() => setShareOpen(true)}
                 >
                   <Share2 className="h-5 w-5 text-green-600" />
                 </Button>
+                <ShareModal post={post} open={shareOpen} onOpenChange={setShareOpen} />
               </div>
 
               <Separator className="my-8" />

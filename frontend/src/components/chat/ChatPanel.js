@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDistanceToNowStrict, format, isToday } from "date-fns";
-import { ArrowLeft, Check, Loader2, Plus, Search, Send, Trash2, Users, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Check, FileText, Loader2, Plus, Search, Send, Trash2, Users, X } from "lucide-react";
 import ChatService, { getChatSocket } from "../../services/chatService";
 import SearchService from "../../services/searchService";
 import { avatarDataUrl } from "../../utils/avatarUtils";
@@ -168,14 +169,48 @@ export function NewChat({ onBack, onStarted }) {
   );
 }
 
+/* ---------------- Shared post card ---------------- */
+
+/** Miniature post inside a chat message; opens the post on click. */
+export function SharedPostCard({ post, mine, hasText }) {
+  const navigate = useNavigate();
+  const chat = useChat();
+  const slug = post.forum?.slug;
+  const open = () => {
+    if (!slug) return;
+    chat?.closePanel();
+    navigate(`/channel/${slug}?post=${post.post_id}`);
+  };
+  return (
+    <button
+      type="button"
+      onClick={open}
+      aria-label={`Open shared post: ${post.title}`}
+      className={`block w-60 max-w-full overflow-hidden rounded-xl border text-left not-italic transition hover:shadow-md ${
+        hasText ? "mt-2" : ""
+      } ${mine ? "border-white/40 bg-white text-gray-800" : "border-gray-200 bg-gray-50"}`}
+    >
+      {post.image && <img src={post.image} alt="" className="h-28 w-full object-cover" />}
+      <span className="block px-3 py-2">
+        <span className="block truncate text-[11px] text-green-700">#{post.forum?.name}</span>
+        <span className="block text-sm font-semibold leading-snug line-clamp-2">{post.title}</span>
+        {post.excerpt && <span className="mt-0.5 block text-xs text-gray-500 line-clamp-2">{post.excerpt}</span>}
+        <span className="mt-1 block text-[11px] text-gray-400">by {post.author?.name}</span>
+      </span>
+    </button>
+  );
+}
+
 /* ---------------- Thread ---------------- */
 
-export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false }) {
+export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false, initialDraft = null }) {
   const me = myId();
   const [messages, setMessages] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialDraft?.text || "");
+  // Post attached to the next message (from "Share to chat"); removable.
+  const [attachedPost, setAttachedPost] = useState(initialDraft?.post || null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [typing, setTyping] = useState({});
@@ -248,16 +283,17 @@ export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false }
 
   const send = async () => {
     const content = text.trim();
-    if (!content || sending) return;
+    if ((!content && !attachedPost) || sending) return;
     setSending(true);
     setError("");
-    const { data, error: err } = await ChatService.sendMessage(cid, content);
+    const { data, error: err } = await ChatService.sendMessage(cid, content, attachedPost?.id);
     setSending(false);
     if (err) {
       setError(err);
       return;
     }
     setText("");
+    setAttachedPost(null);
     clearTimeout(typingTimer.current);
     sendTyping(false);
     setMessages((prev) => (prev.some((x) => x._id === data._id) ? prev : [...prev, data]));
@@ -338,6 +374,9 @@ export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false }
                         title={new Date(m.created_at).toLocaleString()}
                       >
                         {m.deleted ? "Message deleted" : m.content}
+                        {!m.deleted && m.shared_post && (
+                          <SharedPostCard post={m.shared_post} mine={mine} hasText={Boolean(m.content)} />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -355,6 +394,29 @@ export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false }
       </div>
 
       {error && <p className="px-3 pt-1 text-xs text-red-600">{error}</p>}
+      {attachedPost && (
+        <div className="flex items-center gap-2 border-t border-gray-100 bg-green-50/60 px-3 py-2">
+          {attachedPost.images?.[0] ? (
+            <img src={attachedPost.images[0]} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" />
+          ) : (
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-green-700">
+              <FileText className="h-5 w-5" />
+            </span>
+          )}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-xs font-semibold text-gray-800">{attachedPost.title}</span>
+            <span className="block truncate text-[11px] text-gray-500">Post attached · {attachedPost.author?.channel}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setAttachedPost(null)}
+            aria-label="Remove attached post"
+            className="rounded-full p-1 text-gray-500 hover:bg-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       <form
         className="flex items-end gap-2 border-t border-gray-100 p-2.5"
         onSubmit={(e) => {
@@ -379,7 +441,7 @@ export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false }
         />
         <button
           type="submit"
-          disabled={!text.trim() || sending}
+          disabled={(!text.trim() && !attachedPost) || sending}
           aria-label="Send"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-600 text-white hover:bg-green-700 disabled:opacity-40"
         >
@@ -469,14 +531,19 @@ export default function ChatPanel() {
 
   useEffect(() => {
     if (!panelOpen || !startWith) return;
-    ChatService.startConversation([startWith]).then(({ data }) => {
+    const { userId, conversation, draft } = startWith;
+    clearStartWith();
+    if (conversation) {
+      setView({ name: "thread", conversation, draft });
+      return;
+    }
+    ChatService.startConversation([userId]).then(({ data }) => {
       if (data) {
-        openConversation(data);
+        setView({ name: "thread", conversation: data, draft });
         refresh();
       }
-      clearStartWith();
     });
-  }, [panelOpen, startWith, openConversation, refresh, clearStartWith]);
+  }, [panelOpen, startWith, refresh, clearStartWith]);
 
   if (!panelOpen) return null;
 
@@ -488,7 +555,9 @@ export default function ChatPanel() {
     >
       {view.name === "thread" ? (
         <Thread
+          key={view.conversation._id}
           conversation={view.conversation}
+          initialDraft={view.draft}
           onBack={() => {
             setView({ name: "list" });
             refresh();
