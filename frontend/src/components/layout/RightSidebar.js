@@ -48,7 +48,7 @@ const popularTags = [
 
 function RightSidebar() {
   return (
-    <div className="w-80 border-l border-gray-200 p-4 space-y-6">
+    <div className="w-full border-l border-gray-200 p-4 space-y-6">
       {/* Channel Suggestions */}
       <Card className="bg-gradient-to-br from-green-50 to-blue-50 border-none shadow-md">
         <div className="p-4 pb-2">
@@ -88,45 +88,6 @@ function RightSidebar() {
           </div>
         </div>
       </Card>
-      <Card className="bg-gradient-to-br from-green-50 to-blue-50 border-none shadow-md">
-        <div className="p-4 pb-2">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Suggested Channels
-          </h2>
-        </div>
-        <div className="p-4 pt-0">
-          <div className="space-y-4">
-            {channelSuggestions.map((channel) => (
-              <div
-                key={channel.name}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center space-x-3">
-                  <Avatar className="h-10 w-10 rounded-md">
-                    <AvatarImage src={channel.image} alt={channel.name} />
-                    <AvatarFallback>{channel.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-medium text-sm text-gray-800">
-                      {channel.name}
-                    </h3>
-                    <p className="text-xs text-gray-500">
-                      {channel.followers.toLocaleString()} followers
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  className="text-xs h-8 px-3 bg-white hover:bg-green-50 hover:text-green-600 transition-colors duration-200"
-                >
-                  Join
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Card>
-
       {/* Pinned Channels */}
       <Card>
         <div className="p-4 pb-2">

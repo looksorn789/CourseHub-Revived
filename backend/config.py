@@ -10,6 +10,9 @@ class Config:
     SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
     JWT_SECRET_KEY = SUPABASE_JWT_SECRET
     JWT_ALGORITHM = "HS256"
+    # Supabase signs user tokens with its asymmetric key (ES256/RS256); projects
+    # still on the legacy shared secret use HS256. app.setup_jwt picks the key.
+    JWT_DECODE_ALGORITHMS = ["ES256", "RS256", "HS256"]
     JWT_TOKEN_LOCATION = ["headers"]
     JWT_HEADER_NAME = "Authorization"
     JWT_HEADER_TYPE = "Bearer"

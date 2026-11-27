@@ -161,11 +161,11 @@ export default function Friends() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-2 sm:p-8">
         <Card className="max-w-6xl mx-auto bg-white shadow-xl rounded-3xl overflow-hidden border-0">
           <CardContent className="p-0">
             <Tabs defaultValue="friends" className="w-full">
-              <div className="bg-white border-b border-gray-200 px-6 py-4">
+              <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
                 <div className="flex justify-between items-center mb-4">
                   <h1 className="text-2xl font-bold text-gray-800">Your Network</h1>
                   <Badge
@@ -175,33 +175,33 @@ export default function Friends() {
                     {friends.length} Friends
                   </Badge>
                 </div>
-                <TabsList className="grid w-full grid-cols-3 bg-gray-100 rounded-2xl p-1 gap-1">
+                <TabsList className="grid w-full grid-cols-3 bg-gray-100 rounded-2xl p-1 gap-1 text-xs sm:text-sm">
                   <TabsTrigger
                     value="friends"
                     className="data-[state=active]:bg-white data-[state=active]:text-green-600 data-[state=active]:shadow-sm rounded-xl transition-all duration-200"
                   >
-                    <Users className="mr-2 h-4 w-4" />
+                    <Users className="mr-2 hidden h-4 w-4 min-[400px]:inline-block" />
                     Friends
                   </TabsTrigger>
                   <TabsTrigger
                     value="requests"
                     className="data-[state=active]:bg-white data-[state=active]:text-green-600 data-[state=active]:shadow-sm rounded-xl transition-all duration-200"
                   >
-                    <Clock className="mr-2 h-4 w-4" />
+                    <Clock className="mr-2 hidden h-4 w-4 min-[400px]:inline-block" />
                     Requests
                   </TabsTrigger>
                   <TabsTrigger
                     value="search"
                     className="data-[state=active]:bg-white data-[state=active]:text-green-600 data-[state=active]:shadow-sm rounded-xl transition-all duration-200"
                   >
-                    <Search className="mr-2 h-4 w-4" />
+                    <Search className="mr-2 hidden h-4 w-4 min-[400px]:inline-block" />
                     Find Friends
                   </TabsTrigger>
                 </TabsList>
               </div>
 
               {/* Friends Tab */}
-              <TabsContent value="friends" className="p-6">
+              <TabsContent value="friends" className="p-3 sm:p-6">
                 <ScrollArea className="h-[600px] rounded-md -mx-2 px-2">
                   <div className="space-y-4">
                     <AnimatePresence>
@@ -262,7 +262,7 @@ export default function Friends() {
               </TabsContent>
 
               {/* Requests Tab */}
-              <TabsContent value="requests" className="p-6">
+              <TabsContent value="requests" className="p-3 sm:p-6">
                 <ScrollArea className="h-[600px] rounded-md -mx-2 px-2">
                   {receivedRequests.length > 0 && (
                     <>
@@ -394,7 +394,7 @@ export default function Friends() {
               </TabsContent>
 
               {/* Search Tab */}
-              <TabsContent value="search" className="p-6">
+              <TabsContent value="search" className="p-3 sm:p-6">
                 <div className="mb-6">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

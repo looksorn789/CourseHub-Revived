@@ -1,5 +1,9 @@
 import * as React from "react";
-import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@radix-ui/react-icons";
 import { DayPicker } from "react-day-picker";
 import { cn } from "../../lib/utils";
 import { buttonVariants } from "./Button";
@@ -14,6 +18,15 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
+        // Month/year dropdowns (captionLayout="dropdown" or "dropdown-buttons"):
+        // the native <select> sits invisibly on top of its styled label.
+        caption_dropdowns: "flex items-center justify-center gap-1",
+        dropdown_month: "relative inline-flex items-center",
+        dropdown_year: "relative inline-flex items-center",
+        dropdown:
+          "absolute inset-0 z-10 w-full cursor-pointer opacity-0",
+        dropdown_icon: "ml-1 h-3 w-3",
+        vhidden: "sr-only",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
@@ -47,6 +60,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
       components={{
         IconLeft: () => <ChevronLeftIcon className="h-4 w-4" />,
         IconRight: () => <ChevronRightIcon className="h-4 w-4" />,
+        IconDropdown: () => <ChevronDownIcon className="ml-1 h-3 w-3 opacity-60" />,
       }}
       {...props}
     />

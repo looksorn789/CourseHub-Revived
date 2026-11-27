@@ -1,13 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Home,
   TrendingUp,
   Users,
-  Bookmark,
   Settings,
   HelpCircle,
   ChevronDown,
+  Compass,
+  Loader2,
 } from "lucide-react";
 import Button from "../ui/Button";
 import { cn } from "../../lib/utils";
@@ -18,143 +19,168 @@ import {
 } from "../ui/Collapsible";
 import { Separator } from "../ui/Separator";
 import { CreateChannelModal } from "../channel/CreateChannelModal";
+import { forumService, FORUMS_CHANGED_EVENT } from "../../services/forumService";
 
-const channels = [
-  { name: "Web Development", icon: "💻" },
-  { name: "Data Science", icon: "📊" },
-  { name: "Machine Learning", icon: "🤖" },
-  { name: "UI/UX Design", icon: "🎨" },
-  { name: "Mobile Development", icon: "📱" },
-  { name: "DevOps", icon: "🛠️" },
+const navItems = [
+  { name: "Home", icon: Home, path: "/home" },
+  { name: "Explore", icon: TrendingUp, path: "/explore" },
+  { name: "Friends", icon: Users, path: "/friends" },
 ];
 
-function Sidebar() {
+/**
+ * Main navigation. Rendered as the desktop left column by MainLayout and
+ * inside the mobile menu sheet by Header (which passes onNavigate to close it).
+ */
+function Sidebar({ onNavigate, className }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isChannelsOpen, setIsChannelsOpen] = useState(true);
-  const contentRef = useRef(null);
-  const [contentHeight, setContentHeight] = useState("auto");
+  const [myChannels, setMyChannels] = useState([]);
+  const [isLoadingChannels, setIsLoadingChannels] = useState(true);
 
   useEffect(() => {
-    if (contentRef.current) {
-      const height = contentRef.current.scrollHeight;
-      setContentHeight(isChannelsOpen ? `${height}px` : "0px");
-    }
-  }, [isChannelsOpen]);
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await forumService.getMyForums();
+      if (!cancelled) {
+        setMyChannels(data);
+        setIsLoadingChannels(false);
+      }
+    };
+    load();
+    window.addEventListener(FORUMS_CHANGED_EVENT, load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(FORUMS_CHANGED_EVENT, load);
+    };
+  }, []);
 
-  const navItems = [
-    { name: "Home", icon: Home, path: "/home" },
-    { name: "Explore", icon: TrendingUp, path: "/explore" },
-    { name: "Friends", icon: Users, path: "/friends" },
-  ];
+  const go = (path) => {
+    navigate(path);
+    onNavigate?.();
+  };
+
+  const itemClass = (active) =>
+    cn(
+      "w-full justify-start",
+      active ? "bg-green-100 text-green-800" : "text-gray-700 hover:bg-gray-100",
+    );
 
   return (
-    <div className="w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0">
-        <nav className="flex-1 px-4 py-6 overflow-y-auto">
-          <ul className="space-y-1">
-            {navItems.map((item) => (
-              <li key={item.name}>
+    <div className={cn("flex h-full flex-col bg-white", className)}>
+      <nav className="flex-1 overflow-y-auto px-4 py-6">
+        <ul className="space-y-1">
+          {navItems.map((item) => (
+            <li key={item.name}>
+              <Button
+                variant="ghost"
+                className={itemClass(location.pathname === item.path)}
+                onClick={() => go(item.path)}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                {item.name}
+              </Button>
+            </li>
+          ))}
+        </ul>
+
+        {/* My Channels */}
+        <Separator className="my-4" />
+        <Collapsible open={isChannelsOpen} onOpenChange={setIsChannelsOpen}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              className="h-10 w-full justify-between px-4 font-medium text-gray-700 hover:bg-gray-100"
+            >
+              <span className="text-sm">My Channels</span>
+              <ChevronDown
+                className={cn(
+                  "h-5 w-5 text-gray-500 transition-transform duration-300",
+                  isChannelsOpen && "rotate-180",
+                )}
+              />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-2 py-2">
+              <CreateChannelModal />
+            </div>
+
+            {isLoadingChannels ? (
+              <div className="flex justify-center py-3">
+                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+              </div>
+            ) : myChannels.length === 0 ? (
+              <div className="mx-2 rounded-lg border border-dashed border-green-200 bg-green-50/50 px-3 py-4 text-center">
+                <p className="text-sm text-gray-600">
+                  You haven't joined any channels yet.
+                </p>
                 <Button
                   variant="ghost"
-                  className={cn(
-                    "w-full justify-start",
-                    location.pathname === item.path
-                      ? "bg-green-100 text-green-800"
-                      : "text-gray-700 hover:bg-gray-100"
-                  )}
-                  onClick={() => navigate(item.path)}
+                  className="mt-2 h-8 text-sm text-green-700 hover:bg-green-100"
+                  onClick={() => go("/explore")}
                 >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.name}
+                  <Compass className="mr-1.5 h-4 w-4" />
+                  Explore channels
                 </Button>
-              </li>
-            ))}
-          </ul>
-
-          {/* Channels Section */}
-          <div className="mt-6">
-            <Separator className="my-4" />
-            <div className="flex flex-col">
-              <Collapsible
-                open={isChannelsOpen}
-                onOpenChange={setIsChannelsOpen}
-              >
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between px-4 h-10 text-gray-700 hover:bg-gray-100 font-medium transition-all duration-300 ease-in-out"
-                  >
-                    <span className="text-sm">My Channels</span>
-                    <ChevronDown
-                      className={cn(
-                        "h-5 w-5 text-gray-500 transition-transform duration-300 ease-in-out",
-                        isChannelsOpen ? "rotate-180" : "rotate-0"
-                      )}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div
-                    ref={contentRef}
-                    className="overflow-hidden transition-all duration-300 ease-in-out"
-                  >
-                    <div className="transform transition-all duration-300 ease-in-out">
-                      <div className="px-2 py-2">
-                        <CreateChannelModal />
-                      </div>
-                      <div className="space-y-1">
-                        {channels.map((channel, index) => (
-                          <Button
-                            key={`${channel.name}-${index}`}
-                            variant="ghost"
-                            className="w-full justify-start h-10 px-6 text-gray-700 hover:bg-gray-100 transition-all duration-300 ease-in-out"
-                            style={{
-                              opacity: isChannelsOpen ? 1 : 0,
-                              transform: `translateY(${isChannelsOpen ? 0 : -10}px)`,
-                              transitionDelay: `${index * 30}ms`,
-                            }}
-                          >
-                            <span className="mr-3 text-lg">{channel.icon}</span>
-                            <span className="text-sm">{channel.name}</span>
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          </div>
-        </nav>
-      </div>
+              </div>
+            ) : (
+              <ul className="space-y-1">
+                {myChannels.map((channel) => {
+                  const path = `/channel/${channel.slug}`;
+                  return (
+                    <li key={channel._id}>
+                      <Button
+                        variant="ghost"
+                        className={cn(itemClass(location.pathname === path), "h-10 px-4")}
+                        onClick={() => go(path)}
+                      >
+                        {channel.avatar_url ? (
+                          <img
+                            src={channel.avatar_url}
+                            alt=""
+                            className="mr-3 h-6 w-6 rounded-md object-cover"
+                          />
+                        ) : (
+                          <span className="mr-3 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-green-100 text-xs font-semibold text-green-700">
+                            {channel.name?.[0]?.toUpperCase() || "#"}
+                          </span>
+                        )}
+                        <span className="truncate text-sm">{channel.name}</span>
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+      </nav>
 
       {/* Settings Section */}
-      <div className="mt-auto">
-        <div className="px-4 py-4">
-          <Separator className="my-4" />
-          <ul className="space-y-1">
-            <li>
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-gray-700 hover:bg-gray-100"
-                onClick={() => navigate("/settings")}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-            </li>
-            <li>
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-gray-700 hover:bg-gray-100"
-              >
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Help Center
-              </Button>
-            </li>
-          </ul>
-        </div>
+      <div className="px-4 pb-4">
+        <Separator className="mb-4" />
+        <ul className="space-y-1">
+          <li>
+            <Button
+              variant="ghost"
+              className={itemClass(location.pathname === "/settings")}
+              onClick={() => go("/settings")}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Button>
+          </li>
+          <li>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-gray-700 hover:bg-gray-100"
+            >
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Help Center
+            </Button>
+          </li>
+        </ul>
       </div>
     </div>
   );

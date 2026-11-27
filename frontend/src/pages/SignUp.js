@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { signup, verifyEmailCode } from "../services/authService";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  signup,
+  verifyEmailCode,
+  signin,
+  saveSession,
+} from "../services/authService";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Label from "../components/ui/Label";
@@ -26,6 +31,7 @@ function SignUp() {
   // State variables for form inputs
   const [username, setUsername] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
   const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -118,12 +124,27 @@ function SignUp() {
     try {
       // Call the verify email API
       await verifyEmailCode(email, verificationCode.join(""));
-      setStep(3);
     } catch (err) {
       setError(err.message || "Verification failed");
-    } finally {
       setIsLoading(false);
+      return;
     }
+
+    // Sign the new account in right away. PrivateRoute sends accounts
+    // without a finished profile to profile setup, then on to /home.
+    try {
+      const data = await signin(email, password);
+      if (data?.jwt_token) {
+        saveSession(data);
+        navigate("/home", { replace: true });
+        return;
+      }
+    } catch (err) {
+      console.error("Automatic sign-in after sign-up failed:", err);
+    }
+    // Fall back to the "account created, please sign in" screen.
+    setStep(3);
+    setIsLoading(false);
   };
 
   const getPasswordStrengthClass = () => {

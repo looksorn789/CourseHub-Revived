@@ -14,7 +14,7 @@ export function ChannelSidebar({ channelData }) {
     rules = []
   } = channelData;
    return (
-    <div className="w-80 space-y-6">
+    <div className="w-full lg:w-80 lg:shrink-0 space-y-6">
       <Card className="bg-white shadow-md rounded-xl overflow-hidden border-none">
         <CardHeader>
           <h3 className="text-xl font-semibold text-green-700">About</h3>

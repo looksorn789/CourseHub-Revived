@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import Accordion from "../ui/Accordion";
 import { cn } from "../../lib/utils";
 import { avatarDataUrl, DEFAULT_AVATAR_STYLE } from "../../utils/avatarUtils";
+import { GRAD_FROM_YEAR, GRAD_TO_YEAR, graduationStatus } from "../../utils/graduation";
 import AvatarPicker from "../Profile/AvatarPicker";
 import { getUserProfile, saveUserProfile } from "../../services/profileService";
 
@@ -370,7 +371,10 @@ function UserProfile() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="graduationDate">Expected Graduation Date</Label>
+                  <Label htmlFor="graduationDate">
+                    Graduation Date{" "}
+                    <span className="font-normal text-gray-500">(graduated or expected)</span>
+                  </Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -396,11 +400,24 @@ function UserProfile() {
                             : undefined
                         }
                         onSelect={(date) => handleChange('graduationDate', date)}
+                        defaultMonth={
+                          userData.profile?.graduationDate
+                            ? new Date(userData.profile.graduationDate)
+                            : undefined
+                        }
+                        captionLayout="dropdown-buttons"
+                        fromYear={GRAD_FROM_YEAR}
+                        toYear={GRAD_TO_YEAR}
                         disabled={!isEditing}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
+                  {userData.profile?.graduationDate && (
+                    <p className="mt-1 text-xs text-green-700">
+                      {graduationStatus(userData.profile.graduationDate)}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="gpa">GPA</Label>

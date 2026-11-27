@@ -7,6 +7,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/Popover";
 import Calendar from "../ui/Calendar";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
+import {
+  GRAD_FROM_YEAR,
+  GRAD_TO_YEAR,
+  graduationStatus,
+} from "../../utils/graduation";
 
 const API_KEY = process.env.REACT_APP_COLLEGE_SCORECARD_API_KEY;
 const BASE_URL = "https://api.data.gov/ed/collegescorecard/v1/schools";
@@ -311,7 +316,10 @@ function Step2Education({
               htmlFor="graduationDate"
               className="block text-sm font-medium text-gray-700"
             >
-              Expected Graduation Date
+              Graduation Date{" "}
+              <span className="font-normal text-gray-500">
+                (graduated or expected)
+              </span>
             </Label>
             <Popover>
               <PopoverTrigger asChild>
@@ -334,11 +342,20 @@ function Step2Education({
                   mode="single"
                   selected={graduationDate}
                   onSelect={setGraduationDate}
+                  defaultMonth={graduationDate || undefined}
+                  captionLayout="dropdown-buttons"
+                  fromYear={GRAD_FROM_YEAR}
+                  toYear={GRAD_TO_YEAR}
                   initialFocus
                   className="rounded-md border-green-200"
                 />
               </PopoverContent>
             </Popover>
+            {graduationDate && (
+              <p className="mt-1 text-xs text-green-700">
+                {graduationStatus(graduationDate)}
+              </p>
+            )}
           </div>
 
           {/* GPA Input */}

@@ -367,22 +367,22 @@ export function ChannelProfile() {
           <img
             src={channelData.bannerImage}
             alt={`${channelData.name} Banner`}
-            className="w-full h-80 object-cover rounded-3xl shadow-lg"
+            className="w-full h-44 sm:h-64 lg:h-80 object-cover rounded-3xl shadow-lg"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent rounded-3xl"></div>
         </motion.div>
         <motion.div 
-          className="absolute -bottom-12 left-8 flex items-end space-x-6"
+          className="absolute -bottom-10 left-4 right-4 sm:-bottom-12 sm:left-8 flex items-end space-x-3 sm:space-x-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <Avatar className="h-36 w-36 border-4 border-white shadow-lg rounded-full">
+          <Avatar className="h-20 w-20 sm:h-28 sm:w-28 lg:h-36 lg:w-36 shrink-0 border-4 border-white shadow-lg rounded-full">
             <AvatarImage src={channelData.profileImage} alt={channelData.name} />
             <AvatarFallback>{channelData.name[0]}</AvatarFallback>
           </Avatar>
-          <div className="mb-4">
-            <h1 className="text-5xl font-bold text-white shadow-sm mb-2">{channelData.name}</h1>
+          <div className="mb-4 min-w-0">
+            <h1 className="truncate text-2xl sm:text-4xl lg:text-5xl font-bold text-white shadow-sm mb-1 sm:mb-2">{channelData.name}</h1>
             <div className="flex items-center text-sm text-white/80">
               <Hash className="h-4 w-4 mr-1" />
               <span>{channelData.category}</span>
@@ -391,9 +391,9 @@ export function ChannelProfile() {
         </motion.div>
       </div>
 
-      <div className="flex justify-end items-start mt-20 mb-8">
+      <div className="flex justify-end items-start mt-14 sm:mt-20 mb-6 sm:mb-8">
         <Button
-          className={`px-6 py-2 rounded-full text-lg font-semibold transition-all duration-300 flex items-center space-x-2 ${
+          className={`px-5 sm:px-6 py-2 rounded-full text-base sm:text-lg font-semibold transition-all duration-300 flex items-center space-x-2 ${
             isJoined
               ? 'bg-green-100 text-green-800 hover:bg-green-200'
               : 'bg-green-600 text-white hover:bg-green-700'
@@ -414,9 +414,9 @@ export function ChannelProfile() {
         </Button>
       </div>
 
-      <div className="flex gap-8">
-        <div className="flex-grow max-w-3xl">
-          <div className="flex items-center space-x-4 mb-6 bg-white rounded-full shadow-md p-2 border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+        <div className="min-w-0 flex-grow max-w-3xl">
+          <div className="flex items-center space-x-2 sm:space-x-4 mb-6 bg-white rounded-full shadow-md p-2 border border-gray-200 hover:shadow-lg transition-shadow duration-300">
             <Avatar className="h-10 w-10">
               <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
               <AvatarFallback>{currentUser.initials || '?'}</AvatarFallback>
@@ -428,7 +428,7 @@ export function ChannelProfile() {
             />
             <Button
               onClick={() => setIsPostModalOpen(true)}
-              className="bg-green-600 text-white hover:bg-green-700 rounded-full px-6 py-2 font-semibold transition-colors duration-300"
+              className="shrink-0 bg-green-600 text-white hover:bg-green-700 rounded-full px-4 sm:px-6 py-2 font-semibold transition-colors duration-300"
             >
               Post
             </Button>

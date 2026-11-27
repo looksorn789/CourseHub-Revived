@@ -1,6 +1,6 @@
 import React from "react";
 import Header from "./Header";
-import SettingSidebar from "./SettingSidebar";
+import SettingSidebar, { SettingsTabs } from "./SettingSidebar";
 import RightSidebar from "./RightSidebar";
 
 export function SettingLayout({
@@ -16,24 +16,29 @@ export function SettingLayout({
       <Header />
       <div className="flex">
         {/* Left Sidebar */}
-        <div className="w-64 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto bg-white border-r border-gray-200">
+        <aside className="hidden lg:block w-64 shrink-0 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto bg-white border-r border-gray-200">
           <SettingSidebar
             activeSection={activeSection}
             setActiveSection={setActiveSection}
             onDeleteClick={onDeleteClick}
           />
-        </div>
+        </aside>
         {/* Center */}
-        <main className="flex-1 min-h-[calc(100vh-4rem)] px-4 py-6">
+        <main className="flex-1 min-w-0 min-h-[calc(100vh-4rem)] px-4 py-6">
           <div className={`w-full ${maxWidth === "7xl" ? "max-w-7xl" : "max-w-3xl"} mx-auto`}>
+            <SettingsTabs
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              onDeleteClick={onDeleteClick}
+            />
             {children}
           </div>
         </main>
         {/* Right Sidebar */}
         {showRightSidebar && (
-          <div className="w-80 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+          <aside className="hidden xl:block w-80 shrink-0 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
             <RightSidebar />
-          </div>
+          </aside>
         )}
       </div>
     </div>

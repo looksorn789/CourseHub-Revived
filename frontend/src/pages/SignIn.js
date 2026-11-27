@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { signin } from "../services/authService";
+import { signin, saveSession } from "../services/authService";
 import { BookOpen, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
@@ -37,20 +37,7 @@ function SignIn() {
         return;
       }
 
-      // Store user data
-      localStorage.setItem("jwt_token", data.jwt_token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          user_id: data.user_id,
-          username: data.username,
-          email: data.email,
-          first_name: data.first_name,
-          last_name: data.last_name,
-          profile_completed: data.profile_completed,
-          avatar: data.avatar,
-        }),
-      );
+      saveSession(data);
 
       navigate("/home");
     } catch (err) {
