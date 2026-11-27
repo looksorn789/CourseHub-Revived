@@ -1,4 +1,3 @@
-import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
@@ -9,6 +8,7 @@ from models.post import Post, PostType
 from models.forum import ForumStatus, ForumVisibility
 from models.friend_request import RequestStatus
 from routes.search import hidden_forum_ids
+from utils.cache import popular_tags as popular_tags_cache
 from utils.helpers import serialize_mongo_doc, get_user_id
 from utils.storage import POST_IMAGE_BUCKET, read_image_upload, remove_images, upload_image
 import bleach
@@ -389,7 +389,7 @@ def posts_by_tag(tag):
             return jsonify({"success": False, "error": "User not found"}), 404
 
         query = {
-            "tags": {"$regex": f"^{re.escape(tag)}$", "$options": "i"},
+            "tags_lower": tag.lower(),  # indexed exact match
             "forum_id": {"$nin": hidden_forum_ids(current_app.db, user_id)},
         }
         posts, total = Post(current_app.db, current_app.supabase).list_posts_with_authors(
@@ -461,18 +461,21 @@ def popular_tags():
         user_id = get_user_id(get_jwt_identity())
         if not user_id:
             return jsonify({"success": False, "error": "User not found"}), 404
-        tags = list(Post(current_app.db, current_app.supabase).collection.aggregate([
-            {"$match": {
-                "forum_id": {"$nin": hidden_forum_ids(current_app.db, user_id)},
-                "tags.0": {"$exists": True},
-            }},
-            {"$unwind": "$tags"},
-            {"$set": {"tag": {"$toLower": {"$trim": {"input": "$tags"}}}}},
-            {"$match": {"tag": {"$ne": ""}}},
-            {"$group": {"_id": "$tag", "count": {"$sum": 1}}},
-            {"$sort": {"count": -1, "_id": 1}},
-            {"$limit": limit},
-        ]))
+        def compute():
+            return list(Post(current_app.db, current_app.supabase).collection.aggregate([
+                {"$match": {
+                    "forum_id": {"$nin": hidden_forum_ids(current_app.db, user_id)},
+                    "tags_lower.0": {"$exists": True},
+                }},
+                {"$unwind": "$tags_lower"},
+                {"$set": {"tag": "$tags_lower"}},
+                {"$match": {"tag": {"$ne": ""}}},
+                {"$group": {"_id": "$tag", "count": {"$sum": 1}}},
+                {"$sort": {"count": -1, "_id": 1}},
+                {"$limit": limit},
+            ]))
+
+        tags = popular_tags_cache.get_or_set((user_id, limit), compute)
         return jsonify({
             "success": True,
             "data": {"tags": [{"tag": t["_id"], "count": t["count"]} for t in tags]},

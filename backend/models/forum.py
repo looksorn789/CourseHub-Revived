@@ -88,6 +88,7 @@ class Forum:
                 IndexModel([("visibility", ASCENDING)]),
                 IndexModel([("created_at", DESCENDING)]),
                 IndexModel([("last_active", DESCENDING)]),
+                IndexModel([("members.user_id", ASCENDING)]),
             ]
 
             self.collection.create_indexes(indexes)

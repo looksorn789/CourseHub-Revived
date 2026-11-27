@@ -88,9 +88,22 @@ class UserModel:
         },
     }
 
+    _prepared_dbs = set()
+
     def __init__(self, db, supabase):
         self.collection = db["users"]
         self.supabase = supabase
+        # Every request looks users up by supabase_id; without an index that
+        # is a full collection scan. Create the indexes once per process.
+        if db.name not in UserModel._prepared_dbs:
+            try:
+                self.collection.create_index("supabase_id", sparse=True)
+                self.collection.create_index("username")
+                self.collection.create_index("email")
+                self.collection.create_index([("profile_completed", 1), ("created_at", -1)])
+            except Exception as e:  # pragma: no cover - logged, not fatal
+                print(f"Error setting up user indexes: {e}")
+            UserModel._prepared_dbs.add(db.name)
 
     def create_user(
         self,
