@@ -2,24 +2,21 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { getUserByUsername } from "../../services/profileService";
 import { avatarDataUrl } from "../../utils/avatarUtils";
+import { openChatWith } from "../../services/chatService";
 import Button from "../ui/Button"
-import Textarea from "../ui/Textarea"
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card"
 import ScrollArea from "../ui/ScrollArea"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/Dialog"
 import Badge from "../ui/Badge"
 import { Separator } from "../ui/Separator"
 import ProfileSkeleton from "./ProfileSkeleton"
-import { School, GraduationCap, Award, MessageSquare, UserPlus, Users, Calendar as CalendarIcon, Send } from "lucide-react"
+import { School, GraduationCap, Award, MessageSquare, UserPlus, Users, Calendar as CalendarIcon } from "lucide-react"
 
 export default function ProfileView() {
   const { username } = useParams() 
   const [userData, setUserData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
-  const [messageContent, setMessageContent] = useState('')
 
   // Temporary data for posts and connections
   const [followers] = useState(245)
@@ -50,12 +47,6 @@ export default function ProfileView() {
 
   const handleFollow = () => {
     setIsFollowing(!isFollowing)
-  }
-
-  const handleSendMessage = () => {
-    console.log("Sending message:", messageContent)
-    setMessageContent('')
-    setIsMessageModalOpen(false)
   }
 
   const formatDate = (dateString) => {
@@ -121,7 +112,7 @@ export default function ProfileView() {
                       </>
                     )}
                   </Button>
-                  <Button onClick={() => setIsMessageModalOpen(true)} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                  <Button onClick={() => openChatWith(userData._id)} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Message
                   </Button>
@@ -210,34 +201,6 @@ export default function ProfileView() {
         </div>
       </div>
 
-      <Dialog open={isMessageModalOpen} onOpenChange={setIsMessageModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Send a Message to {userData.profile.first_name}</DialogTitle>
-            <DialogDescription>
-              Your message will be sent directly to {userData.profile.first_name}. Be respectful and follow community guidelines.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            <Textarea
-              placeholder="Type your message here..."
-              value={messageContent}
-              onChange={(e) => setMessageContent(e.target.value)}
-              rows={4}
-              className="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500"
-            />
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setIsMessageModalOpen(false)} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-              Cancel
-            </Button>
-            <Button onClick={handleSendMessage} className="bg-green-600 text-white hover:bg-green-700">
-              <Send className="mr-2 h-4 w-4" />
-              Send Message
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
