@@ -103,7 +103,7 @@ function Sidebar({ onNavigate, className }) {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-2 py-2">
-              <CreateChannelModal />
+              <CreateChannelModal onCreated={() => onNavigate?.()} />
             </div>
 
             {isLoadingChannels ? (

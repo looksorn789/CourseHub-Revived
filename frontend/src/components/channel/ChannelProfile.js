@@ -5,11 +5,12 @@ import { toast } from 'react-toastify';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { Plus, Check, ChevronDown, Hash } from 'lucide-react';
+import { Plus, Check, ChevronDown, Hash, Pencil } from 'lucide-react';
 import { Post } from '../posts/Post';
 import { PostModal } from '../posts/PostModal';
 import { FullPostModal } from '../posts/FullPostModal';
 import { ChannelSidebar } from './ChannelSidebar';
+import { EditChannelModal } from './EditChannelModal';
 import { forumService } from '../../services/forumService';
 import PostService from '../../services/postService';
 import { getUserById } from '../../services/profileService';
@@ -104,6 +105,7 @@ export function ChannelProfile() {
   const [scrolled, setScrolled] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [channelPosts, setChannelPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -133,7 +135,9 @@ export function ChannelProfile() {
       category: forumData.category || '',
       visibility: forumData.visibility || 'public',
       creator_id: forumData.creator_id || '',
-      members: forumData.members || [],
+      slug: forumData.slug || '',
+      // Signed-in viewer's relationship to the channel (computed by the API).
+      viewer: forumData.viewer || { is_member: false, role: null, is_owner: false, can_edit: false },
       tags: Array.isArray(forumData.tags) ? forumData.tags : [],
       rules: forumData.rules ? forumData.rules.split('\n').filter(rule => rule.trim()) : [],
       bannerImage: forumData.banner_url || 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&h=400&q=80',
@@ -232,15 +236,12 @@ export function ChannelProfile() {
 
         setChannelData(transformedData);
 
-        const postsData = await fetchPostsWithUserData(transformedData._id, 1);
+        const postsData = await fetchPostsWithUserData(transformedData._id, transformedData.name, 1);
         setChannelPosts(postsData.posts);
         setTotalPages(Math.ceil(postsData.total / postsData.per_page));
         setHasMore(postsData.page < postsData.total_pages);
 
-        const isUserMember = transformedData.members.some(
-          member => member.user_id === 'current-user-id'
-        );
-        setIsJoined(isUserMember);
+        setIsJoined(transformedData.viewer.is_member);
 
       } catch (err) {
         console.error('Error fetching channel:', err);
@@ -264,7 +265,7 @@ export function ChannelProfile() {
     setLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
-      const postsData = await fetchPostsWithUserData(channelData._id, nextPage);
+      const postsData = await fetchPostsWithUserData(channelData._id, channelData.name, nextPage);
       
       setChannelPosts(prevPosts => [...prevPosts, ...postsData.posts]);
       setCurrentPage(nextPage);
@@ -336,6 +337,24 @@ export function ChannelProfile() {
     }
   };
 
+  const handleChannelSaved = (updated) => {
+    setChannelData((prev) => ({
+      ...prev,
+      name: updated.name ?? prev.name,
+      description: updated.description ?? prev.description,
+      category: updated.category ?? prev.category,
+      rules: typeof updated.rules === 'string'
+        ? updated.rules.split('\n').filter((rule) => rule.trim())
+        : prev.rules,
+      slug: updated.slug || prev.slug,
+    }));
+    toast.success('Channel updated');
+    // Renaming changes the slug, so move to the channel's new address.
+    if (updated.slug && updated.slug !== slug) {
+      navigate(`/channel/${updated.slug}`, { replace: true });
+    }
+  };
+
   const handleJoinChannel = async () => {
     if (!channelData?._id) return;
 
@@ -391,7 +410,21 @@ export function ChannelProfile() {
         </motion.div>
       </div>
 
-      <div className="flex justify-end items-start mt-14 sm:mt-20 mb-6 sm:mb-8">
+      <div className="flex justify-end items-center gap-3 mt-14 sm:mt-20 mb-6 sm:mb-8">
+        {channelData.viewer.is_owner && (
+          <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+            You own this channel
+          </span>
+        )}
+        {channelData.viewer.can_edit ? (
+          <Button
+            className="px-5 sm:px-6 py-2 rounded-full text-base sm:text-lg font-semibold flex items-center bg-green-600 text-white hover:bg-green-700"
+            onClick={() => setIsEditOpen(true)}
+          >
+            <Pencil className="w-5 h-5 mr-2" />
+            <span>Edit Channel</span>
+          </Button>
+        ) : (
         <Button
           className={`px-5 sm:px-6 py-2 rounded-full text-base sm:text-lg font-semibold transition-all duration-300 flex items-center space-x-2 ${
             isJoined
@@ -412,7 +445,14 @@ export function ChannelProfile() {
             </>
           )}
         </Button>
+        )}
       </div>
+      <EditChannelModal
+        channel={channelData}
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        onSaved={handleChannelSaved}
+      />
 
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
         <div className="min-w-0 flex-grow max-w-3xl">

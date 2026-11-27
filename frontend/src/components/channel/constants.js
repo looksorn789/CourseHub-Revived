@@ -1,14 +1,18 @@
-export const CHANNEL_TAGS = [
-  "Q&A",
-  "Lecture Notes",
-  "Homework Help",
+// Must match ForumCategory values in backend/models/forum.py.
+export const CHANNEL_CATEGORIES = [
   "Study Group",
+  "General",
+  "Homework Help",
   "Exam Prep",
+  "Q & A",
+  "Project",
   "Career",
 ];
 
+// Kept for older imports.
+export const CHANNEL_TAGS = CHANNEL_CATEGORIES;
+
 export const CREATION_STEPS = [
-  { title: "Basics", description: "Enter channel name and description" },
-  { title: "Category", description: "Select a category for your channel" },
-  { title: "Images", description: "Upload profile icon and banner" },
+  { title: "Basics", description: "Name and description" },
+  { title: "Category", description: "What the channel is for" },
 ];
