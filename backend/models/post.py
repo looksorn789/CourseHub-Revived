@@ -338,6 +338,7 @@ class Post:
         per_page: int = 20,
         sort_field: str = "last_activity_at",
         include_forum: bool = False,
+        viewer_id: Optional[str] = None,
     ) -> Tuple[list, int]:
         """One aggregate round trip for a page of posts, the total count, each
         post's author (name/username/avatar) and optionally its forum.
@@ -362,6 +363,23 @@ class Post:
             }},
             {"$set": {"author": {"$first": "$author"}}},
         ]
+        if viewer_id:
+            # The viewer's own reaction (one per post).
+            page_stages += [
+                {"$lookup": {
+                    "from": "post_reactions",
+                    "let": {"pid": "$_id"},
+                    "pipeline": [
+                        {"$match": {"$expr": {"$and": [
+                            {"$eq": ["$post_id", "$$pid"]},
+                            {"$eq": ["$user_id", ObjectId(viewer_id)]},
+                        ]}}},
+                        {"$project": {"type": 1, "_id": 0}},
+                    ],
+                    "as": "my_reaction",
+                }},
+                {"$set": {"my_reaction": {"$first": "$my_reaction.type"}}},
+            ]
         if include_forum:
             page_stages += [
                 {"$lookup": {
