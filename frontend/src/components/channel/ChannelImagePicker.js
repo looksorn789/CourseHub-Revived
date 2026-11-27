@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Trash2 } from "lucide-react";
 import { forumService } from "../../services/forumService";
+import { shrinkImage, IMAGE_LIMITS } from "../../utils/imageResize";
 
 // Shown when a channel has no custom image.
 export const DEFAULT_CHANNEL_BANNER =
@@ -34,14 +35,16 @@ export function ChannelImagePicker({ kind, label, currentUrl, value, onChange, d
     return () => URL.revokeObjectURL(url);
   }, [value.file]);
 
-  const handleFile = (e) => {
-    const file = e.target.files?.[0];
+  const handleFile = async (e) => {
+    const picked = e.target.files?.[0];
     e.target.value = ""; // allow picking the same file again
-    if (!file) return;
-    if (!ACCEPTED_TYPES.includes(file.type)) {
+    if (!picked) return;
+    if (!ACCEPTED_TYPES.includes(picked.type)) {
       setError("Use a PNG, JPEG, WebP or GIF image.");
       return;
     }
+    // Shrink large photos first so they load fast (and fit the size limit).
+    const file = await shrinkImage(picked, IMAGE_LIMITS[kind]);
     if (file.size > MAX_BYTES[kind]) {
       setError(`Image must be ${MAX_BYTES[kind] / (1024 * 1024)} MB or smaller.`);
       return;

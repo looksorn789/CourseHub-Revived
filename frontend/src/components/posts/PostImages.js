@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 import PostService from "../../services/postService";
+import { shrinkImage, IMAGE_LIMITS } from "../../utils/imageResize";
 
 export const MAX_POST_IMAGES = 4; // same as the API (routes/post.py)
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -25,8 +26,9 @@ export function PostImageGrid({ images = [], className = "" }) {
         >
           <img
             src={url}
-            alt={`Post photo ${i + 1}`}
+            alt={`Attachment ${i + 1} of ${images.length}`}
             loading="lazy"
+            decoding="async"
             className={`h-full w-full object-cover ${single ? "max-h-96" : "aspect-square"}`}
           />
         </a>
@@ -55,16 +57,18 @@ export function PostImagePicker({ value, onChange, disabled }) {
   const kept = value.existing.filter((u) => !value.removed.includes(u));
   const total = kept.length + value.added.length;
 
-  const handleFiles = (e) => {
+  const handleFiles = async (e) => {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
     const room = MAX_POST_IMAGES - total;
     const ok = [];
-    for (const file of files) {
-      if (!ACCEPTED_TYPES.includes(file.type)) {
+    for (const picked of files) {
+      if (!ACCEPTED_TYPES.includes(picked.type)) {
         setError("Use PNG, JPEG, WebP or GIF images.");
         continue;
       }
+      // Shrink large photos first so they load fast (and fit the size limit).
+      const file = await shrinkImage(picked, IMAGE_LIMITS.post);
       if (file.size > MAX_BYTES) {
         setError("Each photo must be 5 MB or smaller.");
         continue;

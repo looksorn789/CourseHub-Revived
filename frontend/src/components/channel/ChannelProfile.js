@@ -12,10 +12,10 @@ import { FullPostModal } from '../posts/FullPostModal';
 import { ChannelSidebar } from './ChannelSidebar';
 import { EditChannelModal } from './EditChannelModal';
 import { applyPostImageChanges } from '../posts/PostImages';
+import { transformPost } from '../../utils/postTransform';
 import { DEFAULT_CHANNEL_BANNER, DEFAULT_CHANNEL_ICON } from './ChannelImagePicker';
 import { forumService } from '../../services/forumService';
 import PostService from '../../services/postService';
-import { getUserById } from '../../services/profileService';
 import { getUserProfile } from '../../services/profileService';
 import { generateAvatarSvg } from '../../utils/avatarUtils';
 
@@ -34,72 +34,7 @@ const LoadingState = () => (
   </div>
 );
 
-const tempImage = 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&h=400&q=80';
 
-const transformPost = async (post, forumName = 'Unknown Channel') => {
-  const defaultAuthor = {
-    name: 'Anonymous',
-    image: tempImage,
-    username: 'anonymous',
-    channel: forumName,
-    id: post.user_id
-  };
-
-  const basePost = {
-    // The create endpoint returns "id"; list/update return "_id".
-    id: post._id || post.id,
-    userId: post.user_id,
-    images: post.images || [],
-    title: post.title || 'Untitled Post',
-    content: post.content || '',
-    tags: post.tags || [],
-    timestamp: new Date(post.created_at || Date.now()),
-    likes: 0,
-    comments: [],
-    type: post.type || 'discussion',
-    metadata: post.metadata || {},
-    view_count: post.view_count || 0
-  };
-
-  try {
-    const { data: userData, error } = await getUserById(post.user_id);
-    
-    if (error || !userData) {
-      console.warn(`Could not fetch user data for post ${post._id}:`, error);
-      return {
-        ...basePost,
-        author: defaultAuthor
-      };
-    }
-
-    let avatarUrl = tempImage;
-    if (userData.profile?.avatar_config) {
-      const { style, seed, options } = userData.profile.avatar_config;
-      const svg = generateAvatarSvg(style, seed, options);
-      avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-    }
-
-    const firstName = userData.profile?.first_name || '';
-    const lastName = userData.profile?.last_name || '';
-
-    return {
-      ...basePost,
-      author: {
-        name: userData.profile ? `${firstName} ${lastName}` : userData.username || 'Anonymous',
-        image: avatarUrl,
-        username: userData.username || 'anonymous',
-        channel: forumName,
-        id: post.user_id
-      }
-    };
-  } catch (error) {
-    console.error('Error transforming post:', error);
-    return {
-      ...basePost,
-      author: defaultAuthor
-    };
-  }
-};
 
 export function ChannelProfile() {
   const { slug } = useParams();
@@ -113,6 +48,7 @@ export function ChannelProfile() {
   const [channelData, setChannelData] = useState(null);
   const [channelPosts, setChannelPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [postsLoading, setPostsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentUser, setCurrentUser] = useState({
@@ -241,13 +177,17 @@ export function ChannelProfile() {
         }
 
         setChannelData(transformedData);
+        setIsJoined(transformedData.viewer.is_member);
+        // Show the channel now; posts fill in below when they arrive.
+        setLoading(false);
 
+        setPostsLoading(true);
         const postsData = await fetchPostsWithUserData(transformedData._id, transformedData.name, 1);
         setChannelPosts(postsData.posts);
+        setCurrentPage(1);
         setTotalPages(Math.ceil(postsData.total / postsData.per_page));
         setHasMore(postsData.page < postsData.total_pages);
-
-        setIsJoined(transformedData.viewer.is_member);
+        setPostsLoading(false);
 
       } catch (err) {
         console.error('Error fetching channel:', err);
@@ -257,6 +197,7 @@ export function ChannelProfile() {
         }
       } finally {
         setLoading(false);
+        setPostsLoading(false);
       }
     };
 
@@ -411,7 +352,9 @@ export function ChannelProfile() {
           <img
             src={channelData.bannerImage}
             alt={`${channelData.name} Banner`}
-            className="w-full h-44 sm:h-64 lg:h-80 object-cover rounded-3xl shadow-lg"
+            fetchpriority="high"
+            decoding="async"
+            className="w-full h-44 sm:h-64 lg:h-80 object-cover rounded-3xl shadow-lg bg-green-100"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent rounded-3xl"></div>
         </motion.div>
@@ -499,6 +442,26 @@ export function ChannelProfile() {
             </Button>
           </div>
           
+          {postsLoading && (
+            <div className="space-y-4" aria-label="Loading posts">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="animate-pulse rounded-2xl border border-gray-100 bg-white p-6">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gray-200" />
+                    <div className="h-4 w-32 rounded bg-gray-200" />
+                  </div>
+                  <div className="mb-2 h-5 w-2/3 rounded bg-gray-200" />
+                  <div className="h-4 w-full rounded bg-gray-100" />
+                </div>
+              ))}
+            </div>
+          )}
+          {!postsLoading && channelPosts.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-green-200 bg-green-50/50 px-6 py-10 text-center">
+              <p className="font-semibold text-gray-800">No posts yet</p>
+              <p className="mt-1 text-sm text-gray-500">Start the conversation with the Post button above.</p>
+            </div>
+          )}
           <AnimatePresence>
             {channelPosts.map((post) => (
               <Post 
