@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { signup, verifyEmailCode } from "../services/authService";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
@@ -25,7 +25,8 @@ function SignUp() {
 
   // State variables for form inputs
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState(Array(6).fill(""));

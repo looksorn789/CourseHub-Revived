@@ -1,9 +1,10 @@
 import React from "react";
 import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
 import { BookOpen, MessageSquare, Users, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import AboutWhiteboard from "../components/landing/AboutWhiteboard";
+import JoinSection from "../components/landing/JoinSection";
 
 export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -61,7 +62,7 @@ export default function LandingPage() {
           </button>
           <button
             className="text-sm font-medium hover:text-green-600 hover:underline underline-offset-4"
-            onClick={() => smoothScrollTo("join-section")}
+            onClick={() => smoothScrollTo("about-section")}
           >
             About
           </button>
@@ -177,41 +178,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-        <section
-          id="join-section"
-          className="w-full py-12 md:py-24 lg:py-32 bg-green-50 dark:bg-green-900"
-        >
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-green-800 dark:text-green-100">
-                  Join CourseHub Today
-                </h2>
-                <p className="mx-auto max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-                  Start collaborating with your classmates and improve your
-                  academic performance.
-                </p>
-              </div>
-              <div className="w-full max-w-sm space-y-2">
-                <form className="flex space-x-2">
-                  <Input
-                    className="max-w-lg flex-1"
-                    placeholder="Enter your email"
-                    type="email"
-                  />
-                  <Link to="/signup">
-                    <Button
-                      type="submit"
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      Sign Up
-                    </Button>
-                  </Link>
-                </form>
-              </div>
-            </div>
-          </div>
-        </section>
+        <AboutWhiteboard />
+        <JoinSection />
       </main>
       <footer className="flex flex-col py-6 w-full shrink-0 items-center justify-center px-4 md:px-6 border-t">
         <p className="text-xs text-gray-500 dark:text-gray-400 text-center">

@@ -27,11 +27,8 @@ function StudentProfile() {
   const [avatar, setAvatar] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [avatarStyle] = useState("adventurer");
-  const [avatarOptions] = useState({
-    backgroundColor: ["b6e3f4", "c0aede", "d1d4f9"],
-    radius: 50,
-  });
+  // The style + seed picked in step 1, saved so the profile shows that exact avatar.
+  const [avatarConfig, setAvatarConfig] = useState(null);
 
   const navigate = useNavigate();
 
@@ -71,8 +68,8 @@ function StudentProfile() {
         awards,
         clubs,
         certifications,
-        avatarStyle,
-        avatarOptions,
+        avatarStyle: avatarConfig?.style,
+        avatarSeed: avatarConfig?.seed,
       };
 
       console.log("Submitting profile data:", profileData);
@@ -106,6 +103,8 @@ function StudentProfile() {
             setBio={setBio}
             avatar={avatar}
             setAvatar={setAvatar}
+            avatarConfig={avatarConfig}
+            setAvatarConfig={setAvatarConfig}
             isSubmitting={isSubmitting}
           />
         );

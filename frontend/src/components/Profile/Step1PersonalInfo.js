@@ -1,21 +1,12 @@
 import React, { useState, useRef } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar";
-import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Label from "../ui/Label";
 import Textarea from "../ui/Textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "../ui/Select";
-import ScrollArea from "../ui/ScrollArea";
 import { cn } from "../../lib/utils";
-import { ImagePlus, User, Check, ChevronDown, Search } from "lucide-react";
-import { generateAvatarSvg, getAvailableStyles } from "../../utils/avatarUtils";
+import { ImagePlus, User } from "lucide-react";
+import AvatarPicker from "./AvatarPicker";
 
 function Step1PersonalInfo({
   firstName,
@@ -26,12 +17,11 @@ function Step1PersonalInfo({
   setBio,
   avatar,
   setAvatar,
+  avatarConfig,
+  setAvatarConfig,
 }) {
   const [customAvatar, setCustomAvatar] = useState(null);
   const fileInputRef = useRef(null);
-  const [selectedStyle, setSelectedStyle] = useState(getAvailableStyles()[0]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [avatarPage, setAvatarPage] = useState(1);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files ? e.target.files[0] : null;
@@ -40,31 +30,17 @@ function Step1PersonalInfo({
       reader.onloadend = () => {
         setCustomAvatar(file);
         setAvatar(reader.result);
+        // Uploaded photos aren't stored yet; fall back to the default avatar.
+        setAvatarConfig?.(null);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleAvatarSelect = (seed) => {
-    const svg = generateAvatarSvg(selectedStyle, seed);
-    const avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-    setAvatar(avatarUrl);
+  const handleAvatarSelect = ({ style, seed, url }) => {
+    setAvatar(url);
     setCustomAvatar(null);
-  };
-
-  const filteredStyles = getAvailableStyles().filter((style) =>
-    style.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  const avatarsToDisplay = Array.from({ length: avatarPage * 15 }, (_, i) => {
-    const seed = `avatar-${i}`;
-    const svg = generateAvatarSvg(selectedStyle, seed);
-    const avatarUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-    return { seed, avatarUrl };
-  });
-
-  const handleLoadMore = () => {
-    setAvatarPage((prevPage) => prevPage + 1);
+    setAvatarConfig?.({ style, seed });
   };
 
   return (
@@ -74,7 +50,7 @@ function Step1PersonalInfo({
           <CardTitle>Profile Picture</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-6">
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
             {/* Avatar Preview and Upload */}
             <div className="flex-shrink-0">
               <div className="relative group">
@@ -113,81 +89,14 @@ function Step1PersonalInfo({
               </div>
             </div>
             {/* Avatar Selection */}
-            <div className="flex-grow">
+            <div className="w-full min-w-0 flex-grow">
               <p className="text-sm text-gray-500 mb-4">
                 Upload a photo or choose an avatar
               </p>
-              <div className="mb-4">
-                <Select onValueChange={setSelectedStyle} value={selectedStyle}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select avatar style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="flex items-center px-3 pb-2">
-                      <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                      <Input
-                        placeholder="Search styles..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-8 w-full"
-                      />
-                    </div>
-                    {filteredStyles.map((style) => (
-                      <SelectItem key={style} value={style}>
-                        {style}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <ScrollArea className="h-48">
-                <div className="grid grid-cols-5 gap-4">
-                  {avatarsToDisplay.map(({ seed, avatarUrl }) => {
-                    const isSelected = avatar === avatarUrl;
-
-                    return (
-                      <button
-                        key={seed}
-                        type="button"
-                        onClick={() => handleAvatarSelect(seed)}
-                        className={cn(
-                          "flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 ease-in-out transform hover:scale-110",
-                          isSelected
-                            ? "ring-2 ring-green-500 ring-offset-2"
-                            : "hover:ring-2 hover:ring-green-300 hover:ring-offset-2",
-                        )}
-                      >
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage
-                            src={avatarUrl}
-                            alt={`${selectedStyle} avatar ${seed}`}
-                          />
-                          <AvatarFallback>AV</AvatarFallback>
-                        </Avatar>
-                        {isSelected && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-50 rounded-full">
-                            <Check className="w-6 h-6 text-white" />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-              <div className="mt-4 flex justify-center">
-                <Button
-                  type="button"
-                  onClick={handleLoadMore}
-                  variant="outline"
-                  className="group relative py-2 px-4 border border-green-400 text-green-600 rounded-full hover:bg-green-50 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 ml-[-30px]"
-                >
-                  <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                    <ChevronDown className="h-5 w-5 text-green-500 group-hover:text-green-400 transition-colors duration-300 ease-in-out" />
-                  </span>
-                  <span className="pl-6">Load More Avatars</span>
-                </Button>
-              </div>
+              <AvatarPicker
+                value={avatarConfig}
+                onSelect={handleAvatarSelect}
+              />
             </div>
           </div>
         </CardContent>

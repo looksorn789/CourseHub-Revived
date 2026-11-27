@@ -229,9 +229,20 @@ class UserModel:
             if not is_valid:
                 return None, f"Validation errors: {', '.join(errors)}"
 
+            # Keep the style/seed the user picked during setup; fall back to
+            # a name-based default only when they didn't pick one.
+            style = profile_data.get("avatarStyle")
+            if not (
+                isinstance(style, str) and re.fullmatch(r"[A-Za-z][A-Za-z-]{0,39}", style)
+            ):
+                style = "adventurer"
+            seed = profile_data.get("avatarSeed")
+            if not (isinstance(seed, str) and seed.strip()):
+                seed = f"{profile_data.get('firstName')}{profile_data.get('lastName')}"
+
             avatar_config = {
-                "style": profile_data.get("avatarStyle", "adventurer"),
-                "seed": f"{profile_data.get('firstName')}{profile_data.get('lastName')}",
+                "style": style,
+                "seed": seed.strip()[:100],
                 "options": profile_data.get("avatarOptions", {}),
             }
 

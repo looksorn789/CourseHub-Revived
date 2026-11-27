@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { searchUsers } from '../../services/profileService';
+import { avatarDataUrl } from '../../utils/avatarUtils';
 import {
   sendFriendRequest,
   getPendingRequests,
@@ -61,9 +62,7 @@ export default function Friends() {
         id: user._id,
         name: `${user.profile.first_name} ${user.profile.last_name}`,
         username: user.username,
-        avatar: `https://api.dicebear.com/6.x/${
-          user.profile.avatar_config?.style || 'adventurer'
-        }/svg?seed=${user.profile.avatar_config?.seed || user.username}`,
+        avatar: avatarDataUrl(user.profile.avatar_config, user.username),
         profile: user.profile,
       }));
 
