@@ -8,6 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Dialog, DialogContent, DialogTitle } from "../ui/Dialog";
 import { forumService } from "../../services/forumService";
 import { CHANNEL_CATEGORIES } from "./constants";
+import {
+  ChannelImagePicker,
+  applyChannelImageChanges,
+  emptyImageChange,
+} from "./ChannelImagePicker";
 
 /**
  * Owner-only dialog for editing a channel. The backend enforces the same rule
@@ -21,6 +26,8 @@ export function EditChannelModal({ channel, open, onOpenChange, onSaved }) {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [rules, setRules] = useState("");
+  const [avatar, setAvatar] = useState(emptyImageChange);
+  const [banner, setBanner] = useState(emptyImageChange);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,6 +38,8 @@ export function EditChannelModal({ channel, open, onOpenChange, onSaved }) {
       setDescription(channel.description || "");
       setCategory(channel.category || "");
       setRules((channel.rules || []).join("\n"));
+      setAvatar(emptyImageChange());
+      setBanner(emptyImageChange());
       setError("");
     }
   }, [open, channel]);
@@ -55,25 +64,40 @@ export function EditChannelModal({ channel, open, onOpenChange, onSaved }) {
     const updates = Object.fromEntries(
       Object.entries(next).filter(([k, v]) => v !== original[k]),
     );
-    if (!Object.keys(updates).length) {
+    const imageChanged = Boolean(avatar.file || avatar.removed || banner.file || banner.removed);
+    if (!Object.keys(updates).length && !imageChanged) {
       onOpenChange(false);
       return;
     }
 
     setIsSaving(true);
-    const { data, error: saveError } = await forumService.updateForum(channel._id, updates);
+    let saved = {};
+    if (Object.keys(updates).length) {
+      const { data, error: saveError } = await forumService.updateForum(channel._id, updates);
+      if (saveError || !data) {
+        setIsSaving(false);
+        setError(saveError || "Couldn't save your changes.");
+        return;
+      }
+      saved = data;
+    }
+    const { urls, errors } = imageChanged
+      ? await applyChannelImageChanges(channel._id, { avatar, banner })
+      : { urls: {}, errors: [] };
     setIsSaving(false);
-    if (saveError || !data) {
-      setError(saveError || "Couldn't save your changes.");
+
+    onSaved({ ...saved, ...urls });
+    if (errors.length) {
+      // Text changes (if any) are saved; keep the dialog open for the images.
+      setError(errors.join("\n"));
       return;
     }
-    onSaved(data);
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !isSaving && onOpenChange(o)}>
-      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[520px] bg-white">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[560px] max-h-[90vh] overflow-y-auto bg-white">
         <DialogTitle className="text-2xl font-bold text-green-600">Edit Channel</DialogTitle>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -129,6 +153,25 @@ export function EditChannelModal({ channel, open, onOpenChange, onSaved }) {
               maxLength={1000}
               rows={4}
               placeholder={"Be respectful\nNo sharing exam answers"}
+            />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <ChannelImagePicker
+              kind="avatar"
+              label="Channel icon"
+              currentUrl={channel?.avatar_url}
+              value={avatar}
+              onChange={setAvatar}
+              disabled={isSaving}
+            />
+            <ChannelImagePicker
+              kind="banner"
+              label="Banner"
+              currentUrl={channel?.banner_url}
+              value={banner}
+              onChange={setBanner}
+              disabled={isSaving}
             />
           </div>
 

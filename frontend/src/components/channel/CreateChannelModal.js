@@ -9,6 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Dialog, DialogContent, DialogTitle } from "../ui/Dialog";
 import { forumService } from "../../services/forumService";
 import { CHANNEL_CATEGORIES, CREATION_STEPS } from "./constants";
+import { toast } from "react-toastify";
+import {
+  ChannelImagePicker,
+  applyChannelImageChanges,
+  emptyImageChange,
+} from "./ChannelImagePicker";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -21,7 +27,10 @@ export function CreateChannelModal({ onCreated }) {
   const [channelName, setChannelName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [avatar, setAvatar] = useState(emptyImageChange);
+  const [banner, setBanner] = useState(emptyImageChange);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
   const isLastStep = currentStep === CREATION_STEPS.length - 1;
@@ -31,7 +40,10 @@ export function CreateChannelModal({ onCreated }) {
     setChannelName("");
     setDescription("");
     setCategory("");
+    setAvatar(emptyImageChange());
+    setBanner(emptyImageChange());
     setError("");
+    setStatus("");
   };
 
   const handleOpenChange = (open) => {
@@ -43,16 +55,17 @@ export function CreateChannelModal({ onCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (currentStep === 1 && !category) {
+      setError("Pick a category for your channel.");
+      return;
+    }
     if (!isLastStep) {
       setCurrentStep((s) => s + 1);
       return;
     }
-    if (!category) {
-      setError("Pick a category for your channel.");
-      return;
-    }
 
     setIsSubmitting(true);
+    setStatus("Creating channel…");
     const { data, error: createError } = await forumService.createForum({
       name: channelName.trim(),
       description: description.trim(),
@@ -60,12 +73,21 @@ export function CreateChannelModal({ onCreated }) {
       tags: [category.toLowerCase()],
       visibility: "public",
     });
-    setIsSubmitting(false);
 
     if (createError || !data?.forum) {
+      setIsSubmitting(false);
+      setStatus("");
       setError(createError || "Couldn't create the channel. Please try again.");
       return;
     }
+
+    // Images need the new channel's id, so they go up after it exists.
+    if (avatar.file || banner.file) {
+      setStatus("Uploading images…");
+      const { errors } = await applyChannelImageChanges(data.forum.id, { avatar, banner });
+      errors.forEach((msg) => toast.error(`${msg}. You can try again from Edit Channel.`));
+    }
+    setIsSubmitting(false);
 
     setIsOpen(false);
     reset();
@@ -173,6 +195,28 @@ export function CreateChannelModal({ onCreated }) {
             </div>
           )}
 
+          {currentStep === 2 && (
+            <div className="space-y-5">
+              <ChannelImagePicker
+                kind="avatar"
+                label="Channel icon"
+                value={avatar}
+                onChange={setAvatar}
+                disabled={isSubmitting}
+              />
+              <ChannelImagePicker
+                kind="banner"
+                label="Banner"
+                value={banner}
+                onChange={setBanner}
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-gray-500">
+                Skip this to use the default images. You can change them later.
+              </p>
+            </div>
+          )}
+
           {error && (
             <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
@@ -199,7 +243,7 @@ export function CreateChannelModal({ onCreated }) {
               className="bg-green-600 hover:bg-green-700 text-white ml-auto"
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLastStep ? "Create Channel" : "Next"}
+              {isSubmitting && status ? status : isLastStep ? "Create Channel" : "Next"}
             </Button>
           </div>
         </form>
