@@ -2,6 +2,7 @@ import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from jwt import PyJWKClient
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from supabase import create_client, Client
@@ -21,6 +22,21 @@ logger = logging.getLogger(__name__)
 
 def setup_jwt(app):
     jwt = JWTManager(app)
+
+    # Public keys Supabase signs user tokens with (cached by PyJWKClient).
+    jwks_client = PyJWKClient(
+        f"{app.config['SUPABASE_URL']}/auth/v1/.well-known/jwks.json",
+        cache_keys=True,
+        lifespan=3600,
+    )
+
+    @jwt.decode_key_loader
+    def decode_key_callback(jwt_header, jwt_payload):  # pylint: disable=unused-argument
+        # HS256 must only ever be checked against the shared secret, and
+        # asymmetric tokens only against Supabase's published public keys.
+        if jwt_header.get("alg") == "HS256":
+            return app.config["JWT_SECRET_KEY"]
+        return jwks_client.get_signing_key(jwt_header.get("kid")).key
 
     @jwt.expired_token_loader
     def expired_token_callback(
