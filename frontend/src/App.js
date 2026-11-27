@@ -16,6 +16,7 @@ import Explore from "./pages/Explore";
 import Settings from "./pages/Settings";
 import ChannelPage from "./pages/ChannelPage";
 import FriendsPage from "./pages/FriendsPage";
+import TagPage from "./pages/TagPage";
 
 function App() {
   return (
@@ -76,6 +77,14 @@ function App() {
           element={
             <PrivateRoute>
               <FriendsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/tags/:tag"
+          element={
+            <PrivateRoute>
+              <TagPage />
             </PrivateRoute>
           }
         />

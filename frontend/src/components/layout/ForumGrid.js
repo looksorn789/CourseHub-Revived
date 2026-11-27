@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Check, Crown, Loader2, Plus, Users } from "lucide-react";
 import { forumService } from "../../services/forumService";
+import TagLink from "../posts/TagLink";
 import {
   DEFAULT_CHANNEL_BANNER,
   DEFAULT_CHANNEL_ICON,
@@ -129,9 +130,11 @@ function ForumGrid() {
             {forum.tags?.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {forum.tags.map((tag) => (
-                  <span key={tag} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                    #{tag}
-                  </span>
+                  <TagLink
+                    key={tag}
+                    tag={tag}
+                    className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                  />
                 ))}
               </div>
             )}

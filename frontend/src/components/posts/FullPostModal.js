@@ -17,6 +17,7 @@ import CommentService from "../../services/commentService";
 import { Comment } from "../comments/Comment";
 import { PostImageGrid } from "./PostImages";
 import { channelPathFor } from "../../utils/postTransform";
+import TagLink from "./TagLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import TextareaAutosize from "react-textarea-autosize";
@@ -330,12 +331,12 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                 {post.tags?.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {post.tags.map((tag, index) => (
-                      <span
+                      <TagLink
                         key={`${tag}-${index}`}
+                        tag={tag}
+                        onNavigate={onClose}
                         className="px-3 py-1 bg-gradient-to-r from-green-50 to-green-100 text-green-700 text-sm font-medium rounded-full"
-                      >
-                        {tag}
-                      </span>
+                      />
                     ))}
                   </div>
                 )}

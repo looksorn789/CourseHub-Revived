@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from '../ui/Card';
-import Badge from '../ui/Badge';
+import TagLink from "../posts/TagLink";
 import { Users } from 'lucide-react';
 
 export function ChannelSidebar({ channelData }) {
@@ -35,13 +35,11 @@ export function ChannelSidebar({ channelData }) {
           {Array.isArray(tags) && tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {tags.map((tag, index) => (
-                <Badge 
-                  key={index} 
-                  variant="secondary" 
+                <TagLink
+                  key={index}
+                  tag={tag}
                   className="bg-green-100 text-green-800 hover:bg-green-200 transition-colors duration-200 px-3 py-1 rounded-full text-sm"
-                >
-                  {tag}
-                </Badge>
+                />
               ))}
             </div>
           )}

@@ -1,24 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Hash, Loader2, Pin, TrendingUp, X } from "lucide-react";
+import { Loader2, Pin, TrendingUp, X } from "lucide-react";
 import { forumService, FORUMS_CHANGED_EVENT } from "../../services/forumService";
 import Button from "../ui/Button";
 import { Card } from "../ui/Card";
-import Badge from "../ui/Badge";
+import PostService from "../../services/postService";
+import TagLink from "../posts/TagLink";
 
-const popularTags = [
-  "react",
-  "javascript",
-  "python",
-  "machinelearning",
-  "webdev",
-  "css",
-  "html",
-  "nodejs",
-  "design",
-  "programming",
-];
 
 function ChannelIcon({ channel, className = "h-9 w-9" }) {
   return channel.avatar_url ? (
@@ -35,6 +24,11 @@ function RightSidebar() {
   const [suggested, setSuggested] = useState(null);
   const [pinned, setPinned] = useState(null);
   const [joining, setJoining] = useState(null);
+  const [tags, setTags] = useState(null);
+
+  useEffect(() => {
+    PostService.getPopularTags(12).then(setTags).catch(() => setTags([]));
+  }, []);
 
   // Real data; refreshes when the user joins/leaves/pins/creates a channel.
   useEffect(() => {
@@ -170,16 +164,22 @@ function RightSidebar() {
         </div>
         <div className="p-4 pt-0">
           <div className="flex flex-wrap gap-2">
-            {popularTags.map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="bg-white hover:bg-gray-100 text-gray-800 hover:text-gray-900 transition-colors duration-200 cursor-pointer"
-              >
-                <Hash className="w-3 h-3 mr-1" />
-                {tag}
-              </Badge>
-            ))}
+            {tags === null ? (
+              <span className="h-6 w-full animate-pulse rounded bg-white/70" />
+            ) : tags.length === 0 ? (
+              <p className="text-sm text-gray-500">Tags from posts will show up here.</p>
+            ) : (
+              tags.map(({ tag, count }) => (
+                <TagLink
+                  key={tag}
+                  tag={tag}
+                  className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-gray-800 shadow-sm"
+                >
+                  {tag}
+                  <span className="ml-1 font-normal text-gray-400">{count}</span>
+                </TagLink>
+              ))
+            )}
           </div>
         </div>
       </Card>
