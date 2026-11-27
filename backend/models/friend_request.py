@@ -81,17 +81,23 @@ class FriendRequest:
             current_app.logger.error(f"Error getting pending requests: {str(e)}")
             return []
 
-    def respond_to_request(self, request_id: str, response: bool) -> Tuple[bool, Optional[str]]:
-        """Accept or decline a friend request"""
+    def respond_to_request(
+        self, request_id: str, response: bool, receiver_id: str
+    ) -> Tuple[bool, Optional[str]]:
+        """Accept or decline a pending friend request sent *to* receiver_id."""
         try:
-            request = self.collection.find_one({"_id": ObjectId(request_id)})
-            if not request:
+            match = {
+                "_id": ObjectId(request_id),
+                "receiver_id": ObjectId(receiver_id),
+                "status": RequestStatus.PENDING.value,
+            }
+            if not self.collection.find_one(match, {"_id": 1}):
                 return False, "Request not found"
 
             new_status = RequestStatus.ACCEPTED.value if response else RequestStatus.DECLINED.value
 
             result = self.collection.update_one(
-                {"_id": ObjectId(request_id)},
+                match,
                 {
                     "$set": {
                         "status": new_status,

@@ -28,6 +28,11 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
   const navigate = useNavigate();
   const location = useLocation();
   // Channel name -> the channel (just close if we're already there).
+  const openAuthor = () => {
+    if (!post.author.username || post.author.username === "anonymous") return;
+    onClose();
+    navigate(`/profile/${post.author.username}`);
+  };
   const openChannel = () => {
     const path = channelPathFor(post);
     onClose();
@@ -278,7 +283,7 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
         <div className="flex-shrink-0 sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 py-4 px-6">
           <div className="flex justify-between items-center max-w-3xl mx-auto">
             <div className="flex items-center gap-4">
-              <div className="relative">
+              <button type="button" onClick={openAuthor} aria-label={`${post.author.name}'s profile`} className="relative rounded-full">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 rounded-full blur-sm opacity-50" />
                 <Avatar className="h-12 w-12 border-2 border-white relative">
                   <AvatarImage src={post.author.image} />
@@ -286,11 +291,15 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                     {post.author.name[0]}
                   </AvatarFallback>
                 </Avatar>
-              </div>
+              </button>
               <div>
-                <p className="font-semibold text-gray-900">
+                <button
+                  type="button"
+                  onClick={openAuthor}
+                  className="block text-left font-semibold text-gray-900 hover:text-green-700 hover:underline underline-offset-2"
+                >
                   {post.author.name}
-                </p>
+                </button>
                 <div className="flex items-center text-sm text-gray-500 mt-0.5">
                   <Hash className="h-4 w-4 mr-1 text-green-500" />
                   <button

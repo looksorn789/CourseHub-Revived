@@ -131,3 +131,14 @@ export const unfriendUser = async (userId) => {
     };
   }
 };
+
+// Your relationship with a user (self | friends | sent | received | none)
+// and their friend count.
+export const getFriendshipStatus = async (userId) => {
+  try {
+    const response = await api.get(`/api/friend-request/status/${userId}`);
+    return { data: response.data, error: null };
+  } catch (error) {
+    return { data: null, error: error.response?.data?.error || error.message };
+  }
+};

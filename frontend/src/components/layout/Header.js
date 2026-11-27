@@ -180,7 +180,9 @@ function Header() {
                   variant="outline"
                   size="sm"
                   className="w-full mt-2"
-                  >
+                  disabled={!user.username}
+                  onClick={() => navigate(`/profile/${user.username}`)}
+                >
                   View Profile
                 </Button>
                 <DropdownMenuSeparator />
@@ -228,7 +230,17 @@ function Header() {
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
                 <div className="border-b border-gray-100 px-4 pb-4 pt-6">
-                  <ProfileContent inMenu={true} />
+                  <button
+                    type="button"
+                    className="w-full rounded-lg text-left hover:bg-gray-50"
+                    disabled={!user.username}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate(`/profile/${user.username}`);
+                    }}
+                  >
+                    <ProfileContent inMenu={true} />
+                  </button>
                   <SearchBar onNavigate={() => setIsMenuOpen(false)} />
                 </div>
                 <Sidebar

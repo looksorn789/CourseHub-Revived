@@ -1,6 +1,8 @@
+from bson.errors import InvalidId
+from bson import ObjectId
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.friend_request import FriendRequest
+from models.friend_request import FriendRequest, RequestStatus
 from models.user import UserModel
 from utils.helpers import get_user_id
 
@@ -84,7 +86,7 @@ def respond_to_request():
             return jsonify({"error": "Request ID and response are required"}), 400
 
         friend_request = FriendRequest(current_app.db, current_app.supabase)
-        _, error = friend_request.respond_to_request(request_id, accept)
+        _, error = friend_request.respond_to_request(request_id, accept, user_id)
 
         if error:
             return jsonify({"error": error}), 400
@@ -151,5 +153,45 @@ def cancel_request():
 
         return jsonify({"message": "Friend request cancelled successfully"})
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@friend_request_bp.route("/status/<user_id>", methods=["GET"])
+@jwt_required()
+def friendship_status(user_id):
+    """Your relationship with another user, for profile buttons:
+    self | friends | sent | received | none, plus their friend count."""
+    try:
+        me = get_user_id(get_jwt_identity())
+        if not me:
+            return jsonify({"error": "User not found"}), 404
+        try:
+            other = ObjectId(user_id)
+        except InvalidId:
+            return jsonify({"error": "User not found"}), 404
+        me_oid = ObjectId(me)
+
+        status, request_id = ("self", None) if other == me_oid else ("none", None)
+        friend_count = 0
+        # One query: every accepted/pending request involving that user.
+        for req in current_app.db["friend_requests"].find(
+            {
+                "$or": [{"sender_id": other}, {"receiver_id": other}],
+                "status": {"$in": [RequestStatus.ACCEPTED.value, RequestStatus.PENDING.value]},
+            },
+            {"sender_id": 1, "receiver_id": 1, "status": 1},
+        ):
+            if req["status"] == RequestStatus.ACCEPTED.value:
+                friend_count += 1
+            if status == "self" or me_oid not in (req["sender_id"], req["receiver_id"]):
+                continue
+            if req["status"] == RequestStatus.ACCEPTED.value:
+                status, request_id = "friends", str(req["_id"])
+            elif status != "friends":
+                status = "sent" if req["sender_id"] == me_oid else "received"
+                request_id = str(req["_id"])
+
+        return jsonify({"status": status, "request_id": request_id, "friend_count": friend_count})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
