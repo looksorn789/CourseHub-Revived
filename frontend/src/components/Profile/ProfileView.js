@@ -1,206 +1,226 @@
-import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useCallback, useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { Award, BadgeCheck, Calendar as CalendarIcon, GraduationCap, MessageSquare, Pencil, School, Sparkles, Users } from "lucide-react";
 import { getUserByUsername } from "../../services/profileService";
+import { getFriendshipStatus } from "../../services/friendsService";
+import PostService from "../../services/postService";
 import { avatarDataUrl } from "../../utils/avatarUtils";
 import { openChatWith } from "../../services/chatService";
-import Button from "../ui/Button"
-import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar"
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card"
-import ScrollArea from "../ui/ScrollArea"
-import Badge from "../ui/Badge"
-import { Separator } from "../ui/Separator"
-import ProfileSkeleton from "./ProfileSkeleton"
-import { School, GraduationCap, Award, MessageSquare, UserPlus, Users, Calendar as CalendarIcon } from "lucide-react"
+import PostStream, { PER_PAGE } from "../posts/PostStream";
+import FriendButton from "./FriendButton";
+import ProfileSkeleton from "./ProfileSkeleton";
 
+function Pill({ icon: Icon, children }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800">
+      <Icon className="h-3.5 w-3.5" />
+      {children}
+    </span>
+  );
+}
+
+function SideCard({ title, children }) {
+  return (
+    <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <h2 className="mb-3 font-semibold text-gray-900">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Chips({ items, icon: Icon }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((item) => (
+        <span
+          key={item}
+          className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800"
+        >
+          {Icon && <Icon className="h-3.5 w-3.5" />}
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+const asList = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
+
+/** /profile/:username - anyone's profile, including your own. */
 export default function ProfileView() {
-  const { username } = useParams() 
-  const [userData, setUserData] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  // Temporary data for posts and connections
-  const [followers] = useState(245)
-  const [following] = useState(178)
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [posts] = useState([
-    { id: "1", content: "Just finished my machine learning project! 🎉 #AI #MachineLearning", likes: 42, comments: 7, date: "2023-11-25T14:30:00Z" },
-    { id: "2", content: "Excited to attend the tech conference next week! Anyone else going? #TechConf2023", likes: 31, comments: 5, date: "2023-11-22T09:15:00Z" },
-    { id: "3", content: "Study group for Advanced Algorithms tonight at the library. Join us! 📚 #CS #StudyGroup", likes: 18, comments: 3, date: "2023-11-20T18:45:00Z" },
-  ])
+  const { username } = useParams();
+  const [userData, setUserData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [friendship, setFriendship] = useState(null); // { status, request_id, friend_count }
+  const [postCount, setPostCount] = useState(null);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      setIsLoading(true)
-      const { data, error } = await getUserByUsername(username)
-      if (data) {
-        setUserData(data)
-      } else {
-        setError(error)
-      }
-      setIsLoading(false)
-    }
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    setFriendship(null);
+    getUserByUsername(username).then(({ data, error: err }) => {
+      if (cancelled) return;
+      if (data) setUserData(data);
+      else setError(err || "User not found");
+      setIsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [username]);
 
-    if (username) {
-      fetchUserData()
-    }
-  }, [username])
+  const userId = userData?._id;
+  const loadFriendship = useCallback(async () => {
+    if (!userId) return;
+    const { data } = await getFriendshipStatus(userId);
+    if (data) setFriendship(data);
+  }, [userId]);
+  useEffect(() => {
+    loadFriendship();
+  }, [loadFriendship]);
 
-  const handleFollow = () => {
-    setIsFollowing(!isFollowing)
-  }
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-  }
-
-  const getGraduationYear = (dateString) => {
-    if (!dateString) return null;
-    return new Date(dateString).getFullYear();
-  };
+  const loadPosts = useCallback(
+    async (page) => (await PostService.getUserPosts(userId, page, PER_PAGE)).data,
+    [userId],
+  );
 
   if (isLoading) return <ProfileSkeleton />;
-  if (error) return <div>Error: {error}</div>;
-  if (!userData) return <div>No user data found</div>;
+  if (error || !userData) {
+    return (
+      <div className="px-4 py-24 text-center">
+        <p className="text-lg font-semibold text-gray-800">This profile doesn't exist</p>
+        <p className="mt-1 text-sm text-gray-500">@{username} may have changed their username.</p>
+      </div>
+    );
+  }
+
+  const p = userData.profile || {};
+  const name = `${p.first_name || ""} ${p.last_name || ""}`.trim() || userData.username;
+  const isSelf = friendship?.status === "self";
+  const gradYear = p.graduation_date ? new Date(p.graduation_date).getFullYear() : null;
+  const interests = asList(p.interests);
+  const awards = asList(p.awards);
+  const clubs = asList(p.clubs);
+  const certifications = asList(p.certifications);
 
   return (
-    <div className="min-h-screen to-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        <Card className="mb-8">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
-              <Avatar className="w-32 h-32 border-4 border-green-500">
-                <AvatarImage 
-                  src={avatarDataUrl(userData.profile.avatar_config, userData.username)} 
-                  alt={`${userData.profile.first_name} ${userData.profile.last_name}`} 
-                />
-                <AvatarFallback>{userData.profile.first_name[0]}{userData.profile.last_name[0]}</AvatarFallback>
-              </Avatar>
-              <div className="flex-grow text-center md:text-left">
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {userData.profile.first_name} {userData.profile.last_name}
-                </h1>
-                <p className="text-xl text-gray-600 mb-2">@{userData.username}</p>
-                <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    <School className="w-4 h-4 mr-1" />
-                    {userData.profile.school}
-                  </Badge>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    <GraduationCap className="w-4 h-4 mr-1" />
-                    {userData.profile.major}
-                  </Badge>
-                  {userData.profile.graduation_date && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      <CalendarIcon className="w-4 h-4 mr-1" />
-                      Class of {getGraduationYear(userData.profile.graduation_date)}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-gray-600 mb-4">{userData.profile.bio}</p>
-                <div className="flex justify-center md:justify-start space-x-4">
-                  <Button onClick={handleFollow} className={isFollowing ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-green-600 text-white hover:bg-green-700"}>
-                    {isFollowing ? (
-                      <>
-                        <Users className="mr-2 h-4 w-4" />
-                        Following
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
-                  <Button onClick={() => openChatWith(userData._id)} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Message
-                  </Button>
-                </div>
+    <div className="px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-6xl space-y-6">
+        {/* Header */}
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="flex flex-col items-center gap-6 text-center md:flex-row md:items-start md:text-left">
+            <img
+              src={avatarDataUrl(p.avatar_config, userData.username)}
+              alt={name}
+              className="h-28 w-28 shrink-0 rounded-full border-4 border-green-500 bg-white sm:h-32 sm:w-32"
+            />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{name}</h1>
+              <p className="text-gray-500">@{userData.username}</p>
+              <div className="mt-3 flex flex-wrap justify-center gap-2 md:justify-start">
+                {p.school && <Pill icon={School}>{p.school}</Pill>}
+                {p.major && <Pill icon={GraduationCap}>{p.major}</Pill>}
+                {gradYear && <Pill icon={CalendarIcon}>Class of {gradYear}</Pill>}
+              </div>
+              {p.bio && <p className="mt-4 whitespace-pre-line text-gray-700">{p.bio}</p>}
+              <div className="mt-5 flex flex-wrap justify-center gap-2 md:justify-start">
+                {friendship === null ? (
+                  <span className="h-9 w-32 animate-pulse rounded-md bg-gray-100" />
+                ) : isSelf ? (
+                  <Link
+                    to="/settings"
+                    className="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit
+                  </Link>
+                ) : (
+                  <>
+                    <FriendButton
+                      userId={userData._id}
+                      name={p.first_name || userData.username}
+                      status={friendship.status}
+                      requestId={friendship.request_id}
+                      onChanged={loadFriendship}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openChatWith(userData._id)}
+                      className="inline-flex items-center rounded-md border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Message
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Posts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px] w-full pr-4">
-                {posts.map((post) => (
-                  <div key={post.id} className="mb-6 last:mb-0">
-                    <p className="text-gray-800 mb-2">{post.content}</p>
-                    <div className="flex justify-between items-center text-sm text-gray-500">
-                      <span>{formatDate(post.date)}</span>
-                      <div className="flex space-x-4">
-                        <span>{post.likes} likes</span>
-                        <span>{post.comments} comments</span>
-                      </div>
-                    </div>
-                    <Separator className="mt-4" />
-                  </div>
-                ))}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Interests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {userData.profile.interests.map((interest, index) => (
-                    <Badge key={index} variant="secondary" className="bg-green-100 text-green-800">
-                      {interest}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {userData.profile.awards && userData.profile.awards.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Awards</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {userData.profile.awards.map((award, index) => (
-                      <Badge key={index} variant="secondary" className="bg-green-100 text-green-800">
-                        <Award className="w-4 h-4 mr-1" />
-                        {award}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Connections</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between text-center">
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{followers}</p>
-                    <p className="text-sm text-gray-600">Followers</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{following}</p>
-                    <p className="text-sm text-gray-600">Following</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Posts */}
+          <section className="min-w-0 rounded-2xl border border-gray-100 bg-white shadow-sm lg:col-span-2">
+            <h2 className="px-6 pt-5 font-semibold text-gray-900">
+              Posts{postCount !== null ? ` (${postCount})` : ""}
+            </h2>
+            {userId && (
+              <PostStream
+                key={userId}
+                loadPage={loadPosts}
+                onTotal={setPostCount}
+                empty={
+                  <p className="py-8 text-center text-sm text-gray-500">
+                    {isSelf ? "You haven't posted yet." : `${p.first_name || userData.username} hasn't posted yet.`}
+                  </p>
+                }
+              />
+            )}
+          </section>
+
+          {/* About */}
+          <aside className="space-y-6">
+            {interests.length > 0 && (
+              <SideCard title="Interests">
+                <Chips items={interests} />
+              </SideCard>
+            )}
+            {awards.length > 0 && (
+              <SideCard title="Awards">
+                <Chips items={awards} icon={Award} />
+              </SideCard>
+            )}
+            {clubs.length > 0 && (
+              <SideCard title="Clubs">
+                <Chips items={clubs} icon={Users} />
+              </SideCard>
+            )}
+            {certifications.length > 0 && (
+              <SideCard title="Certifications">
+                <Chips items={certifications} icon={BadgeCheck} />
+              </SideCard>
+            )}
+            <SideCard title="Connections">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold text-gray-900">{friendship?.friend_count ?? "–"}</span>
+                <span className="text-sm text-gray-500">
+                  {friendship?.friend_count === 1 ? "Friend" : "Friends"}
+                </span>
+              </div>
+            </SideCard>
+            {!interests.length && !awards.length && !clubs.length && !certifications.length && (
+              <SideCard title="About">
+                <p className="flex items-center gap-2 text-sm text-gray-500">
+                  <Sparkles className="h-4 w-4" />
+                  {isSelf ? "Add interests and awards from Edit." : "Nothing here yet."}
+                </p>
+              </SideCard>
+            )}
+          </aside>
         </div>
       </div>
-
     </div>
-  )
+  );
 }

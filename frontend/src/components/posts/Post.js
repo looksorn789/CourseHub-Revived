@@ -103,6 +103,14 @@ export function Post({
     }
   };
 
+  // Author avatar/name -> their profile.
+  const openAuthor = (e) => {
+    e.stopPropagation();
+    if (post.author.username && post.author.username !== "anonymous") {
+      navigate(`/profile/${post.author.username}`);
+    }
+  };
+
   const handleChannelClick = (e) => {
     e.stopPropagation();
     const path = channelPathFor(post);
@@ -133,16 +141,27 @@ export function Post({
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <div className="flex items-center space-x-4">
-            <div className="p-0.5 rounded-full bg-gradient-to-r from-green-400 to-green-600">
-              <Avatar className="h-10 w-10 border-2 border-white">
-                <AvatarImage src={post.author.image} alt={post.author.name} />
-                <AvatarFallback>{post.author.name[0]}</AvatarFallback>
-              </Avatar>
-            </div>
+            <button
+              type="button"
+              onClick={openAuthor}
+              aria-label={`${post.author.name}'s profile`}
+              className="shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+            >
+              <div className="p-0.5 rounded-full bg-gradient-to-r from-green-400 to-green-600">
+                <Avatar className="h-10 w-10 border-2 border-white">
+                  <AvatarImage src={post.author.image} alt={post.author.name} />
+                  <AvatarFallback>{post.author.name[0]}</AvatarFallback>
+                </Avatar>
+              </div>
+            </button>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">
+              <button
+                type="button"
+                onClick={openAuthor}
+                className="block text-left text-sm font-semibold text-gray-900 hover:text-green-700 hover:underline underline-offset-2"
+              >
                 {post.author.name}
-              </p>
+              </button>
               <div className="flex flex-wrap items-center text-xs text-gray-500">
                 {showChannelHash && <Hash className="h-3 w-3 mr-1" />}
                 <button

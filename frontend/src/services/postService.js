@@ -69,6 +69,12 @@ class PostService {
     return response.data;
   }
 
+  // A user's posts (for their profile), newest first.
+  static async getUserPosts(userId, page = 1, perPage = 20) {
+    const response = await api.get(`/api/posts/user/${userId}`, { params: { page, per_page: perPage } });
+    return response.data;
+  }
+
   static async getPopularTags(limit = 12) {
     const response = await api.get('/api/posts/tags/popular', { params: { limit } });
     return response.data.data.tags || [];
