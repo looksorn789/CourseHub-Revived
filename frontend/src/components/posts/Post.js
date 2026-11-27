@@ -28,6 +28,7 @@ import {
 import { PostImageGrid } from "./PostImages";
 import { channelPathFor } from "../../utils/postTransform";
 import TagLink from "./TagLink";
+import ShareModal from "./ShareModal";
 import { PostModal } from "./PostModal";
 import { DeletePostConfirmation } from "./DeletePostConfirmation";
 import { ReactionPicker } from "./ReactionPicker";
@@ -46,6 +47,7 @@ export function Post({
   const [isSaved, setIsSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [postReactions, setPostReactions] = useState(post.reactions || {});
   const [currentReaction, setCurrentReaction] = useState(null);
   const isAuthor = currentUserId === post.author.id;
@@ -293,7 +295,11 @@ export function Post({
               variant="ghost"
               size="sm"
               className="text-gray-600 hover:text-green-600 transition-colors duration-200"
-              onClick={(e) => e.stopPropagation()}
+              aria-label="Share post"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShareOpen(true);
+              }}
             >
               <Share2 className="h-4 w-4" />
             </Button>
@@ -311,6 +317,8 @@ export function Post({
           </div>
         </CardFooter>
       </Card>
+      {/* Outside the Card so clicks in the dialog don't open the post. */}
+      <ShareModal post={post} open={shareOpen} onOpenChange={setShareOpen} />
       <PostModal
         isOpen={isEditMode}
         onClose={() => setIsEditMode(false)}

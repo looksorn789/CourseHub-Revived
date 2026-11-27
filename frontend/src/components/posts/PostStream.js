@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -43,6 +44,9 @@ export default function PostStream({ loadPage: fetchPage, empty = null, header =
   const [error, setError] = useState("");
   const [currentUserId, setCurrentUserId] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
+  // ?post=<id> (shared links) opens that post once the list has loaded.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedPostId = searchParams.get("post");
 
   const loadPage = useCallback(async (pageNumber) => {
     const data = (await fetchPage(pageNumber)) || {};
@@ -69,6 +73,32 @@ export default function PostStream({ loadPage: fetchPage, empty = null, header =
       cancelled = true;
     };
   }, [loadPage]);
+
+  useEffect(() => {
+    if (!linkedPostId || loading) return undefined;
+    let cancelled = false;
+    (async () => {
+      let post = posts.find((p) => p.id === linkedPostId);
+      if (!post) {
+        try {
+          const res = await PostService.getPost(linkedPostId);
+          if (res?.data) post = await transformPost(res.data);
+        } catch {
+          toast.error("That post is no longer available.");
+        }
+      }
+      if (cancelled) return;
+      if (post) setSelectedPost(post);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("post");
+        return next;
+      }, { replace: true });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [linkedPostId, loading, posts, setSearchParams]);
 
   const loadMore = async () => {
     setLoadingMore(true);

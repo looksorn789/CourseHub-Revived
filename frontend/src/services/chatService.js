@@ -47,8 +47,13 @@ const ChatService = {
   getConversation: (id) => unwrap(api.get(`/api/messages/conversations/${id}`)),
   listMessages: (id, before) =>
     unwrap(api.get(`/api/messages/conversations/${id}/messages`, { params: { before, limit: 30 } })),
-  sendMessage: (id, content) =>
-    unwrap(api.post(`/api/messages/conversations/${id}/messages`, { content })),
+  sendMessage: (id, content, sharedPostId = null) =>
+    unwrap(
+      api.post(`/api/messages/conversations/${id}/messages`, {
+        content,
+        ...(sharedPostId ? { shared_post_id: sharedPostId } : {}),
+      }),
+    ),
   markRead: (id) => unwrap(api.post(`/api/messages/conversations/${id}/read`)),
   deleteMessage: (messageId) => unwrap(api.delete(`/api/messages/messages/${messageId}`)),
 };

@@ -15,6 +15,8 @@ export function ChatProvider({ children }) {
   const [signedIn, setSignedIn] = useState(() => Boolean(localStorage.getItem("jwt_token")));
   const [conversations, setConversations] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  // What the small panel should open next:
+  // { userId?, conversation?, draft?: { text, post } }
   const [startWith, setStartWith] = useState(null);
 
   // Sign-in/out happens on route changes (sign in -> /home, sign out -> /signin).
@@ -49,9 +51,10 @@ export function ChatProvider({ children }) {
     };
   }, [signedIn, refresh]);
 
-  const openPanel = useCallback((userId = null) => {
+  // openPanel(userId) or openPanel({ userId | conversation, draft })
+  const openPanel = useCallback((target = null) => {
     setPanelOpen(true);
-    if (userId) setStartWith(userId);
+    if (target) setStartWith(typeof target === "string" ? { userId: target } : target);
   }, []);
   const closePanel = useCallback(() => setPanelOpen(false), []);
   const togglePanel = useCallback(() => setPanelOpen((open) => !open), []);
