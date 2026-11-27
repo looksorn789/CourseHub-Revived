@@ -413,6 +413,45 @@ def posts_by_tag(tag):
         return jsonify({"success": False, "error": "Error loading tagged posts"}), 500
 
 
+@post_bp.route("/user/<user_id>", methods=["GET"])
+@jwt_required()
+def posts_by_user(user_id):
+    """A user's posts (that the viewer may see), newest first, for profiles."""
+    try:
+        page = max(int(request.args.get("page", 1)), 1)
+        per_page = min(max(int(request.args.get("per_page", 20)), 1), 50)
+        viewer_id = get_user_id(get_jwt_identity())
+        if not viewer_id:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        posts, total = Post(current_app.db, current_app.supabase).list_posts_with_authors(
+            {
+                "user_id": ObjectId(user_id),
+                "forum_id": {"$nin": hidden_forum_ids(current_app.db, viewer_id)},
+            },
+            page=page,
+            per_page=per_page,
+            sort_field="created_at",
+            include_forum=True,
+        )
+        return jsonify({
+            "success": True,
+            "data": {
+                "posts": serialize_mongo_doc(posts),
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": (total + per_page - 1) // per_page,
+            },
+        })
+    except InvalidId:
+        return jsonify({"success": False, "error": "User not found"}), 404
+    except ValueError:
+        return jsonify({"success": False, "error": "Invalid pagination parameters"}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error listing user posts: {str(e)}")
+        return jsonify({"success": False, "error": "Error loading posts"}), 500
+
+
 @post_bp.route("/tags/popular", methods=["GET"])
 @jwt_required()
 def popular_tags():
