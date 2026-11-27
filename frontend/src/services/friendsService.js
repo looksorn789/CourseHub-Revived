@@ -1,9 +1,20 @@
 import api from './api';
 import { avatarDataUrl } from '../utils/avatarUtils';
 
+// Fired when requests are sent/answered/cancelled so badges refresh.
+export const FRIEND_REQUESTS_CHANGED_EVENT = 'coursehub:friend-requests-changed';
+const requestsChanged = () => window.dispatchEvent(new Event(FRIEND_REQUESTS_CHANGED_EVENT));
+
+/** Number of friend requests waiting for you to answer. */
+export const getPendingRequestCount = async () => {
+  const response = await api.get('/api/friend-request/pending/count');
+  return response.data.count || 0;
+};
+
 export const sendFriendRequest = async (receiverId) => {
   try {
     const response = await api.post('/api/friend-request/send', { receiver_id: receiverId });
+    requestsChanged();
     return { success: true, data: response.data };
   } catch (error) {
     return {
@@ -65,6 +76,7 @@ export const acceptFriendRequest = async (requestId) => {
       request_id: requestId,
       accept: true,
     });
+    requestsChanged();
     return { success: true, data: response.data };
   } catch (error) {
     return {
@@ -80,6 +92,7 @@ export const declineFriendRequest = async (requestId) => {
       request_id: requestId,
       accept: false,
     });
+    requestsChanged();
     return { success: true, data: response.data };
   } catch (error) {
     return {
@@ -92,6 +105,7 @@ export const declineFriendRequest = async (requestId) => {
 export const cancelFriendRequest = async (requestId) => {
   try {
     const response = await api.post('/api/friend-request/cancel', { request_id: requestId });
+    requestsChanged();
     return { success: true, data: response.data };
   } catch (error) {
     return {

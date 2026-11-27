@@ -23,6 +23,7 @@ import { Separator } from "../ui/Separator";
 import { CreateChannelModal } from "../channel/CreateChannelModal";
 import { forumService, FORUMS_CHANGED_EVENT } from "../../services/forumService";
 import { fetchCached, getCached, orThrow } from "../../utils/queryCache";
+import PendingRequestsBadge, { usePendingFriendRequests } from "../Friends/PendingRequestsBadge";
 
 const navItems = [
   { name: "Home", icon: Home, path: "/home" },
@@ -39,6 +40,7 @@ function Sidebar({ onNavigate, className }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isChannelsOpen, setIsChannelsOpen] = useState(true);
+  const pendingRequests = usePendingFriendRequests();
   // Start from the cache (instant), then refresh.
   const [myChannels, setMyChannels] = useState(() => getCached("forums:mine") || []);
   const [isLoadingChannels, setIsLoadingChannels] = useState(() => getCached("forums:mine") === undefined);
@@ -94,6 +96,7 @@ function Sidebar({ onNavigate, className }) {
               >
                 <item.icon className="mr-2 h-4 w-4" />
                 {item.name}
+                {item.path === "/friends" && <PendingRequestsBadge count={pendingRequests} className="ml-auto" />}
               </Button>
             </li>
           ))}

@@ -33,6 +33,8 @@ class FriendRequest:
 
             for index in indexes:
                 self.collection.create_index([index])
+            # Pending-request counts (the red badge on Friends).
+            self.collection.create_index([("receiver_id", 1), ("status", 1)])
 
         except Exception as e:
             current_app.logger.error(f"Error setting up indexes: {str(e)}")
@@ -67,6 +69,13 @@ class FriendRequest:
 
         except Exception as e:
             return False, str(e), None
+
+    def count_pending_requests(self, user_id: str) -> int:
+        """How many friend requests are waiting for this user to answer."""
+        return self.collection.count_documents({
+            "receiver_id": ObjectId(user_id),
+            "status": RequestStatus.PENDING.value,
+        })
 
     def get_pending_requests(self, user_id: str) -> list:
         """Get pending friend requests for a user"""

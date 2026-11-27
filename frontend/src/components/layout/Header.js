@@ -26,6 +26,7 @@ import {
   SheetTitle,
 } from "../ui/Sheet";
 import Sidebar from "./SideBar";
+import { usePendingFriendRequests } from "../Friends/PendingRequestsBadge";
 import SearchBar from "./SearchBar";
 import { disconnectChatSocket } from "../../services/chatService";
 import { useChat } from "../../context/ChatContext";
@@ -38,6 +39,7 @@ function Header() {
   const location = useLocation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pendingRequests = usePendingFriendRequests();
   const { unreadTotal: unreadMessages, togglePanel, panelOpen } = useChat();
   const onMessagesPage = location.pathname.startsWith("/messages");
   // Desktop/tablet: full chat page. Phones (no room for it): the chat panel.
@@ -218,10 +220,13 @@ function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Open menu"
-                  className="lg:hidden text-green-600 hover:bg-green-100 transition-colors duration-200"
+                  aria-label={pendingRequests ? `Open menu (${pendingRequests} friend requests)` : "Open menu"}
+                  className="relative lg:hidden text-green-600 hover:bg-green-100 transition-colors duration-200"
                 >
                   <Menu className="h-6 w-6" />
+                  {pendingRequests > 0 && (
+                    <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
                 </Button>
               </SheetTrigger>
               <SheetContent

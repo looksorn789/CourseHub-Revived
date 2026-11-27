@@ -19,6 +19,7 @@ import ScrollArea from '../ui/ScrollArea';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/Avatar';
 import { Card, CardContent } from '../ui/Card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
+import PendingRequestsBadge from './PendingRequestsBadge';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -189,6 +190,7 @@ export default function Friends() {
                   >
                     <Clock className="mr-2 hidden h-4 w-4 min-[400px]:inline-block" />
                     Requests
+                    <PendingRequestsBadge count={receivedRequests.length} className="ml-1.5" />
                   </TabsTrigger>
                   <TabsTrigger
                     value="search"
