@@ -1,8 +1,8 @@
-from bson.objectid import ObjectId
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 import re
+from datetime import datetime
 from enum import Enum
+from typing import Dict, Optional, Tuple
+from bson.objectid import ObjectId
 from pymongo import ASCENDING, DESCENDING, IndexModel
 from pymongo.errors import PyMongoError
 from flask import current_app
@@ -127,93 +127,6 @@ class Forum:
             print(f"Error generating slug: {str(e)}")
             return None
 
-    def validate_forum_data(data: Dict) -> Tuple[bool, List[str]]:
-        """Validate forum creation/update data"""
-        errors = []
-
-        # Required fields check
-        required_fields = {
-            "name": "Forum name is required",
-            "description": "Description is required",
-            "category": "Category is required",
-            "tags": "At least one tag is required",
-        }
-
-        for field, message in required_fields.items():
-            if not data.get(field):
-                errors.append(message)
-
-        if errors:
-            return False, errors
-
-        # Name validation
-        name = data["name"].strip()
-        if len(name) < 3:
-            errors.append("Forum name must be at least 3 characters")
-        if len(name) > 50:
-            errors.append("Forum name must not exceed 50 characters")
-        if re.search(r"[^a-zA-Z0-9\s\-_]", name):
-            errors.append(
-                "Forum name can only contain letters, numbers, spaces, hyphens, and underscores"
-            )
-
-        # Description validation
-        description = data["description"].strip()
-        if len(description) < 10:
-            errors.append("Description must be at least 10 characters")
-        if len(description) > 500:
-            errors.append("Description must not exceed 500 characters")
-
-        # Category validation
-        try:
-            ForumCategory(data["category"])
-        except ValueError:
-            valid_categories = ", ".join(c.value for c in ForumCategory)
-            errors.append(f"Invalid category. Must be one of: {valid_categories}")
-
-        # Tags validation
-        tags = data.get("tags", [])
-        if not isinstance(tags, list):
-            errors.append("Tags must be a list")
-        else:
-            if len(tags) > 5:
-                errors.append("Maximum 5 tags allowed")
-            if len(tags) < 1:
-                errors.append("At least one tag is required")
-
-            seen_tags = set()
-            for tag in tags:
-                if not isinstance(tag, str):
-                    errors.append(f"Tag must be a string: {tag}")
-                    continue
-
-                tag = tag.strip().lower()
-                if not tag:
-                    errors.append("Empty tags are not allowed")
-                    continue
-
-                if tag in seen_tags:
-                    errors.append(f"Duplicate tag: {tag}")
-                    continue
-
-                seen_tags.add(tag)
-
-                if len(tag) < 2:
-                    errors.append(f"Tag '{tag}' must be at least 2 characters")
-                if len(tag) > 20:
-                    errors.append(f"Tag '{tag}' must not exceed 20 characters")
-
-        if "visibility" in data:
-            try:
-                ForumVisibility(data["visibility"])
-            except ValueError:
-                valid_visibilities = ", ".join(v.value for v in ForumVisibility)
-                errors.append(
-                    f"Invalid visibility. Must be one of: {valid_visibilities}"
-                )
-
-        return len(errors) == 0, errors
-
     def _validate_category(self, category: str) -> Tuple[bool, Optional[str]]:
         """Validate forum category"""
         valid_categories = [c.value for c in ForumCategory]
@@ -305,6 +218,8 @@ class Forum:
             current_app.logger.error(f"Error in create_forum: {error_msg}")
             return None, error_msg
 
+    # Field-by-field validation; splitting it up wouldn't make it clearer.
+    # pylint: disable-next=too-many-branches,too-many-statements
     def _validate_update_data(self, data: Dict) -> Tuple[bool, Optional[str]]:
         """Validate forum update data"""
         try:

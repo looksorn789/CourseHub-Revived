@@ -1,10 +1,9 @@
-from datetime import datetime
+import traceback
+from typing import Optional, Dict, Tuple
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from pymongo.errors import PyMongoError
 from models.forum import Forum, ForumRole, ForumStatus, ForumVisibility, ForumCategory
 from models.user import UserModel
-from typing import Optional, Dict, Tuple
 import bleach
 from utils.helpers import get_user_id
 
@@ -264,8 +263,6 @@ def create_forum():
         )
 
     except Exception as e:
-        import traceback
-
         error_msg = f"Unexpected error: {str(e)}\nTraceback: {traceback.format_exc()}"
         current_app.logger.error(f"Route error: {error_msg}")
         return jsonify({"success": False, "errors": [str(e)]}), 500
@@ -309,7 +306,7 @@ def get_forum(forum_identifier):
 
 @forum_bp.route("/<forum_id>", methods=["PATCH"])
 @jwt_required()
-def update_forum(forum_id):
+def update_forum(forum_id):  # pylint: disable=too-many-branches
     """Update forum details"""
     try:
         # Get user
@@ -318,7 +315,7 @@ def update_forum(forum_id):
             return jsonify({"success": False, "error": "User not found"}), 404
 
         # Validate forum access
-        forum, error = validate_forum_access(forum_id, user_id, ForumRole.ADMIN.value)
+        _forum, error = validate_forum_access(forum_id, user_id, ForumRole.ADMIN.value)
         if error:
             return jsonify({"success": False, "error": error}), 403
 
@@ -444,7 +441,7 @@ def update_member_role(forum_id, member_id):
         if not user_id:
             return jsonify({"error": "User not found"}), 404
 
-        forum, error = validate_forum_access(forum_id, user_id, ForumRole.ADMIN.value)
+        _forum, error = validate_forum_access(forum_id, user_id, ForumRole.ADMIN.value)
         if error:
             return jsonify({"error": error}), 403
 
@@ -475,7 +472,7 @@ def delete_forum(forum_id):
             return jsonify({"error": "User not found"}), 404
 
         # Validate user role and forum access
-        forum, error = validate_forum_access(forum_id, user_id, ForumRole.ADMIN.value)
+        _forum, error = validate_forum_access(forum_id, user_id, ForumRole.ADMIN.value)
         if error:
             return jsonify({"error": error}), 403
 
@@ -501,12 +498,12 @@ def handle_bad_request(e):
 
 
 @forum_bp.errorhandler(401)
-def handle_unauthorized(e):
+def handle_unauthorized(_e):
     return jsonify({"error": "Unauthorized", "message": "Authentication required"}), 401
 
 
 @forum_bp.errorhandler(403)
-def handle_forbidden(e):
+def handle_forbidden(_e):
     return jsonify({"error": "Forbidden", "message": "Insufficient permissions"}), 403
 
 

@@ -50,7 +50,7 @@ def unfriend_user():
             return jsonify({"error": "User ID is required"}), 400
 
         friend_request = FriendRequest(current_app.db, current_app.supabase)
-        success, error = friend_request.unfriend(user_id, friend_id)
+        _, error = friend_request.unfriend(user_id, friend_id)
 
         if error:
             return jsonify({"error": error}), 400

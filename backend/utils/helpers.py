@@ -1,5 +1,5 @@
-from bson import ObjectId
 from datetime import datetime
+from bson import ObjectId
 from flask import current_app
 from models.user import UserModel
 
@@ -7,11 +7,11 @@ def serialize_mongo_doc(doc):
     """Convert MongoDB document to JSON serializable format"""
     if isinstance(doc, dict):
         return {k: serialize_mongo_doc(v) for k, v in doc.items()}
-    elif isinstance(doc, list):
+    if isinstance(doc, list):
         return [serialize_mongo_doc(item) for item in doc]
-    elif isinstance(doc, ObjectId):
+    if isinstance(doc, ObjectId):
         return str(doc)
-    elif isinstance(doc, datetime):
+    if isinstance(doc, datetime):
         return doc.isoformat()
     return doc
 

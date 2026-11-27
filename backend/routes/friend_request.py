@@ -21,7 +21,7 @@ def send_request():
             return jsonify({"error": "Receiver ID is required"}), 400
 
         friend_request = FriendRequest(current_app.db, current_app.supabase)
-        success, error, request_id = friend_request.create_request(sender_id, receiver_id)
+        _, error, request_id = friend_request.create_request(sender_id, receiver_id)
 
         if error:
             return jsonify({"error": error}), 400
@@ -84,7 +84,7 @@ def respond_to_request():
             return jsonify({"error": "Request ID and response are required"}), 400
 
         friend_request = FriendRequest(current_app.db, current_app.supabase)
-        success, error = friend_request.respond_to_request(request_id, accept)
+        _, error = friend_request.respond_to_request(request_id, accept)
 
         if error:
             return jsonify({"error": error}), 400
@@ -95,7 +95,7 @@ def respond_to_request():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
 @friend_request_bp.route("/sent", methods=["GET"])
 @jwt_required()
 def get_sent_requests():
@@ -128,7 +128,7 @@ def get_sent_requests():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
 @friend_request_bp.route("/cancel", methods=["POST"])
 @jwt_required()
 def cancel_request():
@@ -144,7 +144,7 @@ def cancel_request():
             return jsonify({"error": "Request ID is required"}), 400
 
         friend_request = FriendRequest(current_app.db, current_app.supabase)
-        success, error = friend_request.cancel_request(request_id, user_id)
+        _, error = friend_request.cancel_request(request_id, user_id)
 
         if error:
             return jsonify({"error": error}), 400

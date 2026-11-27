@@ -1,10 +1,34 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.user import UserModel
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from models.comment import Comment
 from utils.helpers import serialize_mongo_doc, get_user_id
 
 comment_bp = Blueprint('comment_bp', __name__)
+
+def _mark_liked_comments(comment_model, comments):
+    """Set "liked" on each comment and reply for the signed-in user, if any."""
+    if not verify_jwt_in_request(optional=True):
+        return
+    supabase_user_id = get_jwt_identity()
+    if not supabase_user_id:
+        return
+    user_id = get_user_id(supabase_user_id)
+    if not user_id:
+        return
+
+    # Get all comment IDs (including replies)
+    comment_ids = []
+    for comment in comments:
+        comment_ids.append(comment["_id"])
+        comment_ids.extend(reply["_id"] for reply in comment.get("replies", []))
+
+    liked_comments = comment_model.get_user_comment_likes(user_id, comment_ids)
+
+    for comment in comments:
+        comment["liked"] = comment["_id"] in liked_comments
+        for reply in comment.get("replies", []):
+            reply["liked"] = reply["_id"] in liked_comments
+
 
 @comment_bp.route('/post/<post_id>/comments', methods=['GET'])
 def get_comments(post_id):
@@ -28,26 +52,7 @@ def get_comments(post_id):
         current_app.logger.debug(f"Found {len(comments)} comments")
 
         try:
-            from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-            if verify_jwt_in_request(optional=True):
-                supabase_user_id = get_jwt_identity()
-                if supabase_user_id:
-                    user_id = get_user_id(supabase_user_id)
-                    if user_id:
-                        # Get all comment IDs (including replies)
-                        comment_ids = []
-                        for comment in comments:
-                            comment_ids.append(comment["_id"])
-                            comment_ids.extend(reply["_id"] for reply in comment.get("replies", []))
-
-                        # Get liked comments
-                        liked_comments = comment_model.get_user_comment_likes(user_id, comment_ids)
-
-                        # Add liked status to comments and replies
-                        for comment in comments:
-                            comment["liked"] = comment["_id"] in liked_comments
-                            for reply in comment.get("replies", []):
-                                reply["liked"] = reply["_id"] in liked_comments
+            _mark_liked_comments(comment_model, comments)
         except Exception as e:
             current_app.logger.warning(f"Error processing likes: {str(e)}")
 
@@ -116,7 +121,7 @@ def create_comment(post_id):
         if comment:
             # Serialize the response
             serialized_comment = serialize_mongo_doc(comment)
-            
+
             current_app.logger.debug(f"Created comment: {serialized_comment}")
 
             return jsonify({
@@ -124,11 +129,11 @@ def create_comment(post_id):
                 "message": "Comment created successfully",
                 "data": serialized_comment
             }), 201
-        else:
-            return jsonify({
-                "success": False,
-                "error": "Failed to create comment"
-            }), 500
+
+        return jsonify({
+            "success": False,
+            "error": "Failed to create comment"
+        }), 500
 
     except Exception as e:
         current_app.logger.error(f"Error creating comment: {str(e)}")
@@ -160,7 +165,7 @@ def create_reply(comment_id):
         # Get parent comment for post_id
         comment_model = Comment(current_app.db, current_app.supabase)
         parent_comment = comment_model.find_by_id(comment_id)
-        
+
         if not parent_comment:
             return jsonify({
                 "success": False,
@@ -169,7 +174,7 @@ def create_reply(comment_id):
 
         # Prepare reply data
         reply_data = {
-            "post_id": parent_comment["post_id"], 
+            "post_id": parent_comment["post_id"],
             "user_id": user_id,
             "content": data.get("content"),
             "parent_id": comment_id
@@ -328,14 +333,14 @@ def handle_bad_request(e):
     }), 400
 
 @comment_bp.errorhandler(401)
-def handle_unauthorized(e):
+def handle_unauthorized(_e):
     return jsonify({
         "error": "Unauthorized",
         "message": "Authentication required"
     }), 401
 
 @comment_bp.errorhandler(403)
-def handle_forbidden(e):
+def handle_forbidden(_e):
     return jsonify({
         "error": "Forbidden",
         "message": "Insufficient permissions"

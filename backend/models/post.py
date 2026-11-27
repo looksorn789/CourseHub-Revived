@@ -1,9 +1,9 @@
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Dict, Optional, Tuple
 from bson import ObjectId
 from flask import current_app
-import re
 
 
 class PostStatus(Enum):
@@ -75,7 +75,7 @@ class Post:
                 ("last_activity_at", -1),
                 [("title", "text"), ("content", "text")]
             ]
-            
+
             for index in indexes:
                 if isinstance(index, tuple):
                     self.collection.create_index([index])
@@ -86,64 +86,64 @@ class Post:
             print(f"Error setting up indexes: {str(e)}")
 
     def create_post(self, data: Dict) -> Tuple[Optional[str], Optional[str]]:
-            """Create a new post"""
-            try:
-                with self.collection.database.client.start_session() as session:
-                    with session.start_transaction():
-                        # Validate post data
-                        is_valid, errors = self.validate_post_data(data)
-                        if not is_valid:
-                            return None, errors
+        """Create a new post"""
+        try:
+            with self.collection.database.client.start_session() as session:
+                with session.start_transaction():
+                    # Validate post data
+                    is_valid, errors = self.validate_post_data(data)
+                    if not is_valid:
+                        return None, errors
 
-                        current_time = datetime.utcnow()
+                    current_time = datetime.utcnow()
 
-                        # Prepare post document
-                        post_data = {
-                            "forum_id": ObjectId(data["forum_id"]),
-                            "user_id": ObjectId(data["user_id"]),
-                            "title": data["title"].strip(),
-                            "content": data["content"].strip(),
-                            "type": data["type"],
-                            "tags": data.get("tags", [])[:5],
-                            "created_at": current_time,
-                            "updated_at": current_time,
-                            "last_activity_at": current_time,
-                            "view_count": 0,
-                            "comment_count": 0,
-                            "metadata": {
-                                "last_edited_by": None,
-                                "last_edited_at": None,
-                                "edit_history": [],
-                            }
+                    # Prepare post document
+                    post_data = {
+                        "forum_id": ObjectId(data["forum_id"]),
+                        "user_id": ObjectId(data["user_id"]),
+                        "title": data["title"].strip(),
+                        "content": data["content"].strip(),
+                        "type": data["type"],
+                        "tags": data.get("tags", [])[:5],
+                        "created_at": current_time,
+                        "updated_at": current_time,
+                        "last_activity_at": current_time,
+                        "view_count": 0,
+                        "comment_count": 0,
+                        "metadata": {
+                            "last_edited_by": None,
+                            "last_edited_at": None,
+                            "edit_history": [],
                         }
+                    }
 
-                        # Insert post
-                        result = self.collection.insert_one(post_data, session=session)
-                        if not result.inserted_id:
-                            return None, "Failed to create post"
+                    # Insert post
+                    result = self.collection.insert_one(post_data, session=session)
+                    if not result.inserted_id:
+                        return None, "Failed to create post"
 
-                        # Update forum post count and last activity
-                        forums_collection = self.collection.database.get_collection('forums')
-                        update_result = forums_collection.update_one(
-                            {"_id": ObjectId(data["forum_id"])},
-                            {
-                                "$inc": {"post_count": 1},
-                                "$set": {
-                                    "last_activity": current_time,
-                                    "updated_at": current_time
-                                }
-                            },
-                            session=session
-                        )
+                    # Update forum post count and last activity
+                    forums_collection = self.collection.database.get_collection('forums')
+                    update_result = forums_collection.update_one(
+                        {"_id": ObjectId(data["forum_id"])},
+                        {
+                            "$inc": {"post_count": 1},
+                            "$set": {
+                                "last_activity": current_time,
+                                "updated_at": current_time
+                            }
+                        },
+                        session=session
+                    )
 
-                        if update_result.modified_count == 0:
-                            return None, "Failed to update forum post count"
+                    if update_result.modified_count == 0:
+                        return None, "Failed to update forum post count"
 
-                        return str(result.inserted_id), None
+                    return str(result.inserted_id), None
 
-            except Exception as e:
-                current_app.logger.error(f"Error creating post: {str(e)}")
-                return None, f"Error creating post: {str(e)}"
+        except Exception as e:
+            current_app.logger.error(f"Error creating post: {str(e)}")
+            return None, f"Error creating post: {str(e)}"
 
     def update_post(self, post_id: str, data: Dict, editor_id: str) -> Tuple[bool, Optional[str]]:
         """Update an existing post"""
@@ -219,7 +219,7 @@ class Post:
                 if not isinstance(data[field_name], rules["type"]):
                     errors.append(f"{field_name} must be of type {rules['type'].__name__}")
                     continue
-                
+
                 # List validations
                 if field_name == "tags":
                     if len(data[field_name]) > rules["max_items"]:
@@ -311,7 +311,7 @@ class Post:
             query = {
                 "forum_id": ObjectId(forum_id)
             }
-            
+
             if post_type:
                 query["type"] = post_type
 

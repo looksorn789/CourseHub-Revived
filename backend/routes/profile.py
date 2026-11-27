@@ -99,7 +99,7 @@ def get_user_profile():
 
     except Exception as e:
         return handle_error(e, "Error retrieving user profile")
-    
+
 @profile_bp.route("/user/<user_id>", methods=["GET"])
 @jwt_required()
 def get_user_by_id(user_id):
@@ -141,7 +141,7 @@ def get_user_by_id(user_id):
 
     except Exception as e:
         return handle_error(e, "Error retrieving user profile")
-    
+
 @profile_bp.route("/user/username/<username>", methods=["GET"])
 def get_user_by_username(username):
     """Get user profile by username"""
