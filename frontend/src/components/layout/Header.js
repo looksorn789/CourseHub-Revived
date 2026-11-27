@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   BookOpen,
-  Search,
   MessageSquare,
   Bell,
   Moon,
@@ -11,7 +10,6 @@ import {
   LogOut,
 } from "lucide-react";
 import Button from "../ui/Button";
-import Input from "../ui/Input";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -28,6 +26,7 @@ import {
   SheetTitle,
 } from "../ui/Sheet";
 import Sidebar from "./SideBar";
+import SearchBar from "./SearchBar";
 import { getUserProfile } from "../../services/profileService";
 import { generateAvatarSvg } from "../../utils/avatarUtils";
 
@@ -123,13 +122,7 @@ function Header() {
             <h1 className="text-xl sm:text-2xl font-bold text-green-600">CourseHub</h1>
           </Link>
           <div className="flex-1 max-w-xl mx-4 hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search CourseHub"
-                className="pl-10 w-full rounded-full bg-gray-100 border-transparent focus:border-green-500 focus:ring-green-500"
-              />
-            </div>
+            <SearchBar onNavigate={() => setIsMenuOpen(false)} />
           </div>
           <div className="flex items-center space-x-1 sm:space-x-4">
             <Button
@@ -218,13 +211,7 @@ function Header() {
                 </SheetHeader>
                 <div className="border-b border-gray-100 px-4 pb-4 pt-6">
                   <ProfileContent inMenu={true} />
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search CourseHub"
-                      className="pl-10 w-full rounded-full bg-gray-100 border-transparent focus:border-green-500 focus:ring-green-500"
-                    />
-                  </div>
+                  <SearchBar onNavigate={() => setIsMenuOpen(false)} />
                 </div>
                 <Sidebar
                   className="h-auto flex-1"
