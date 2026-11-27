@@ -81,7 +81,18 @@ function StudentProfile() {
       }
 
       console.log("Profile created successfully:", data);
-      navigate("/home");
+      // Mark the stored session's profile as done so PrivateRoute lets the
+      // user into /home instead of sending them back to setup.
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ ...user, first_name: firstName, last_name: lastName, profile_completed: true }),
+        );
+      } catch (storageError) {
+        console.error("Could not update stored user:", storageError);
+      }
+      navigate("/home", { replace: true });
     } catch (err) {
       console.error("Profile creation failed:", err);
       setError(err.message || "Something went wrong. Please try again.");
