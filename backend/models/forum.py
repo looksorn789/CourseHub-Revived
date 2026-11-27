@@ -61,17 +61,23 @@ class Forum:
         },
     }
 
+    # Databases whose forum collection has already been cleaned up and
+    # indexed by this process. A Forum is created on every request, so the
+    # one-time setup must not run each time (it took ~1s per request).
+    _prepared_dbs = set()
+
     def __init__(self, db, supabase):
         self.collection = db["forums"]
         self.supabase = supabase
-        self.cleanup_forum_collection()
-        self._setup_indexes()
+        if db.name not in Forum._prepared_dbs:
+            self.cleanup_forum_collection()
+            self._setup_indexes()
+            Forum._prepared_dbs.add(db.name)
 
     def _setup_indexes(self):
         """Set up indexes for faster queries"""
         try:
-            self.collection.drop_indexes()
-
+            # create_indexes is a no-op for indexes that already exist.
             # Create indexes for frequently queried fields
             indexes = [
                 IndexModel([("name", ASCENDING)], unique=True),

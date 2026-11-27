@@ -8,12 +8,6 @@ import {
   Moon,
   User,
   Menu,
-  Home,
-  TrendingUp,
-  Users,
-  Bookmark,
-  Settings,
-  HelpCircle,
   LogOut,
 } from "lucide-react";
 import Button from "../ui/Button";
@@ -32,15 +26,15 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetClose,
 } from "../ui/Sheet";
-import { Separator } from "../ui/Separator";
+import Sidebar from "./SideBar";
 import { getUserProfile } from "../../services/profileService";
 import { generateAvatarSvg } from "../../utils/avatarUtils";
 
 function Header() {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState({
     name: "",
     username: "",
@@ -119,22 +113,14 @@ function Header() {
     </div>
   );
 
-  const navigationItems = [
-    { name: "Home", icon: Home, path: "/" },
-    { name: "Popular", icon: TrendingUp, path: "/popular" },
-    { name: "Friends", icon: Users, path: "/friends" },
-    { name: "Bookmarks", icon: Bookmark, path: "/bookmarks" },
-    { name: "Messages", icon: MessageSquare, path: "/messages" },
-    { name: "Notifications", icon: Bell, path: "/notifications" },
-  ];
 
   return (
     <header className="sticky top-0 z-10 bg-white border-b border-green-100">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
           <Link to="/home" className="flex items-center space-x-2">
-            <BookOpen className="h-8 w-8 text-green-600" />
-            <h1 className="text-2xl font-bold text-green-600">CourseHub</h1>
+            <BookOpen className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
+            <h1 className="text-xl sm:text-2xl font-bold text-green-600">CourseHub</h1>
           </Link>
           <div className="flex-1 max-w-xl mx-4 hidden md:block">
             <div className="relative">
@@ -145,7 +131,7 @@ function Header() {
               />
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-4">
             <Button
               variant="ghost"
               size="icon"
@@ -164,7 +150,7 @@ function Header() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="p-1 hidden md:flex items-center space-x-2"
+                  className="p-1 hidden sm:flex items-center space-x-2"
                 >
                   <Avatar className="h-8 w-8 transition-transform duration-200 hover:scale-110">
                     {user.avatarUrl ? (
@@ -212,23 +198,26 @@ function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Sheet>
+            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="md:hidden text-green-600 hover:bg-green-100 transition-colors duration-200"
+                  aria-label="Open menu"
+                  className="lg:hidden text-green-600 hover:bg-green-100 transition-colors duration-200"
                 >
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                <SheetHeader>
+              <SheetContent
+                side="left"
+                className="flex w-[85vw] max-w-xs flex-col gap-0 overflow-y-auto p-0"
+              >
+                <SheetHeader className="sr-only">
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
-                <div className="mt-6 flex flex-col space-y-4">
+                <div className="border-b border-gray-100 px-4 pb-4 pt-6">
                   <ProfileContent inMenu={true} />
-                  <Separator />
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
@@ -236,41 +225,15 @@ function Header() {
                       className="pl-10 w-full rounded-full bg-gray-100 border-transparent focus:border-green-500 focus:ring-green-500"
                     />
                   </div>
-                  <nav className="flex flex-col space-y-1">
-                    {navigationItems.map((item) => (
-                      <SheetClose asChild key={item.name}>
-                        <Link to={item.path}>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start text-green-600 hover:bg-green-100 transition-colors duration-200"
-                          >
-                            <item.icon className="mr-2 h-5 w-5" />
-                            {item.name}
-                          </Button>
-                        </Link>
-                      </SheetClose>
-                    ))}
-                  </nav>
-                  <Separator />
+                </div>
+                <Sidebar
+                  className="h-auto flex-1"
+                  onNavigate={() => setIsMenuOpen(false)}
+                />
+                <div className="border-t border-gray-100 p-4">
                   <Button
                     variant="ghost"
-                    className="justify-start text-gray-600 hover:bg-gray-100 transition-colors duration-200"
-                    onClick={() => navigate("/settings")}
-                  >
-                    <Settings className="mr-2 h-5 w-5" />
-                    Settings
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="justify-start text-gray-600 hover:bg-gray-100 transition-colors duration-200"
-                  >
-                    <HelpCircle className="mr-2 h-5 w-5" />
-                    Help Center
-                  </Button>
-                  <Separator />
-                  <Button
-                    variant="ghost"
-                    className="justify-start text-red-600 hover:bg-red-100 transition-colors duration-200"
+                    className="w-full justify-start text-red-600 hover:bg-red-100 transition-colors duration-200"
                     onClick={handleSignOut}
                   >
                     <LogOut className="mr-2 h-5 w-5" />

@@ -158,6 +158,32 @@ def list_forums():
         return jsonify({"error": "Error retrieving forums"}), 500
 
 
+@forum_bp.route("/mine", methods=["GET"])
+@jwt_required()
+def list_my_forums():
+    """Forums the signed-in user is a member of (for the sidebar)."""
+    try:
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"error": "User not found"}), 404
+
+        forum_model = Forum(current_app.db, current_app.supabase)
+        forums = list(
+            forum_model.collection.find(
+                {"status": ForumStatus.ACTIVE.value, "members.user_id": user_id},
+                {"name": 1, "slug": 1, "category": 1, "member_count": 1, "avatar_url": 1},
+            ).sort("name", 1)
+        )
+        for forum in forums:
+            forum["_id"] = str(forum["_id"])
+
+        return jsonify({"forums": forums})
+
+    except Exception as e:
+        current_app.logger.error(f"Error listing user's forums: {str(e)}")
+        return jsonify({"error": "Error retrieving your forums"}), 500
+
+
 @forum_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_forum():

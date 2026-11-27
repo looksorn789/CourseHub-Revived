@@ -78,6 +78,17 @@ function ForumGrid() {
     return <div>Error: {error}</div>;
   }
 
+  if (!forums.length) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <p className="text-lg font-semibold text-gray-800">No channels yet</p>
+        <p className="mt-2 text-sm text-gray-500">
+          Be the first to start one with "Create Channel" in the menu.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
       {forums.map((forum) => (
