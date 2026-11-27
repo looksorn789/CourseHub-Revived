@@ -169,6 +169,7 @@ export default function ProfileView() {
             {userId && (
               <PostStream
                 key={userId}
+                cacheKey={`user:${userId}`}
                 loadPage={loadPosts}
                 onTotal={setPostCount}
                 empty={

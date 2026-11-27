@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import ChatService, { getChatSocket, OPEN_CHAT_EVENT } from "../services/chatService";
+import { getCached, setCached } from "../utils/queryCache";
 
 const ChatContext = createContext(null);
 
@@ -13,7 +14,8 @@ const ChatContext = createContext(null);
 export function ChatProvider({ children }) {
   const location = useLocation();
   const [signedIn, setSignedIn] = useState(() => Boolean(localStorage.getItem("jwt_token")));
-  const [conversations, setConversations] = useState(null);
+  // Cached so the list and unread badge show instantly after a reload.
+  const [conversations, setConversations] = useState(() => getCached("chat:conversations") ?? null);
   const [panelOpen, setPanelOpen] = useState(false);
   // What the small panel should open next:
   // { userId?, conversation?, draft?: { text, post } }
@@ -26,7 +28,10 @@ export function ChatProvider({ children }) {
 
   const refresh = useCallback(async () => {
     const { data } = await ChatService.listConversations();
-    if (data) setConversations(data.conversations);
+    if (data) {
+      setConversations(data.conversations);
+      setCached("chat:conversations", data.conversations);
+    }
   }, []);
 
   useEffect(() => {

@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { Check, Crown, Loader2, Plus, Users } from "lucide-react";
 import { forumService } from "../../services/forumService";
 import TagLink from "../posts/TagLink";
+import { fetchCached, getCached, orThrow } from "../../utils/queryCache";
 import {
   DEFAULT_CHANNEL_BANNER,
   DEFAULT_CHANNEL_ICON,
@@ -23,17 +24,22 @@ function ForumCardSkeleton() {
 
 /** Explore: every public channel as a clickable card with join/leave. */
 function ForumGrid() {
-  const [forums, setForums] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Start from the cache (instant), then refresh.
+  const [forums, setForums] = useState(() => getCached("forums:all")?.forums || []);
+  const [loading, setLoading] = useState(() => !getCached("forums:all"));
   const [error, setError] = useState(null);
   const [busyId, setBusyId] = useState(null);
 
   useEffect(() => {
     const fetchForums = async () => {
-      const { data, error: fetchError } = await forumService.getAllForums();
-      if (fetchError) setError(fetchError);
-      else setForums(data.forums || []);
-      setLoading(false);
+      try {
+        const data = await fetchCached("forums:all", () => orThrow(forumService.getAllForums()));
+        setForums(data.forums || []);
+      } catch (err) {
+        if (!getCached("forums:all")) setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchForums();
   }, []);

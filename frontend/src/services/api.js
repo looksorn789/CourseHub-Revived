@@ -1,5 +1,6 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { clearQueryCache } from "../utils/queryCache";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://127.0.0.1:5000",
@@ -63,6 +64,7 @@ api.interceptors.response.use(
       case 401:
         localStorage.removeItem("jwt_token");
         localStorage.removeItem("user");
+        clearQueryCache();
         return Promise.reject(
           new Error("Session expired. Please login again."),
         );
