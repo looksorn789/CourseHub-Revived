@@ -1,7 +1,7 @@
 import traceback
 from typing import Optional, Dict, Tuple
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from models.forum import Forum, ForumRole, ForumStatus, ForumVisibility, ForumCategory
 from models.user import UserModel
 import bleach
@@ -96,6 +96,30 @@ def validate_forum_data(data: Dict) -> Tuple[bool, Optional[str]]:
             )
 
     return True, None
+
+
+def _viewer_info(forum: Dict) -> Dict:
+    """Membership/permissions of the signed-in user for a forum, if any."""
+    viewer = {"is_member": False, "role": None, "is_owner": False, "can_edit": False}
+    try:
+        verify_jwt_in_request(optional=True)
+        identity = get_jwt_identity()
+    except Exception:  # invalid/expired token: treat as signed out
+        identity = None
+    user_id = get_user_id(identity) if identity else None
+    if not user_id:
+        return viewer
+    member = next(
+        (m for m in forum.get("members", []) if m.get("user_id") == user_id), None
+    )
+    role = member.get("role") if member else None
+    viewer.update(
+        is_member=member is not None,
+        role=role,
+        is_owner=str(forum.get("creator_id")) == user_id,
+        can_edit=role == ForumRole.ADMIN.value,
+    )
+    return viewer
 
 
 @forum_bp.route("/", methods=["GET"])
@@ -317,6 +341,11 @@ def get_forum(forum_identifier):
         )
         forum["_id"] = str(forum["_id"])
 
+        # Tell the (optional) signed-in viewer how they relate to this forum,
+        # and don't expose the member list publicly.
+        forum["viewer"] = _viewer_info(forum)
+        forum.pop("members", None)
+
         # Include member count and stats
         stats = forum_model.get_forum_stats(str(forum["_id"]))
         if stats:
@@ -369,6 +398,8 @@ def update_forum(forum_id):  # pylint: disable=too-many-branches
                 update_data["visibility"] = str(data["visibility"]).strip().lower()
             if "rules" in data:
                 update_data["rules"] = bleach.clean(str(data["rules"]))
+            if "category" in data:
+                update_data["category"] = str(data["category"]).strip()
             if "avatar_url" in data:
                 update_data["avatar_url"] = bleach.clean(str(data["avatar_url"]))
             if "banner_url" in data:
@@ -410,6 +441,7 @@ def update_forum(forum_id):  # pylint: disable=too-many-branches
                     "tags": updated_forum["tags"],
                     "visibility": updated_forum.get("visibility", "public"),
                     "rules": updated_forum.get("rules", ""),
+                    "category": updated_forum.get("category", ""),
                     "slug": updated_forum.get("slug", ""),
                     "updated_at": updated_forum["updated_at"],
                 },
@@ -445,13 +477,16 @@ def manage_membership(forum_id):
 
         if action == "join":
             success, error = forum_model.add_member(forum_id, user_id)
+        elif str(forum.get("creator_id")) == user_id:
+            return jsonify({"error": "The channel owner can't leave their own channel"}), 400
         else:
             success, error = forum_model.remove_member(forum_id, user_id)
 
         if not success:
             return jsonify({"error": error}), 400
 
-        return jsonify({"message": f"Successfully {action}ed forum"})
+        verb = "joined" if action == "join" else "left"
+        return jsonify({"message": f"Successfully {verb} forum"})
 
     except Exception as e:
         current_app.logger.error(f"Error managing membership: {str(e)}")

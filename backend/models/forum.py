@@ -325,6 +325,10 @@ class Forum:
             is_valid, error = self._validate_update_data(data)
             if not is_valid:
                 return False, error
+            if "category" in data:
+                is_valid, error = self._validate_category(data["category"])
+                if not is_valid:
+                    return False, error
 
             # Prepare update data
             update_data = {"updated_at": datetime.utcnow()}
@@ -343,6 +347,7 @@ class Forum:
 
             # other fields
             fields_to_update = [
+                "category",
                 "description",
                 "tags",
                 "visibility",
