@@ -380,7 +380,7 @@ class UserModel:
         except Exception as e:
             print(f"Error finding user by email: {e}")
             return None
-        
+
     def find_by_id(self, user_id):
         """Find user by ID"""
         try:
@@ -405,7 +405,7 @@ class UserModel:
         except Exception as e:
             print(f"Error finding user by username: {e}")
             return None
-        
+
     def search_users(self, query: str, limit: int = 20):
         """Search users by name, username, school, or major"""
         try:
