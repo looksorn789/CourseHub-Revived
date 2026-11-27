@@ -1,3 +1,4 @@
+import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
@@ -371,6 +372,77 @@ def delete_post_image(post_id):
     except Exception as e:
         current_app.logger.error(f"Error removing post image: {str(e)}")
         return jsonify({"success": False, "error": "Error removing photo"}), 500
+
+
+@post_bp.route("/tag/<path:tag>", methods=["GET"])
+@jwt_required()
+def posts_by_tag(tag):
+    """All posts (the user may see) carrying a tag, newest first. Case-insensitive."""
+    try:
+        tag = tag.strip().lstrip("#")
+        if not tag or len(tag) > 50:
+            return jsonify({"success": False, "error": "Invalid tag"}), 400
+        page = max(int(request.args.get("page", 1)), 1)
+        per_page = min(max(int(request.args.get("per_page", 20)), 1), 50)
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"success": False, "error": "User not found"}), 404
+
+        query = {
+            "tags": {"$regex": f"^{re.escape(tag)}$", "$options": "i"},
+            "forum_id": {"$nin": hidden_forum_ids(current_app.db, user_id)},
+        }
+        posts, total = Post(current_app.db, current_app.supabase).list_posts_with_authors(
+            query, page=page, per_page=per_page, sort_field="created_at", include_forum=True
+        )
+        return jsonify({
+            "success": True,
+            "data": {
+                "tag": tag,
+                "posts": serialize_mongo_doc(posts),
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": (total + per_page - 1) // per_page,
+            },
+        })
+    except ValueError:
+        return jsonify({"success": False, "error": "Invalid pagination parameters"}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error listing posts by tag: {str(e)}")
+        return jsonify({"success": False, "error": "Error loading tagged posts"}), 500
+
+
+@post_bp.route("/tags/popular", methods=["GET"])
+@jwt_required()
+def popular_tags():
+    """Most used post tags (case-insensitive) among posts the user may see."""
+    try:
+        limit = min(max(int(request.args.get("limit", 12)), 1), 50)
+        user_id = get_user_id(get_jwt_identity())
+        if not user_id:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        tags = list(Post(current_app.db, current_app.supabase).collection.aggregate([
+            {"$match": {
+                "forum_id": {"$nin": hidden_forum_ids(current_app.db, user_id)},
+                "tags.0": {"$exists": True},
+            }},
+            {"$unwind": "$tags"},
+            {"$set": {"tag": {"$toLower": {"$trim": {"input": "$tags"}}}}},
+            {"$match": {"tag": {"$ne": ""}}},
+            {"$group": {"_id": "$tag", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1, "_id": 1}},
+            {"$limit": limit},
+        ]))
+        return jsonify({
+            "success": True,
+            "data": {"tags": [{"tag": t["_id"], "count": t["count"]} for t in tags]},
+        })
+    except ValueError:
+        return jsonify({"success": False, "error": "Invalid limit"}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error loading popular tags: {str(e)}")
+        return jsonify({"success": False, "error": "Error loading tags"}), 500
 
 
 @post_bp.route("/feed", methods=["GET"])

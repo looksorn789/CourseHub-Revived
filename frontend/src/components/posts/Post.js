@@ -18,7 +18,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/Avatar";
 import { Card, CardFooter, CardHeader } from "../ui/Card";
 import Button from "../ui/Button";
 import { motion } from "framer-motion";
-import Badge from "../ui/Badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +27,7 @@ import {
 } from "../ui/DropdownMenu";
 import { PostImageGrid } from "./PostImages";
 import { channelPathFor } from "../../utils/postTransform";
+import TagLink from "./TagLink";
 import { PostModal } from "./PostModal";
 import { DeletePostConfirmation } from "./DeletePostConfirmation";
 import { ReactionPicker } from "./ReactionPicker";
@@ -238,13 +238,11 @@ export function Post({
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {post.tags.map((tag, index) => (
-                <Badge
+                <TagLink
                   key={index}
-                  variant="secondary"
-                  className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full"
-                >
-                  {tag}
-                </Badge>
+                  tag={tag}
+                  className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full hover:bg-green-200"
+                />
               ))}
             </div>
           )}

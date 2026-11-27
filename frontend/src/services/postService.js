@@ -61,6 +61,19 @@ class PostService {
     return response.data;
   }
 
+  // Every visible post with a tag (case-insensitive), newest first.
+  static async getTagPosts(tag, page = 1, perPage = 20) {
+    const response = await api.get(`/api/posts/tag/${encodeURIComponent(tag)}`, {
+      params: { page, per_page: perPage },
+    });
+    return response.data;
+  }
+
+  static async getPopularTags(limit = 12) {
+    const response = await api.get('/api/posts/tags/popular', { params: { limit } });
+    return response.data.data.tags || [];
+  }
+
   static async getPost(postId) {
     try {
       const response = await api.get(`/api/posts/${postId}`);
