@@ -15,6 +15,8 @@ from routes.profile import profile_bp
 from routes.friend_request import friend_request_bp
 from routes.friends import friends_bp
 from routes.search import search_bp
+from routes.messages import messages_bp
+from chat_socket import init_realtime, socketio
 
 
 logging.basicConfig(level=logging.INFO)
@@ -114,6 +116,8 @@ def create_app(config_class=Config):
     app.register_blueprint(friend_request_bp, url_prefix='/api/friend-request')
     app.register_blueprint(friends_bp, url_prefix='/api')
     app.register_blueprint(search_bp, url_prefix='/api/search')
+    app.register_blueprint(messages_bp, url_prefix='/api/messages')
+    init_realtime(app)
 
 
     @app.errorhandler(404)
@@ -139,4 +143,11 @@ def create_app(config_class=Config):
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=app.config["DEBUG"])
+    # socketio.run serves both the REST API and the chat WebSocket.
+    socketio.run(
+        app,
+        host="127.0.0.1",
+        port=5000,
+        debug=app.config["DEBUG"],
+        allow_unsafe_werkzeug=app.config["DEBUG"],  # dev server only
+    )
