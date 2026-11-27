@@ -84,7 +84,7 @@ def respond_to_request():
             return jsonify({"error": "Request ID and response are required"}), 400
 
         friend_request = FriendRequest(current_app.db, current_app.supabase)
-        _, error = friend_request.respond_to_request(request_id, accept)
+        _, error = friend_request.respond_to_request(request_id, accept, user_id)
 
         if error:
             return jsonify({"error": error}), 400
