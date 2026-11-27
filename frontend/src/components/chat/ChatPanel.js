@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { formatDistanceToNowStrict, format, isToday } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Check, FileText, Loader2, Plus, Search, Send, Trash2, Users, X } from "lucide-react";
@@ -216,6 +216,18 @@ export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false, 
   const [typing, setTyping] = useState({});
   const bottomRef = useRef(null);
   const typingTimer = useRef(null);
+  const inputRef = useRef(null);
+
+  // Grow the message box with its text (up to ~6 lines, then scroll), so
+  // longer and prefilled messages stay readable.
+  useLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const max = 160;
+    el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+    el.style.overflowY = el.scrollHeight > max ? "auto" : "hidden";
+  }, [text]);
   const cid = conversation._id;
   const membersById = useMemo(
     () => Object.fromEntries((conversation.members || []).map((m) => [m._id, m])),
@@ -425,6 +437,7 @@ export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false, 
         }}
       >
         <textarea
+          ref={inputRef}
           value={text}
           onChange={onChange}
           onKeyDown={(e) => {
@@ -437,7 +450,7 @@ export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false, 
           maxLength={2000}
           placeholder="Write a message…"
           aria-label="Message"
-          className="max-h-28 min-h-[40px] flex-1 resize-none rounded-2xl bg-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+          className="min-h-[40px] flex-1 resize-none rounded-2xl bg-gray-100 px-3 py-2.5 text-sm leading-5 focus:outline-none focus:ring-1 focus:ring-green-500"
         />
         <button
           type="submit"
