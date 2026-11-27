@@ -53,6 +53,7 @@ export default function SearchBar({ onNavigate, className = "" }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState(null);
+  const [suggestError, setSuggestError] = useState(false);
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(0);
@@ -62,13 +63,19 @@ export default function SearchBar({ onNavigate, className = "" }) {
   const trimmed = query.trim();
   const isQuery = trimmed.length >= 2;
 
-  // Load suggestions the first time the box is opened.
+  // Reload suggestions every time the box opens (new people/channels show up,
+  // and a failed load is retried); the previous result stays while loading.
   useEffect(() => {
-    if (!open || suggestions) return;
+    if (!open) return undefined;
+    let cancelled = false;
+    setSuggestError(false);
     SearchService.suggestions()
-      .then(setSuggestions)
-      .catch(() => setSuggestions({ people: [], channels: [] }));
-  }, [open, suggestions]);
+      .then((data) => !cancelled && setSuggestions(data))
+      .catch(() => !cancelled && setSuggestError(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   // Debounced search; only the newest request may update results.
   useEffect(() => {
@@ -131,7 +138,7 @@ export default function SearchBar({ onNavigate, className = "" }) {
     }
   };
 
-  const waiting = isQuery ? loading && !results : !suggestions;
+  const waiting = isQuery ? loading && !results : !suggestions && !suggestError;
   let lastSection = null;
 
   return (
@@ -167,7 +174,11 @@ export default function SearchBar({ onNavigate, className = "" }) {
             <p className="px-4 py-3 text-sm text-gray-500">Loading…</p>
           ) : items.length === 0 ? (
             <p className="px-4 py-3 text-sm text-gray-500">
-              {isQuery ? `No results for "${trimmed}"` : "Type at least 2 letters to search posts too."}
+              {isQuery
+                ? `No results for "${trimmed}"`
+                : suggestError
+                  ? "Couldn't load suggestions. Type to search, or try again."
+                  : "No people or channels yet. Type at least 2 letters to search posts too."}
             </p>
           ) : (
             items.map((item, index) => {
