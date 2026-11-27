@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "../ui/DropdownMenu";
+import { PostImageGrid } from "./PostImages";
 import { PostModal } from "./PostModal";
 import { DeletePostConfirmation } from "./DeletePostConfirmation";
 import { ReactionPicker } from "./ReactionPicker";
@@ -47,6 +48,18 @@ export function Post({
   const [postReactions, setPostReactions] = useState(post.reactions || {});
   const [currentReaction, setCurrentReaction] = useState(null);
   const isAuthor = currentUserId === post.author.id;
+  // Stable object so the edit dialog doesn't reset (and drop picked photos)
+  // whenever this card re-renders.
+  const editInitialData = useMemo(
+    () => ({
+      type: post.type,
+      title: post.title,
+      content: post.content,
+      tags: post.tags,
+      images: post.images || [],
+    }),
+    [post.type, post.title, post.content, post.tags, post.images],
+  );
 
   const handleReact = (reactionName) => {
     setPostReactions((prev) => ({
@@ -223,6 +236,7 @@ export function Post({
           >
             {post.content}
           </p>
+          <PostImageGrid images={post.images} className="mt-3" />
           {post.content.length > 150 && (
             <Button
               variant="link"
@@ -298,12 +312,7 @@ export function Post({
         isOpen={isEditMode}
         onClose={() => setIsEditMode(false)}
         onSubmit={handleEditComplete}
-        initialData={{
-          type: post.type,
-          title: post.title,
-          content: post.content,
-          tags: post.tags,
-        }}
+        initialData={editInitialData}
       />
     </motion.div>
   );

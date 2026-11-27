@@ -15,6 +15,7 @@ import { X, Hash, MessageCircle, Share2, Send, Heart } from "lucide-react";
 import { ReactionPicker } from "./ReactionPicker";
 import CommentService from "../../services/commentService";
 import { Comment } from "../comments/Comment";
+import { PostImageGrid } from "./PostImages";
 import { toast } from "react-toastify";
 import TextareaAutosize from "react-textarea-autosize";
 import { generateAvatarSvg } from "../../utils/avatarUtils";
@@ -328,6 +329,7 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                     {post.content}
                   </p>
                 </div>
+                <PostImageGrid images={post.images} className="mt-4" />
               </div>
 
               <div className="flex items-center justify-between py-4">
@@ -377,6 +379,13 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                       </div>
                     ))}
                   </div>
+                ) : comments.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-green-200 bg-green-50/50 px-6 py-10 text-center">
+                    <p className="text-base font-semibold text-gray-800">No comments yet</p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Be the first to comment!
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-6">
                     {comments.map((comment, index) =>
@@ -390,6 +399,7 @@ export function FullPostModal({ post, isOpen, onClose, currentUserId }) {
                           onDeleteComment={handleDeleteComment}
                           onEditReply={handleEditReply}
                           onDeleteReply={handleDeleteReply}
+                          viewer={currentUser.name ? currentUser : null}
                         />
                       ) : (
                         <div key={`comment-placeholder-${index}`}>
