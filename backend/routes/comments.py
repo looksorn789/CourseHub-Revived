@@ -7,6 +7,8 @@ comment_bp = Blueprint('comment_bp', __name__)
 
 def _mark_liked_comments(comment_model, comments):
     """Set "liked" on each comment and reply for the signed-in user, if any."""
+    if not comments:
+        return  # nothing to mark; skip the user and likes lookups
     if not verify_jwt_in_request(optional=True):
         return
     supabase_user_id = get_jwt_identity()

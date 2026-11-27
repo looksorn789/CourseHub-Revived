@@ -10,10 +10,16 @@ class RequestStatus(Enum):
     DECLINED = "declined"
 
 class FriendRequest:
+    _prepared_dbs = set()
+
     def __init__(self, db, supabase):
         self.collection = db["friend_requests"]
         self.supabase = supabase
-        self._setup_indexes()
+        # Index setup is slow over the network and only needs to happen once
+        # per process; a model is constructed on every request.
+        if db.name not in FriendRequest._prepared_dbs:
+            self._setup_indexes()
+            FriendRequest._prepared_dbs.add(db.name)
 
     def _setup_indexes(self):
         """Set up indexes for faster queries"""
