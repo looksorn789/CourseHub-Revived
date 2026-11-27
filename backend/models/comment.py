@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional, Tuple, List, Union
+from typing import Dict, Optional, Tuple, List
 from bson import ObjectId
 from flask import current_app
 import bleach
@@ -48,14 +48,14 @@ class Comment:
         """Set up optimized indexes for comment queries"""
         try:
             indexes = [
-                IndexModel([("post_id", ASCENDING), ("parent_id", ASCENDING), 
+                IndexModel([("post_id", ASCENDING), ("parent_id", ASCENDING),
                           ("status", ASCENDING), ("created_at", DESCENDING)]),
                 IndexModel([("user_id", ASCENDING)]),
                 IndexModel([("parent_id", ASCENDING)]),
                 IndexModel([("likes", DESCENDING)]),
                 IndexModel([("created_at", DESCENDING)])
             ]
-            
+
             self.collection.create_indexes(indexes)
             current_app.logger.info("Comment indexes created successfully")
 
@@ -73,7 +73,7 @@ class Comment:
     def _prepare_comment_data(self, data: Dict) -> Dict:
         """Prepare comment data for insertion"""
         current_time = datetime.utcnow()
-        
+
         comment_data = {
             "post_id": ObjectId(data["post_id"]),
             "user_id": ObjectId(data["user_id"]),
@@ -139,7 +139,7 @@ class Comment:
             if comment:
                 self._convert_ids_to_strings(comment)
                 return comment
-                
+
             return None
         except Exception as e:
             current_app.logger.error(f"Error getting comment: {str(e)}")
@@ -151,14 +151,14 @@ class Comment:
             with self.collection.database.client.start_session() as session:
                 with session.start_transaction():
                     current_app.logger.debug("Starting transaction for comment creation")
-                    
+
                     comment_data = self._prepare_comment_data(data)
                     current_app.logger.debug(f"Prepared comment data: {comment_data}")
 
                     # Insert comment first
                     current_app.logger.debug("Inserting new comment")
                     result = self.collection.insert_one(comment_data, session=session)
-                    
+
                     if not result.inserted_id:
                         return None, "Failed to create comment"
 
@@ -182,7 +182,7 @@ class Comment:
                         )
                         if parent:
                             comment_data["metadata"]["thread_depth"] = parent["metadata"]["thread_depth"] + 1
-                            
+
                             self.collection.update_one(
                                 {"_id": ObjectId(data["parent_id"])},
                                 {
@@ -328,7 +328,7 @@ class Comment:
 
             # Execute aggregation pipeline
             comments = list(self.collection.aggregate(pipeline))
-            
+
             # Convert ObjectIds to strings
             for comment in comments:
                 self._convert_ids_to_strings(comment)
@@ -388,7 +388,7 @@ class Comment:
                         return None, f"Failed to update {comment_type}"
 
                     response_data = self._format_comment_response(result)
-                    
+
                     return response_data, None
 
         except Exception as e:
@@ -415,11 +415,11 @@ class Comment:
                         return False, "Comment not found or unauthorized"
 
                     is_reply = bool(comment.get("parent_id"))
-                    
+
                     if is_reply:
                         # Delete single reply
                         self.collection.delete_one({"_id": ObjectId(comment_id)}, session=session)
-                        
+
                         # Update parent's reply count
                         self.collection.update_one(
                             {"_id": comment["parent_id"]},
@@ -437,7 +437,7 @@ class Comment:
                                 {"parent_id": ObjectId(comment_id)}
                             ]
                         }, session=session)
-                        
+
                         # Update post's comment count
                         posts_collection = self.collection.database.get_collection('posts')
                         posts_collection.update_one(
@@ -470,10 +470,10 @@ class Comment:
             "likes": comment["likes"],
             "metadata": comment["metadata"],
         }
-        
+
         if comment.get("parent_id"):
             response["parent_id"] = str(comment["parent_id"])
-        
+
         # Add user info
         users_collection = self.collection.database.get_collection('users')
         user = users_collection.find_one(
@@ -485,7 +485,7 @@ class Comment:
                 "username": user.get("username"),
                 "profile": user.get("profile")
             }
-        
+
         return response
 
     def toggle_like(
@@ -516,19 +516,19 @@ class Comment:
                             session=session
                         )
                         return True, "Like removed"
-                    else:
-                        # Add like
-                        likes_collection.insert_one({
-                            "comment_id": ObjectId(comment_id),
-                            "user_id": ObjectId(user_id),
-                            "created_at": datetime.utcnow()
-                        }, session=session)
-                        self.collection.update_one(
-                            {"_id": ObjectId(comment_id)},
-                            {"$inc": {"likes": 1}},
-                            session=session
-                        )
-                        return True, "Comment liked"
+
+                    # Add like
+                    likes_collection.insert_one({
+                        "comment_id": ObjectId(comment_id),
+                        "user_id": ObjectId(user_id),
+                        "created_at": datetime.utcnow()
+                    }, session=session)
+                    self.collection.update_one(
+                        {"_id": ObjectId(comment_id)},
+                        {"$inc": {"likes": 1}},
+                        session=session
+                    )
+                    return True, "Comment liked"
 
         except Exception as e:
             current_app.logger.error(f"Error toggling like: {str(e)}")
@@ -546,7 +546,7 @@ class Comment:
                 "user_id": ObjectId(user_id),
                 "comment_id": {"$in": [ObjectId(cid) for cid in comment_ids]}
             }).distinct("comment_id"))
-            
+
             return [str(comment_id) for comment_id in liked_comments]
 
         except Exception as e:
@@ -563,9 +563,9 @@ class Comment:
 
             if comment:
                 self._convert_ids_to_strings(comment)
-            
+
             return comment
-            
+
         except Exception as e:
             current_app.logger.error(f"Error finding comment: {str(e)}")
             return None
