@@ -17,6 +17,9 @@ import Settings from "./pages/Settings";
 import ChannelPage from "./pages/ChannelPage";
 import FriendsPage from "./pages/FriendsPage";
 import TagPage from "./pages/TagPage";
+import MessagesPage from "./pages/MessagesPage";
+import { ChatProvider } from "./context/ChatContext";
+import ChatWidget from "./components/chat/ChatWidget";
 
 function App() {
   return (
@@ -24,6 +27,9 @@ function App() {
       {/* The app uses both toast libraries; mount both so their messages show. */}
       <ToastContainer position="bottom-right" autoClose={3000} newestOnTop />
       <Toaster position="bottom-right" />
+      <ChatProvider>
+      {/* Floating chat bubble + small chat panel (shared chat state). */}
+      <ChatWidget />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<SignUp />} />
@@ -81,6 +87,14 @@ function App() {
           }
         />
         <Route
+          path="/messages/:conversationId?"
+          element={
+            <PrivateRoute>
+              <MessagesPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/tags/:tag"
           element={
             <PrivateRoute>
@@ -97,6 +111,7 @@ function App() {
           }
         />
       </Routes>
+      </ChatProvider>
     </Router>
   );
 }

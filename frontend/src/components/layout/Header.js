@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   MessageSquare,
@@ -27,53 +27,23 @@ import {
 } from "../ui/Sheet";
 import Sidebar from "./SideBar";
 import SearchBar from "./SearchBar";
-import ChatPanel from "../chat/ChatPanel";
-import ChatService, {
-  getChatSocket,
-  disconnectChatSocket,
-  OPEN_CHAT_EVENT,
-} from "../../services/chatService";
+import { disconnectChatSocket } from "../../services/chatService";
+import { useChat } from "../../context/ChatContext";
 import { getUserProfile } from "../../services/profileService";
 import { generateAvatarSvg } from "../../utils/avatarUtils";
 
 function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatStartWith, setChatStartWith] = useState(null);
-  const [conversations, setConversations] = useState(null);
-  const unreadMessages = (conversations || []).reduce((n, c) => n + (c.unread || 0), 0);
-
-  const refreshConversations = useCallback(async () => {
-    const { data } = await ChatService.listConversations();
-    if (data) setConversations(data.conversations);
-  }, []);
-
-  // Live unread count: refetch when the server says a conversation changed.
-  useEffect(() => {
-    if (!localStorage.getItem("jwt_token")) return undefined;
-    refreshConversations();
-    const socket = getChatSocket();
-    let timer;
-    const onUpdate = () => {
-      clearTimeout(timer);
-      timer = setTimeout(refreshConversations, 300);
-    };
-    socket?.on("conversation_updated", onUpdate);
-    socket?.on("connect", onUpdate);
-    const onOpenChat = (e) => {
-      setIsChatOpen(true);
-      if (e.detail?.userId) setChatStartWith(e.detail.userId);
-    };
-    window.addEventListener(OPEN_CHAT_EVENT, onOpenChat);
-    return () => {
-      clearTimeout(timer);
-      socket?.off("conversation_updated", onUpdate);
-      socket?.off("connect", onUpdate);
-      window.removeEventListener(OPEN_CHAT_EVENT, onOpenChat);
-    };
-  }, [refreshConversations]);
+  const { unreadTotal: unreadMessages, togglePanel, panelOpen } = useChat();
+  const onMessagesPage = location.pathname.startsWith("/messages");
+  // Desktop/tablet: full chat page. Phones (no room for it): the chat panel.
+  const openChat = () => {
+    if (window.matchMedia("(min-width: 640px)").matches) navigate("/messages");
+    else togglePanel();
+  };
   const [user, setUser] = useState({
     name: "",
     username: "",
@@ -170,8 +140,8 @@ function Header() {
               variant="ghost"
               size="icon"
               aria-label={unreadMessages ? `Messages, ${unreadMessages} unread` : "Messages"}
-              onClick={() => setIsChatOpen((o) => !o)}
-              className={`relative flex text-green-600 hover:bg-green-100 transition-colors duration-200 h-10 w-10 p-2 ${isChatOpen ? "bg-green-100" : ""}`}
+              onClick={openChat}
+              className={`relative flex text-green-600 hover:bg-green-100 transition-colors duration-200 h-10 w-10 p-2 ${onMessagesPage || panelOpen ? "bg-green-100" : ""}`}
             >
               <MessageSquare className="h-5 w-5" />
               {unreadMessages > 0 && (
@@ -280,14 +250,6 @@ function Header() {
           </div>
         </div>
       </div>
-      <ChatPanel
-        open={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        conversations={conversations}
-        refresh={refreshConversations}
-        startWith={chatStartWith}
-        onStartHandled={() => setChatStartWith(null)}
-      />
     </header>
   );
 }

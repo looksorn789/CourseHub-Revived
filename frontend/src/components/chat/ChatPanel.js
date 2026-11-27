@@ -4,30 +4,31 @@ import { ArrowLeft, Check, Loader2, Plus, Search, Send, Trash2, Users, X } from 
 import ChatService, { getChatSocket } from "../../services/chatService";
 import SearchService from "../../services/searchService";
 import { avatarDataUrl } from "../../utils/avatarUtils";
+import { useChat } from "../../context/ChatContext";
 
-const myId = () => {
+export const myId = () => {
   try {
     return JSON.parse(localStorage.getItem("user") || "{}").user_id || null;
   } catch {
     return null;
   }
 };
-const nameOf = (u) =>
+export const nameOf = (u) =>
   `${u?.profile?.first_name || ""} ${u?.profile?.last_name || ""}`.trim() || u?.username || "Someone";
 const others = (conv, me) => (conv?.members || []).filter((m) => m._id !== me);
-const titleOf = (conv, me) =>
+export const titleOf = (conv, me) =>
   conv?.type === "group" && conv.name ? conv.name : others(conv, me).map(nameOf).join(", ") || "Just you";
-const avatarOf = (conv, me) => {
+export const avatarOf = (conv, me) => {
   const o = others(conv, me);
   return o.length === 1 ? avatarDataUrl(o[0].profile?.avatar_config, o[0].username) : null;
 };
-const when = (iso) => {
+export const when = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
   return isToday(d) ? format(d, "h:mm a") : formatDistanceToNowStrict(d, { addSuffix: true });
 };
 
-function Avatar({ src, label, size = "h-10 w-10" }) {
+export function Avatar({ src, label, size = "h-10 w-10" }) {
   return src ? (
     <img src={src} alt="" className={`${size} shrink-0 rounded-full bg-gray-100`} />
   ) : (
@@ -39,7 +40,7 @@ function Avatar({ src, label, size = "h-10 w-10" }) {
 
 /* ---------------- New message ---------------- */
 
-function NewChat({ onBack, onStarted }) {
+export function NewChat({ onBack, onStarted }) {
   const [query, setQuery] = useState("");
   const [people, setPeople] = useState([]);
   const [picked, setPicked] = useState([]);
@@ -169,7 +170,7 @@ function NewChat({ onBack, onStarted }) {
 
 /* ---------------- Thread ---------------- */
 
-function Thread({ conversation, onBack, onRead }) {
+export function Thread({ conversation, onBack, onRead, backOnlyOnPhone = false }) {
   const me = myId();
   const [messages, setMessages] = useState([]);
   const [hasMore, setHasMore] = useState(false);
@@ -274,9 +275,16 @@ function Thread({ conversation, onBack, onRead }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2.5">
-        <button type="button" onClick={onBack} aria-label="Back to conversations" className="rounded-full p-1.5 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back to conversations"
+            className={`rounded-full p-1.5 hover:bg-gray-100 ${backOnlyOnPhone ? "sm:hidden" : ""}`}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
         <Avatar src={avatarOf(conversation, me)} size="h-8 w-8" />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{titleOf(conversation, me)}</p>
@@ -382,37 +390,101 @@ function Thread({ conversation, onBack, onRead }) {
   );
 }
 
-/* ---------------- Panel ---------------- */
+/* ---------------- Conversation list (shared) ---------------- */
+
+export function ConversationList({ conversations, selectedId, onSelect, onNew, emptyText = "Start one with a classmate." }) {
+  const me = myId();
+  if (conversations === null) {
+    return (
+      <div className="flex justify-center py-10">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+  if (!conversations.length) {
+    return (
+      <div className="px-6 py-12 text-center">
+        <p className="font-semibold text-gray-800">No conversations yet</p>
+        <p className="mt-1 text-sm text-gray-500">{emptyText}</p>
+        {onNew && (
+          <button
+            type="button"
+            onClick={onNew}
+            className="mt-4 rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+          >
+            New message
+          </button>
+        )}
+      </div>
+    );
+  }
+  return conversations.map((c) => {
+    const last = c.last_message;
+    const preview = last
+      ? `${last.sender_id === me ? "You: " : ""}${last.content || "Message deleted"}`
+      : "No messages yet";
+    const title = titleOf(c, me);
+    return (
+      <button
+        key={c._id}
+        type="button"
+        onClick={() => onSelect(c)}
+        aria-current={c._id === selectedId ? "true" : undefined}
+        className={`flex w-full items-center gap-3 px-4 py-3 text-left ${
+          c._id === selectedId ? "bg-green-50" : "hover:bg-gray-50"
+        }`}
+      >
+        <Avatar src={avatarOf(c, me)} label={c.type === "group" ? null : title[0]} />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline justify-between gap-2">
+            <span className={`truncate text-sm ${c.unread ? "font-semibold" : "font-medium"}`}>{title}</span>
+            <span className="shrink-0 text-[11px] text-gray-400">{when(last?.created_at || c.created_at)}</span>
+          </span>
+          <span className="flex items-center justify-between gap-2">
+            <span className={`truncate text-xs ${c.unread ? "text-gray-800" : "text-gray-500"}`}>{preview}</span>
+            {c.unread > 0 && (
+              <span className="shrink-0 rounded-full bg-green-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                {c.unread}
+              </span>
+            )}
+          </span>
+        </span>
+      </button>
+    );
+  });
+}
+
+/* ---------------- Small panel ---------------- */
 
 /**
- * Floating chat (full screen on phones). Lists conversations, opens threads,
- * starts new direct/group chats. `startWith` (a user id) opens or creates a
- * direct chat with that person.
+ * Small chat: floating window on desktop (opened from the chat bubble), full
+ * screen on phones (opened from the header). All chats in one list (no
+ * direct/group tabs). State comes from ChatContext, shared with /messages.
  */
-export default function ChatPanel({ open, onClose, conversations, refresh, startWith, onStartHandled }) {
-  const me = myId();
+export default function ChatPanel() {
+  const { panelOpen, closePanel, conversations, refresh, startWith, clearStartWith } = useChat();
   const [view, setView] = useState({ name: "list" });
 
   const openConversation = useCallback((conv) => setView({ name: "thread", conversation: conv }), []);
 
   useEffect(() => {
-    if (!open || !startWith) return;
+    if (!panelOpen || !startWith) return;
     ChatService.startConversation([startWith]).then(({ data }) => {
       if (data) {
         openConversation(data);
         refresh();
       }
-      onStartHandled?.();
+      clearStartWith();
     });
-  }, [open, startWith, openConversation, refresh, onStartHandled]);
+  }, [panelOpen, startWith, openConversation, refresh, clearStartWith]);
 
-  if (!open) return null;
+  if (!panelOpen) return null;
 
   return (
     <div
       role="dialog"
       aria-label="Messages"
-      className="fixed inset-0 z-50 flex flex-col bg-white sm:inset-auto sm:bottom-4 sm:right-4 sm:h-[560px] sm:max-h-[calc(100vh-6rem)] sm:w-[380px] sm:rounded-2xl sm:border sm:border-gray-200 sm:shadow-2xl"
+      className="fixed inset-0 z-50 flex flex-col bg-white sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[540px] sm:max-h-[calc(100vh-8rem)] sm:w-[380px] sm:rounded-2xl sm:border sm:border-gray-200 sm:shadow-2xl"
     >
       {view.name === "thread" ? (
         <Thread
@@ -444,61 +516,17 @@ export default function ChatPanel({ open, onClose, conversations, refresh, start
               >
                 <Plus className="h-5 w-5" />
               </button>
-              <button type="button" onClick={onClose} aria-label="Close messages" className="rounded-full p-2 hover:bg-gray-100">
+              <button type="button" onClick={closePanel} aria-label="Close messages" className="rounded-full p-2 hover:bg-gray-100">
                 <X className="h-5 w-5" />
               </button>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {conversations === null ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-              </div>
-            ) : conversations.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <p className="font-semibold text-gray-800">No conversations yet</p>
-                <p className="mt-1 text-sm text-gray-500">Start one with a classmate.</p>
-                <button
-                  type="button"
-                  onClick={() => setView({ name: "new" })}
-                  className="mt-4 rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                >
-                  New message
-                </button>
-              </div>
-            ) : (
-              conversations.map((c) => {
-                const last = c.last_message;
-                const preview = last
-                  ? `${last.sender_id === me ? "You: " : ""}${last.content || "Message deleted"}`
-                  : "No messages yet";
-                const title = titleOf(c, me);
-                return (
-                  <button
-                    key={c._id}
-                    type="button"
-                    onClick={() => openConversation(c)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50"
-                  >
-                    <Avatar src={avatarOf(c, me)} label={c.type === "group" ? null : title[0]} />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-baseline justify-between gap-2">
-                        <span className={`truncate text-sm ${c.unread ? "font-semibold" : "font-medium"}`}>{title}</span>
-                        <span className="shrink-0 text-[11px] text-gray-400">{when(last?.created_at || c.created_at)}</span>
-                      </span>
-                      <span className="flex items-center justify-between gap-2">
-                        <span className={`truncate text-xs ${c.unread ? "text-gray-800" : "text-gray-500"}`}>{preview}</span>
-                        {c.unread > 0 && (
-                          <span className="shrink-0 rounded-full bg-green-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                            {c.unread}
-                          </span>
-                        )}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })
-            )}
+            <ConversationList
+              conversations={conversations}
+              onSelect={openConversation}
+              onNew={() => setView({ name: "new" })}
+            />
           </div>
         </div>
       )}
